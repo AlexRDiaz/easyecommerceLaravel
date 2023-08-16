@@ -31,17 +31,35 @@ class PedidosShopifyAPIController extends Controller
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
         
-        $pageSize = $request->input('page_size', 10); // Default page size is 10
-    
-        $pedidos = PedidosShopify::with('operadores')
-            ->with('transportadoras')
+        $pageSize = $data['page_size']; 
+        $pageNumber = $data['page_number']; 
+        $searchTerm=$data['search'];
+        if($searchTerm!=""){
+        $filteFields=$data['or'];
+                $filteFields=$data['or'];
+        }else{
+            $filteFields=[];
+        }
+
+        $pedidos = PedidosShopify::with('operadore.up_users')
+            ->with('transportadora')
             ->with('users.vendedores')
             ->with('novedades')
             ->with('pedidoFecha')
-            ->with('rutaAsignada')
+            ->with('ruta')->with('subRuta')
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
-            ->paginate($pageSize);
+            ->where(function ($pedidos) use ($searchTerm, $filteFields) {
+
+                foreach ($filteFields as $field) {
+                    $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                }
+            })
+            ->paginate($pageSize, ['*'], 'page', $pageNumber);
     
+
+          
+
+
         return response()->json($pedidos);
     }
 

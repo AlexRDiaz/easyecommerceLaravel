@@ -166,11 +166,11 @@ class PedidosShopify extends Model
 		return $this->hasMany(UpUsersPedidosShopifiesLink::class);
 	}
 
-	public function operadores()
+	public function operadore()
     {
         return $this->hasManyThrough(Operadore::class, PedidosShopifiesOperadoreLink::class, 'pedidos_shopify_id', 'id', 'id', 'operadore_id');
     }
-	public function transportadoras()
+	public function transportadora()
     {
         return $this->hasManyThrough(Transportadora::class, PedidosShopifiesTransportadoraLink::class, 'pedidos_shopify_id', 'id', 'id', 'transportadora_id');
     }
@@ -183,9 +183,14 @@ class PedidosShopify extends Model
         return $this->hasManyThrough(UpUser::class, UpUsersPedidosShopifiesLink::class, 'pedidos_shopify_id', 'id', 'id', 'user_id');
     }
 
-	public function rutaAsignada()
+	public function ruta()
     {
         return $this->hasManyThrough(Ruta::class, PedidosShopifiesRutaLink::class, 'pedidos_shopify_id', 'id', 'id', 'ruta_id');
+    }
+
+	public function subRuta()
+    {
+        return $this->hasManyThrough(SubRuta::class, PedidosShopifiesSubRutaLink::class, 'pedidos_shopify_id', 'id', 'id', 'sub_ruta_id');
     }
 	// public function novedades()
     // {
