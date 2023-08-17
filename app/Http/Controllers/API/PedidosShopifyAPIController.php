@@ -63,23 +63,23 @@ class PedidosShopifyAPIController extends Controller
         return response()->json($pedidos);
     }
 
-    public function store(Request $request)
-    {
-        $pedido = PedidosShopify::create($request->all());
-        return response()->json($pedido, Response::HTTP_CREATED);
-    }
+    // public function store(Request $request)
+    // {
+    //     $pedido = PedidosShopify::create($request->all());
+    //     return response()->json($pedido, Response::HTTP_CREATED);
+    // }
 
-    public function update(Request $request, $id)
-    {
-        $pedido = PedidosShopify::findOrFail($id);
-        $pedido->update($request->all());
-        return response()->json($pedido, Response::HTTP_OK);
-    }
+    // public function update(Request $request, $id)
+    // {
+    //     $pedido = PedidosShopify::findOrFail($id);
+    //     $pedido->update($request->all());
+    //     return response()->json($pedido, Response::HTTP_OK);
+    // }
 
-    public function destroy($id)
-    {
-        $pedido = PedidosShopify::findOrFail($id);
-        $pedido->delete();
-        return response()->json(null, Response::HTTP_NO_CONTENT);
-    }
+    // public function destroy($id)
+    // {
+    //     $pedido = PedidosShopify::findOrFail($id);
+    //     $pedido->delete();
+    //     return response()->json(null, Response::HTTP_NO_CONTENT);
+    // }
 }
