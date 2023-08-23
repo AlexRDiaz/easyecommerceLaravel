@@ -76,18 +76,12 @@ class PedidosShopifyAPIController extends Controller
         $endDate = $data['end'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
-
-        $pedidos = PedidosShopify::with('operadore.up_users')
-            ->with('transportadora')
-            ->with('users.vendedores')
-            ->with('novedades')
-            ->with('pedidoFecha')
-            ->with('ruta')
-            ->with('subRuta')->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+    
+        $result = PedidosShopify::whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
             ->get();
-
-
-
+    
         $stateTotals = [
             'ENTREGADO' => 0,
             'NO ENTREGADO' => 0,
@@ -98,20 +92,18 @@ class PedidosShopifyAPIController extends Controller
             'PEDIDO PROGRAMADO' => 0,
             'TOTAL' => 0
         ];
-        foreach ($pedidos as $objeto) {
-
-            $estado = $objeto->status;
-            $stateTotals[$estado]++;
+    
+        foreach ($result as $row) {
+            $estado = $row->status;
+            $stateTotals[$estado] = $row->count;
+            $stateTotals['TOTAL'] += $row->count;
         }
-
-
-
-
-
+    
         return response()->json([
             'data' => $stateTotals,
         ]);
     }
+    
 
     public function getProductsDashboardRoutesCount(Request $request)
 {
