@@ -108,54 +108,42 @@ class PedidosShopifyAPIController extends Controller
     public function getProductsDashboardRoutesCount(Request $request)
 {
     $data = $request->json()->all();
-    $startDate = Carbon::createFromFormat('j/n/Y', $data['start'])->format('Y-m-d');
-    $endDate = Carbon::createFromFormat('j/n/Y', $data['end'])->format('Y-m-d');
+    $startDate = $data['start'];
+    $endDate = $data['end'];
+    $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+    $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
 
-    $pedidos = PedidosShopify::with([
-            'operadore.up_users:id', 
-            'transportadora', 
-            'pedidoFecha', 
-            'ruta', 
-            'subRuta'
-        ])
-        ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate])
-        ->get();
-
-    $rutas = Ruta::with(['transportadoras', 'sub_rutas'])->get();
-
-    $routeStateTotals = [];
-
-    foreach ($rutas as $route) {
-        $routeStateTotals[$route->id] = [
-            'ENTREGADO' => 0,
-            'NO ENTREGADO' => 0,
-            'NOVEDAD' => 0,
-            'REAGENDADO' => 0,
-            'EN RUTA' => 0,
-            'EN OFICINA' => 0,
-            'PEDIDO PROGRAMADO' => 0
-        ];
+    $searchTerm = $data['search'];
+    if ($searchTerm != "") {
+        $filteFields = $data['or'];
+        $filteFields = $data['or'];
+    } else {
+        $filteFields = [];
     }
 
-        foreach ($pedidos as $pedido) {
-            $newPedido = json_decode($pedido);
-
-            if ($newPedido->ruta !== null) {
-                $estado = $newPedido->status;
-                $rutaId = $newPedido->ruta[0]->id;
-                if (isset($routeStateTotals[$rutaId])) {
-                    $routeStateTotals[$rutaId][$estado]++;
-                }
-            }
+    $routeId = $data['route_id'];
+    $pedidos = PedidosShopify::with([  'operadore.up_users:id', 
+    'transportadora', 
+    'pedidoFecha', 
+    'ruta', 
+    'subRuta'])
+   
+    ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+    ->where(function ($query) use ($searchTerm, $filteFields) {
+        foreach ($filteFields as $field) {
+            $query->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
         }
+    })
+    ->whereHas('ruta', function ($query) use ($routeId) {
+        $query->where('rutas.id', $routeId); // Califica 'id' con 'rutas'
+    })
+    ->selectRaw('status, COUNT(*) as count')
+    ->groupBy('status')
+    ->get();
 
-
-    $routesValues = array_map(function ($route) use ($routeStateTotals) {
-        return array_merge(['rutaId' => $route->id], $routeStateTotals[$route->id]);
-    }, $rutas->all());
 
     return response()->json([
-        'data' => $routesValues
+        'data' => $pedidos
     ]);
 }
 
