@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\pedidos_shopifies;
 use App\Models\PedidosShopify;
+use App\Models\Ruta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -18,7 +20,9 @@ class PedidosShopifyAPIController extends Controller
 
     public function show($id)
     {
-        $pedido = PedidosShopify::findOrFail($id);
+        $pedido = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
+            ->findOrFail($id);
+
         return response()->json($pedido);
     }
 
@@ -30,11 +34,13 @@ class PedidosShopifyAPIController extends Controller
         $endDate = $data['end'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
         $searchTerm = $data['search'];
         if ($searchTerm != "") {
             $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
+
         } else {
             $filteFields = [];
         }
@@ -49,8 +55,9 @@ class PedidosShopifyAPIController extends Controller
             ->with('users.vendedores')
             ->with('novedades')
             ->with('pedidoFecha')
-            ->with('ruta')->with('subRuta')
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->with('ruta')
+            ->with('subRuta')
+            ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
 
                 foreach ($filteFields as $field) {
@@ -65,6 +72,7 @@ class PedidosShopifyAPIController extends Controller
             })
 
             // ! no modificar el codigo arriba de esta linea ↑↑↑↑
+
 
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {

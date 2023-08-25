@@ -57,6 +57,11 @@ class Ruta extends Model
 		return $this->hasMany(SubRutasRutaLink::class);
 	}
 
+	public function sub_rutas()
+    {
+        return $this->hasManyThrough(SubRuta::class, SubRutasRutaLink::class, 'ruta_id', 'id', 'id', 'sub_ruta_id');
+    }
+
 	public function transportadoras()
 	{
 		return $this->belongsToMany(Transportadora::class, 'transportadoras_rutas_links')
