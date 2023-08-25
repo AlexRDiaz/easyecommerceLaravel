@@ -40,26 +40,36 @@ class PedidosShopifyAPIController extends Controller
         $searchTerm = $data['search'];
         if ($searchTerm != "") {
             $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
-
         } else {
             $filteFields = [];
         }
 
-        $cont=0;
-        // ! *************
+        // ! *************************************
         $Map = $data['and'];
-        // ! *************
+        // ! *************************************
+        // ! ordenamiento ↓
+        $orderBy = null;
+        if (isset($data['sort'])) {
+            $sort = $data['sort'];
+            $sortParts = explode(':', $sort);
+            if (count($sortParts) === 2) {
+                $field = $sortParts[0];
+                $direction = strtoupper($sortParts[1]) === 'DESC' ? 'DESC' : 'ASC';
+                $orderBy = [$field => $direction];
+            }
+        }
 
-        $pedidos = PedidosShopify::with('operadore.up_users')
+        // ! *************************************
+
+        $pedidos = PedidosShopify::with(['operadore.up_users'])
             ->with('transportadora')
             ->with('users.vendedores')
             ->with('novedades')
             ->with('pedidoFecha')
             ->with('ruta')
             ->with('subRuta')
-            ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
-
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
                         $relacion = substr($field, 0, strpos($field, '.'));
@@ -70,9 +80,29 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             })
+            ->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
 
-            // ! no modificar el codigo arriba de esta linea ↑↑↑↑
+                    }
+                }
+            }));
+            // ! Ordena
+            if ($orderBy !== null) {
+                $pedidos->orderBy(key($orderBy), reset($orderBy));
+            }
+            // ! **************************************************
+            $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
+            // ! **************************************************
 
+            
 
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
@@ -96,6 +126,7 @@ class PedidosShopifyAPIController extends Controller
 
     private function recursiveWhereHas($query, $relation, $property, $searchTerm)
     {
+        if($searchTerm=="null"){$searchTerm= null;}
         if (strpos($property, '.') !== false) {
 
             $nestedRelation = substr($property, 0, strpos($property, '.'));
@@ -105,21 +136,19 @@ class PedidosShopifyAPIController extends Controller
                 $this->recursiveWhereHas($q, $nestedRelation, $nestedProperty, $searchTerm);
             });
         } else {
-
             $query->whereHas($relation, function ($q) use ($property, $searchTerm) {
                 $q->where($property, 'LIKE', '%' . $searchTerm . '%');
             });
         }
     }
-
-
     private function recursiveWhere($query, $key, $property, $valor)
     {
-        print("entro en function recursiveWhere\n");
-
+        if($valor=="null"){$valor = null;}
         if (strpos($property, '.') !== false) {
             $nestedRelation = substr($property, 0, strpos($property, '.'));
             $nestedProperty = substr($property, strpos($property, '.') + 1);
+            print($nestedProperty);
+            print($nestedRelation);
             $query->whereHas($key, function ($query) use ($nestedRelation, $nestedProperty, $valor) {
                 $this->recursiveWhere($query, $nestedRelation, $nestedProperty, $valor);
             });
