@@ -199,7 +199,15 @@ class PedidosShopifyAPIController extends Controller
         $not=$data['not'];
 
 
-        $result = PedidosShopify::whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+        $result = PedidosShopify:: 
+            with(['operadore.up_users'])
+            ->with('transportadora')
+            ->with('users.vendedores')
+            ->with('novedades')
+            ->with('pedidoFecha')
+            ->with('ruta')
+            ->with('subRuta')->
+            whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
