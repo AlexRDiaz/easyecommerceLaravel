@@ -27,6 +27,111 @@ class PedidosShopifyAPIController extends Controller
     }
 
 
+    public function getByDateRangeLogistic(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+
+        $pageSize = $data['page_size'];
+        $pageNumber = $data['page_number'];
+        $searchTerm = $data['search'];
+
+        if ($searchTerm != "") {
+            $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
+        } else {
+            $filteFields = [];
+        }
+
+        // ! *************************************
+        $Map = $data['and'];
+        $not=$data['not'];
+        // ! *************************************
+        // ! ordenamiento ↓
+        $orderBy = null;
+        if (isset($data['sort'])) {
+            $sort = $data['sort'];
+            $sortParts = explode(':', $sort);
+            if (count($sortParts) === 2) {
+                $field = $sortParts[0];
+                $direction = strtoupper($sortParts[1]) === 'DESC' ? 'DESC' : 'ASC';
+                $orderBy = [$field => $direction];
+            }
+        }
+
+        // ! *************************************
+
+        $pedidos = PedidosShopify::with(['operadore.up_users'])
+            ->with('transportadora')
+            ->with('users.vendedores')
+            ->with('novedades')
+            ->with('pedidoFecha')
+            ->with('ruta')
+            ->with('subRuta')
+            ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->where(function ($pedidos) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
+
+                    }
+                }
+            }))->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
+
+                    }
+                }
+            }))->where((function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
+
+                    }
+                }
+            }));
+            // ! Ordena
+            if ($orderBy !== null) {
+                $pedidos->orderBy(key($orderBy), reset($orderBy));
+            }
+            // ! **************************************************
+            $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
+
+        return response()->json($pedidos);
+    }
+
     public function getByDateRange(Request $request)
     {
         $data = $request->json()->all();
@@ -188,7 +293,7 @@ class PedidosShopifyAPIController extends Controller
 
 
 
-    public function getProductsDashboardLogistic(Request $request)
+    public function getCountersLogistic(Request $request)
     {
         $data = $request->json()->all();
         $startDate = $data['start'];
@@ -197,8 +302,6 @@ class PedidosShopifyAPIController extends Controller
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
         $Map = $data['and'];
         $not=$data['not'];
-
-
         $result = PedidosShopify:: 
             with(['operadore.up_users'])
             ->with('transportadora')
@@ -206,37 +309,43 @@ class PedidosShopifyAPIController extends Controller
             ->with('novedades')
             ->with('pedidoFecha')
             ->with('ruta')
-            ->with('subRuta')->
-            whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->with('subRuta')
+            ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->selectRaw('status, COUNT(*) as count')
-            ->groupBy('status')->where((function ($pedidos) use ($Map) {
+            ->groupBy('status')
+            ->where(function ($query) use ($Map, $not) {
                 foreach ($Map as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '=', $valor);
+                    $query->where(function ($q) use ($condition) {
+                        foreach ($condition as $key => $valor) {
+                            if (strpos($key, '.') !== false) {
+                                [$relacion, $propiedad] = explode('.', $key, 2);
+                                $q->whereHas($relacion, function ($subquery) use ($propiedad, $valor) {
+                                    $subquery->where($propiedad, '=', $valor);
+                                });
+                            } else {
+                                $q->where($key, '=', $valor);
+                            }
                         }
-
-                    }
+                    });
                 }
-            }))->where((function ($pedidos) use ($not) {
+        
                 foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
+                    $query->where(function ($q) use ($condition) {
+                        foreach ($condition as $key => $valor) {
+                            if (strpos($key, '.') !== false) {
+                                [$relacion, $propiedad] = explode('.', $key, 2);
+                                $q->whereHas($relacion, function ($subquery) use ($propiedad, $valor) {
+                                    $subquery->where($propiedad, '!=', $valor);
+                                });
+                            } else {
+                                $q->where($key, '!=', $valor);
+                            }
                         }
-
-                    }
+                    });
                 }
-            }))
+            })
             ->get();
+        
 
         $stateTotals = [
             'ENTREGADO' => 0,
@@ -248,17 +357,109 @@ class PedidosShopifyAPIController extends Controller
             'PEDIDO PROGRAMADO' => 0,
             'TOTAL' => 0
         ];
-
+   $counter=0;
         foreach ($result as $row) {
+            $counter++;
             $estado = $row->status;
             $stateTotals[$estado] = $row->count;
             $stateTotals['TOTAL'] += $row->count;
         }
 
         return response()->json([
-            'data' => $stateTotals,
+            'data' => $counter,
         ]);
     }
+
+
+
+    public function getCounters(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+        $Map = $data['and'];
+        $not=$data['not'];
+        $result = PedidosShopify:: 
+            with(['operadore.up_users'])
+            ->with('transportadora')
+            ->with('users.vendedores')
+            ->with('novedades')
+            ->with('pedidoFecha')
+            ->with('ruta')
+            ->with('subRuta')
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->where(function ($query) use ($Map, $not) {
+                foreach ($Map as $condition) {
+                    $query->where(function ($q) use ($condition) {
+                        foreach ($condition as $key => $valor) {
+                            if (strpos($key, '.') !== false) {
+                                [$relacion, $propiedad] = explode('.', $key, 2);
+                                $q->whereHas($relacion, function ($subquery) use ($propiedad, $valor) {
+                                    $subquery->where($propiedad, '=', $valor);
+                                });
+                            } else {
+                                $q->where($key, '=', $valor);
+                            }
+                        }
+                    });
+                }
+        
+                foreach ($not as $condition) {
+                    $query->where(function ($q) use ($condition) {
+                        foreach ($condition as $key => $valor) {
+                            if (strpos($key, '.') !== false) {
+                                [$relacion, $propiedad] = explode('.', $key, 2);
+                                $q->whereHas($relacion, function ($subquery) use ($propiedad, $valor) {
+                                    $subquery->where($propiedad, '!=', $valor);
+                                });
+                            } else {
+                                $q->where($key, '!=', $valor);
+                            }
+                        }
+                    });
+                }
+            })
+            ->get();
+        
+
+        $stateTotals = [
+            'ENTREGADO' => 0,
+            'NO ENTREGADO' => 0,
+            'NOVEDAD' => 0,
+            'REAGENDADO' => 0,
+            'EN RUTA' => 0,
+            'EN OFICINA' => 0,
+            'PEDIDO PROGRAMADO' => 0,
+            'TOTAL' => 0
+        ];
+   $counter=0;
+        foreach ($result as $row) {
+            $counter++;
+            $estado = $row->status;
+            $stateTotals[$estado] = $row->count;
+            $stateTotals['TOTAL'] += $row->count;
+        }
+
+        return response()->json([
+            'data' => $result,
+        ]);
+    }
+
+
+
+
+
+
+
+
+
+
+
+
 
 
     public function getProductsDashboardRoutesCount(Request $request)

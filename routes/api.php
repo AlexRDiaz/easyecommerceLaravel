@@ -29,7 +29,11 @@ Route::resource('schemas-tests', App\Http\Controllers\API\SchemasTestAPIControll
     Route::resource('pedidos-shopify', PedidosShopifyAPIController::class)
     ->except(['create', 'edit']);
 
+ Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
  Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
+
  
- Route::post('pedidos-shopify/products', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getProductsDashboardLogistic']);
+ Route::post('pedidos-shopify/products/counters', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getCounters']);
+ Route::post('pedidos-shopify/products/counters/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getCountersLogistic']);
+
  Route::post('pedidos-shopify/routes/count', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getProductsDashboardRoutesCount']);
