@@ -38,6 +38,7 @@ class PedidosShopifyAPIController extends Controller
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
         $searchTerm = $data['search'];
+
         if ($searchTerm != "") {
             $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
         } else {
@@ -46,6 +47,7 @@ class PedidosShopifyAPIController extends Controller
 
         // ! *************************************
         $Map = $data['and'];
+        $not=$data['not'];
         // ! *************************************
         // ! ordenamiento ↓
         $orderBy = null;
@@ -93,18 +95,7 @@ class PedidosShopifyAPIController extends Controller
 
                     }
                 }
-            }));
-            // ! Ordena
-            if ($orderBy !== null) {
-                $pedidos->orderBy(key($orderBy), reset($orderBy));
-            }
-            // ! **************************************************
-            $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
-            // ! **************************************************
-
-            
-
-            ->where((function ($pedidos) use ($Map) {
+            }))->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
                         if (strpos($key, '.') !== false) {
@@ -117,10 +108,27 @@ class PedidosShopifyAPIController extends Controller
 
                     }
                 }
-            }))
-            
-            // ! ******************
-            ->paginate($pageSize, ['*'], 'page', $pageNumber);
+            }))->where((function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
+
+                    }
+                }
+            }));;
+            // ! Ordena
+            if ($orderBy !== null) {
+                $pedidos->orderBy(key($orderBy), reset($orderBy));
+            }
+            // ! **************************************************
+            $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
+
         return response()->json($pedidos);
     }
 
@@ -177,4 +185,87 @@ class PedidosShopifyAPIController extends Controller
         $pedido->delete();
         return response()->json(null, Response::HTTP_NO_CONTENT);
     }
+
+
+
+    public function getProductsDashboardLogistic(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+
+        $result = PedidosShopify::whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->get();
+
+        $stateTotals = [
+            'ENTREGADO' => 0,
+            'NO ENTREGADO' => 0,
+            'NOVEDAD' => 0,
+            'REAGENDADO' => 0,
+            'EN RUTA' => 0,
+            'EN OFICINA' => 0,
+            'PEDIDO PROGRAMADO' => 0,
+            'TOTAL' => 0
+        ];
+
+        foreach ($result as $row) {
+            $estado = $row->status;
+            $stateTotals[$estado] = $row->count;
+            $stateTotals['TOTAL'] += $row->count;
+        }
+
+        return response()->json([
+            'data' => $stateTotals,
+        ]);
+    }
+
+
+    public function getProductsDashboardRoutesCount(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+
+        $searchTerm = $data['search'];
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
+        }
+
+        $routeId = $data['route_id'];
+        $pedidos = PedidosShopify::with([
+            'operadore.up_users:id',
+            'transportadora',
+            'pedidoFecha',
+            'ruta',
+            'subRuta'
+        ])
+
+            ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->where(function ($query) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    $query->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                }
+            })
+            ->whereHas('ruta', function ($query) use ($routeId) {
+                $query->where('rutas.id', $routeId); // Califica 'id' con 'rutas'
+            })
+            ->selectRaw('status, COUNT(*) as count')
+            ->groupBy('status')
+            ->get();
+
+
+        return response()->json([
+            'data' => $pedidos
+        ]);
+    }
+
 }
