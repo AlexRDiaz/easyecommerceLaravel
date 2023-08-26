@@ -366,7 +366,7 @@ class PedidosShopifyAPIController extends Controller
         }
 
         return response()->json([
-            'data' => $counter,
+            'data' => $stateTotals,
         ]);
     }
 
@@ -445,7 +445,7 @@ class PedidosShopifyAPIController extends Controller
         }
 
         return response()->json([
-            'data' => $result,
+            'data' => $stateTotals,
         ]);
     }
 
