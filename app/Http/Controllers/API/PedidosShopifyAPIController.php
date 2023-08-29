@@ -95,19 +95,6 @@ class PedidosShopifyAPIController extends Controller
 
                     }
                 }
-            }))->where((function ($pedidos) use ($Map) {
-                foreach ($Map as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '=', $valor);
-                        }
-
-                    }
-                }
             }))->where((function ($pedidos) use ($not) {
                 foreach ($not as $condition) {
                     foreach ($condition as $key => $valor) {
@@ -187,20 +174,7 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             })
-            ->where((function ($pedidos) use ($Map) {
-                foreach ($Map as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '=', $valor);
-                        }
-
-                    }
-                }
-            }))->where((function ($pedidos) use ($Map) {
+      ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
                         if (strpos($key, '.') !== false) {
@@ -313,38 +287,20 @@ class PedidosShopifyAPIController extends Controller
             ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
-            ->where(function ($query) use ($Map, $not) {
+            ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
-                    $query->where(function ($q) use ($condition) {
-                        foreach ($condition as $key => $valor) {
-                            if (strpos($key, '.') !== false) {
-                                [$relacion, $propiedad] = explode('.', $key, 2);
-                                $q->whereHas($relacion, function ($subquery) use ($propiedad, $valor) {
-                                    $subquery->where($propiedad, '=', $valor);
-                                });
-                            } else {
-                                $q->where($key, '=', $valor);
-                            }
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
                         }
-                    });
+
+                    }
                 }
-        
-                foreach ($not as $condition) {
-                    $query->where(function ($q) use ($condition) {
-                        foreach ($condition as $key => $valor) {
-                            if (strpos($key, '.') !== false) {
-                                [$relacion, $propiedad] = explode('.', $key, 2);
-                                $q->whereHas($relacion, function ($subquery) use ($propiedad, $valor) {
-                                    $subquery->where($propiedad, '!=', $valor);
-                                });
-                            } else {
-                                $q->where($key, '!=', $valor);
-                            }
-                        }
-                    });
-                }
-            })
-            ->get();
+            }))->get();
         
 
         $stateTotals = [
@@ -392,38 +348,20 @@ class PedidosShopifyAPIController extends Controller
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
-            ->where(function ($query) use ($Map, $not) {
+            ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
-                    $query->where(function ($q) use ($condition) {
-                        foreach ($condition as $key => $valor) {
-                            if (strpos($key, '.') !== false) {
-                                [$relacion, $propiedad] = explode('.', $key, 2);
-                                $q->whereHas($relacion, function ($subquery) use ($propiedad, $valor) {
-                                    $subquery->where($propiedad, '=', $valor);
-                                });
-                            } else {
-                                $q->where($key, '=', $valor);
-                            }
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
                         }
-                    });
+
+                    }
                 }
-        
-                foreach ($not as $condition) {
-                    $query->where(function ($q) use ($condition) {
-                        foreach ($condition as $key => $valor) {
-                            if (strpos($key, '.') !== false) {
-                                [$relacion, $propiedad] = explode('.', $key, 2);
-                                $q->whereHas($relacion, function ($subquery) use ($propiedad, $valor) {
-                                    $subquery->where($propiedad, '!=', $valor);
-                                });
-                            } else {
-                                $q->where($key, '!=', $valor);
-                            }
-                        }
-                    });
-                }
-            })
-            ->get();
+            }))->get();
         
 
         $stateTotals = [
@@ -449,19 +387,6 @@ class PedidosShopifyAPIController extends Controller
         ]);
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
     public function getProductsDashboardRoutesCount(Request $request)
     {
         $data = $request->json()->all();
@@ -469,6 +394,7 @@ class PedidosShopifyAPIController extends Controller
         $endDate = $data['end'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+        $Map = $data['and'];
 
         $searchTerm = $data['search'];
         if ($searchTerm != "") {
@@ -488,11 +414,20 @@ class PedidosShopifyAPIController extends Controller
         ])
 
             ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
-            ->where(function ($query) use ($searchTerm, $filteFields) {
-                foreach ($filteFields as $field) {
-                    $query->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+            ->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
+
+                    }
                 }
-            })
+            }))
             ->whereHas('ruta', function ($query) use ($routeId) {
                 $query->where('rutas.id', $routeId); // Califica 'id' con 'rutas'
             })
