@@ -361,7 +361,22 @@ class PedidosShopifyAPIController extends Controller
 
                     }
                 }
-            }))->get();
+            }))->where((function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
+
+                    }
+                }
+            }))
+            
+            ->get();
         
 
         $stateTotals = [
@@ -440,5 +455,70 @@ class PedidosShopifyAPIController extends Controller
             'data' => $pedidos
         ]);
     }
+
+
+    // public function CalculateValuesSeller(Request $request){
+    //     $data = $request->json()->all();
+    //     $startDate = $data['start'];
+    //     $endDate = $data['end'];
+    //     $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+    //     $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+    //     $Map = $data['and'];
+    //     $not=$data['not'];
+    //     $result = PedidosShopify:: 
+    //         with(['operadore.up_users'])
+    //         ->with('transportadora')
+    //         ->with('users.vendedores')
+    //         ->with('novedades')
+    //         ->with('pedidoFecha')
+    //         ->with('ruta')
+    //         ->with('subRuta')
+    //         ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+    //         ->where((function ($pedidos) use ($Map) {
+    //             foreach ($Map as $condition) {
+    //                 foreach ($condition as $key => $valor) {
+    //                     if (strpos($key, '.') !== false) {
+    //                         $relacion = substr($key, 0, strpos($key, '.'));
+    //                         $propiedad = substr($key, strpos($key, '.') + 1);
+    //                         $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+    //                     } else {
+    //                         $pedidos->where($key, '=', $valor);
+    //                     }
+
+    //                 }
+    //             }
+    //         }))->get();
+
+    //     $totalValoresRecibidos = 0;
+    //     $totalShippingCost = 0;
+    //     $totalDevolucion = 0;
+
+    //     foreach ($result as $element) {
+    //         if ($element->status === 'ENTREGADO') {
+    //             $totalValoresRecibidos += floatval(str_replace(',', '', $element->precio_total));
+    //         }
+
+    //         if ($element->status === 'ENTREGADO' || $element->status === 'NO ENTREGADO') {
+    //             $totalShippingCost += floatval(str_replace(',', '', data_get($element, 'users.0.vendedores.0.costo_envio', 0)));
+    //         }
+
+    //         if ($element->status === 'NOVEDAD' && $element->estado_devolucion === 'PENDIENTE') {
+    //             $totalDevolucion += floatval(str_replace(',', '', data_get($element, 'users.0.vendedores.0.costo_devolucion', 0)));
+    //         }
+    //     }
+
+    //     $summary = [
+    //         'totalValoresRecibidos' => $totalValoresRecibidos,
+    //         'totalShippingCost' => $totalShippingCost,
+    //         'totalDevolucion' => $totalDevolucion,
+    //     ];
+
+
+
+
+    //         return response()->json([
+    //             'data' => $summary,
+    //         ]);
+    // }
 
 }
