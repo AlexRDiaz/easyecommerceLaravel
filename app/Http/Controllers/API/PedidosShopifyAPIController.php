@@ -475,13 +475,21 @@ class PedidosShopifyAPIController extends Controller
     
         $summary = [
             'totalValoresRecibidos' => $query->whereIn('status', ['ENTREGADO'])->sum(DB::raw('REPLACE(precio_total, ",", "")')),
-            'totalShippingCost' => $query
+           
+         //  este sirve para costo envio
+            // 'totalShippingCost' => $query
+            // ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])
+            // ->join('up_users_pedidos_shopifies_links', 'pedidos_shopifies.id', '=', 'up_users_pedidos_shopifies_links.pedidos_shopify_id')
+            // ->join('up_users', 'up_users_pedidos_shopifies_links.user_id', '=', 'up_users.id')
+            // ->join('up_users_vendedores_links', 'up_users.id', '=', 'up_users_vendedores_links.user_id')
+            // ->join('vendedores', 'up_users_vendedores_links.vendedor_id', '=', 'vendedores.id')->get()
+            //  ->sum(DB::raw('REPLACE(vendedores.costo_envio, ",", "")'))
+               'totalShippingCost' => $query
             ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])
-            ->join('up_users_pedidos_shopifies_links', 'pedidos_shopifies.id', '=', 'up_users_pedidos_shopifies_links.pedidos_shopify_id')
-            ->join('up_users', 'up_users_pedidos_shopifies_links.user_id', '=', 'up_users.id')
-            ->join('up_users_vendedores_links', 'up_users.id', '=', 'up_users_vendedores_links.user_id')
-            ->join('vendedores', 'up_users_vendedores_links.vendedor_id', '=', 'vendedores.id')
-            ->sum(DB::raw('REPLACE(vendedores.costo_envio, ",", "")'))];
+            ->join('pedidos_shopifies_transportadora_links', 'pedidos_shopifies.id', '=', 'pedidos_shopifies_transportadora_links.pedidos_shopify_id')
+            ->join('transportadoras', 'pedidos_shopifies_transportadora_links.transportadora_id', '=', 'transportadoras.id')
+             ->sum(DB::raw('REPLACE(transportadoras.costo_transportadora, ",", "")'))
+        ];
     
         return response()->json([
             'data' => $summary,
