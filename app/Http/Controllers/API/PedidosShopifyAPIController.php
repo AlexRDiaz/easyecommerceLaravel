@@ -9,6 +9,7 @@ use App\Models\Ruta;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class PedidosShopifyAPIController extends Controller
 {
@@ -457,78 +458,55 @@ class PedidosShopifyAPIController extends Controller
     }
 
 
-    public function CalculateValuesSeller(Request $request){
+    public function CalculateValuesSeller(Request $request)
+    {
         $data = $request->json()->all();
-        $startDate = $data['start'];
-        $endDate = $data['end'];
-        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
-        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+        $startDate = Carbon::createFromFormat('j/n/Y', $data['start'])->format('Y-m-d');
+        $endDate = Carbon::createFromFormat('j/n/Y', $data['end'])->format('Y-m-d');
         $Map = $data['and'];
-        $not=$data['not'];
-        $result = PedidosShopify:: 
-            with(['operadore.up_users'])
-            ->with('transportadora')
-            ->with('users.vendedores')
-            ->with('novedades')
-            ->with('pedidoFecha')
-            ->with('ruta')
-            ->with('subRuta')
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
-            ->where((function ($pedidos) use ($Map) {
-                foreach ($Map as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '=', $valor);
-                        }
-
-                    }
-                }
-            }))->where((function ($pedidos) use ($not) {
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
-
-                    }
-                }
-            }))->get();
-
-        $totalValoresRecibidos = 0;
-        $totalCostoTransportadora = 0;
-
-        foreach ($result as $element) {
-            if ($element->status === 'ENTREGADO') {
-                $totalValoresRecibidos += floatval(str_replace(',', '', $element->precio_total));
-            }
-
-            if ($element->status === 'ENTREGADO' || $element->status === 'NO ENTREGADO') {
-                $totalCostoTransportadora += floatval(str_replace(',', '', data_get($element, 'users.0.vendedores.0.costo_envio', 0)));
-            }
-
-           
-        }
-
+        $not = $data['not'];
+        
+        $query = PedidosShopify::query()
+            ->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
+    
+        $this->applyConditions($query, $Map);
+        $this->applyConditions($query, $not, true);
+    
         $summary = [
-            'totalValoresRecibidos' => $totalValoresRecibidos,
-            'totalShippingCost' => $totalCostoTransportadora,
-            
-        ];
-
-
-
-
-            return response()->json([
-                'data' => $summary,
-            ]);
+            'totalValoresRecibidos' => $query->whereIn('status', ['ENTREGADO'])->sum(DB::raw('REPLACE(precio_total, ",", "")')),
+            'totalShippingCost' => $query
+            ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])
+            ->join('up_users_pedidos_shopifies_links', 'pedidos_shopifies.id', '=', 'up_users_pedidos_shopifies_links.pedidos_shopify_id')
+            ->join('up_users', 'up_users_pedidos_shopifies_links.user_id', '=', 'up_users.id')
+            ->join('up_users_vendedores_links', 'up_users.id', '=', 'up_users_vendedores_links.user_id')
+            ->join('vendedores', 'up_users_vendedores_links.vendedor_id', '=', 'vendedores.id')
+            ->sum(DB::raw('REPLACE(vendedores.costo_envio, ",", "")'))];
+    
+        return response()->json([
+            'data' => $summary,
+        ]);
     }
 
+
+
+    private function applyConditions($query, $conditions, $not = false)
+{
+    $operator = $not ? '!=' : '=';
+
+    foreach ($conditions as $condition) {
+        foreach ($condition as $key => $value) {
+            if (strpos($key, '.') !== false) {
+                [$relation, $property] = explode('.', $key);
+                $query->whereHas($relation, function ($subQuery) use ($property, $value, $operator) {
+                    $subQuery->where($property, $operator, $value);
+                });
+            } else {
+                $query->where($key, $operator, $value);
+            }
+        }
+    }
+}
+
+    
 }
