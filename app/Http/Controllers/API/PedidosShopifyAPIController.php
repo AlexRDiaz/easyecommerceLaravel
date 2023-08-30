@@ -458,7 +458,7 @@ class PedidosShopifyAPIController extends Controller
     }
 
 
-    public function CalculateValuesSeller(Request $request)
+    public function CalculateValuesTransport(Request $request)
     {
         $data = $request->json()->all();
         $startDate = Carbon::createFromFormat('j/n/Y', $data['start'])->format('Y-m-d');
@@ -495,6 +495,51 @@ class PedidosShopifyAPIController extends Controller
             'data' => $summary,
         ]);
     }
+
+    public function CalculateValuesSeller(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = Carbon::createFromFormat('j/n/Y', $data['start'])->format('Y-m-d');
+        $endDate = Carbon::createFromFormat('j/n/Y', $data['end'])->format('Y-m-d');
+        $Map = $data['and'];
+        $not = $data['not'];
+        
+        $query = PedidosShopify::query()
+            ->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
+    
+        $this->applyConditions($query, $Map);
+        $this->applyConditions($query, $not, true);
+        $query1 = clone $query;
+        $query2 = clone $query;
+        $query3 = clone $query;
+        $summary = [
+           'totalValoresRecibidos' => $query1->whereIn('status', ['ENTREGADO'])->sum(DB::raw('REPLACE(precio_total, ",", "")')),
+           
+            'totalShippingCost' => $query2
+            ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])
+            ->join('up_users_pedidos_shopifies_links', 'pedidos_shopifies.id', '=', 'up_users_pedidos_shopifies_links.pedidos_shopify_id')
+            ->join('up_users', 'up_users_pedidos_shopifies_links.user_id', '=', 'up_users.id')
+            ->join('up_users_vendedores_links', 'up_users.id', '=', 'up_users_vendedores_links.user_id')
+            ->join('vendedores', 'up_users_vendedores_links.vendedor_id', '=', 'vendedores.id')
+             ->sum(DB::raw('REPLACE(vendedores.costo_envio, ",", "")')),
+            
+             'totalCostoDevolucion' => $query3
+             ->whereIn('status', ['NOVEDAD'])
+             ->whereNotIn('estado_devolucion', ['PENDIENTE'])
+             ->join('up_users_pedidos_shopifies_links', 'pedidos_shopifies.id', '=', 'up_users_pedidos_shopifies_links.pedidos_shopify_id')
+             ->join('up_users', 'up_users_pedidos_shopifies_links.user_id', '=', 'up_users.id')
+             ->join('up_users_vendedores_links', 'up_users.id', '=', 'up_users_vendedores_links.user_id')
+             ->join('vendedores', 'up_users_vendedores_links.vendedor_id', '=', 'vendedores.id')
+              ->sum(DB::raw('REPLACE(vendedores.costo_devolucion, ",", "")')),
+             
+        ];
+    
+        return response()->json([
+            'data' => $summary,
+        ]);
+    }
+    
 
 
 

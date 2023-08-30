@@ -37,4 +37,6 @@ Route::resource('schemas-tests', App\Http\Controllers\API\SchemasTestAPIControll
  Route::post('pedidos-shopify/products/counters/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getCountersLogistic']);
 
  Route::post('pedidos-shopify/routes/count', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getProductsDashboardRoutesCount']);
- Route::post('pedidos-shopify/products/values', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesSeller']);
+ Route::post('pedidos-shopify/products/values/transport', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesTransport']);
+ Route::post('pedidos-shopify/products/values/seller', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesSeller']);
+
