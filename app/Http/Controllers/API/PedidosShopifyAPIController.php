@@ -473,8 +473,11 @@ class PedidosShopifyAPIController extends Controller
         $this->applyConditions($query, $Map);
         $this->applyConditions($query, $not, true);
     
+
+        $query1 = clone $query;
+        $query2 = clone $query;
         $summary = [
-            'totalValoresRecibidos' => $query->whereIn('status', ['ENTREGADO'])->sum(DB::raw('REPLACE(precio_total, ",", "")')),
+            'totalValoresRecibidos' => $query1->whereIn('status', ['ENTREGADO'])->sum(DB::raw('REPLACE(precio_total, ",", "")')),
            
          //  este sirve para costo envio
             // 'totalShippingCost' => $query
@@ -484,7 +487,7 @@ class PedidosShopifyAPIController extends Controller
             // ->join('up_users_vendedores_links', 'up_users.id', '=', 'up_users_vendedores_links.user_id')
             // ->join('vendedores', 'up_users_vendedores_links.vendedor_id', '=', 'vendedores.id')->get()
             //  ->sum(DB::raw('REPLACE(vendedores.costo_envio, ",", "")'))
-               'totalShippingCost' => $query
+               'totalShippingCost' => $query2
             ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])
             ->join('pedidos_shopifies_transportadora_links', 'pedidos_shopifies.id', '=', 'pedidos_shopifies_transportadora_links.pedidos_shopify_id')
             ->join('transportadoras', 'pedidos_shopifies_transportadora_links.transportadora_id', '=', 'transportadoras.id')
