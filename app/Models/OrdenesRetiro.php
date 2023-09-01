@@ -63,4 +63,9 @@ class OrdenesRetiro extends Model
 	{
 		return $this->hasMany(OrdenesRetirosUsersPermissionsUserLink::class);
 	}
+
+	public function users_permissions_user()
+    {
+        return $this->hasManyThrough(UpUser::class, OrdenesRetirosUsersPermissionsUserLink::class, 'ordenes_retiro_id', 'id', 'id', 'user_id');
+    }
 }
