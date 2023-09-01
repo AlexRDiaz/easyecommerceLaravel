@@ -30,7 +30,12 @@ Route::resource('schemas-tests', App\Http\Controllers\API\SchemasTestAPIControll
     ->except(['create', 'edit']);
 
  Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
+ 
+//  ! ↓ LA ORIGINAL
  Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
+
+//  ! MIA OPERATOR
+ Route::post('operator/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getDevolucionesOperator']);
 
  
  Route::post('pedidos-shopify/products/counters', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getCounters']);
