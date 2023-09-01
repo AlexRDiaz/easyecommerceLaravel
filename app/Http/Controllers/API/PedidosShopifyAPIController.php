@@ -26,7 +26,70 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($pedido);
     }
+    public function getDevolucionesOperator(Request $request){
+        $data = $request->json()->all();
+        $Map = $data['and'];
+        $not=$data['not'];
+        $searchTerm = $data['search'];
+        $pageSize = $data['page_size'];
+        $pageNumber = $data['page_number'];
 
+        if ($searchTerm != "") {
+            $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
+        } else {
+            $filteFields = [];
+        }
+
+        $pedidos = PedidosShopify::with(['operadore.up_users'])
+            ->with('transportadora')
+            ->with('users.vendedores')
+            ->with('novedades')
+            ->with('pedidoFecha')
+            ->with('ruta')
+            ->with('subRuta')
+            ->where(function ($pedidos) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
+
+                    }
+                }
+            }))->where((function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
+
+                    }
+                }
+            }));
+            // ! **************************************************
+            $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
+
+        return response()->json($pedidos);
+    }
 
     public function getByDateRangeLogistic(Request $request)
     {
