@@ -225,7 +225,7 @@ class PedidosShopifyAPIController extends Controller
             });
         } else {
             $query->whereHas($relation, function ($q) use ($property, $searchTerm) {
-                $q->where($property, 'LIKE', '%' . $searchTerm . '%');
+                $q->where($property, '=', $searchTerm);
             });
         }
     }

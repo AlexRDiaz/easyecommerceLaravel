@@ -32,7 +32,7 @@ class VendedoreAPIController extends Controller
         $values = [];
     
         // Obtén todos los vendedores
-        $searchGeneralSellers = Vendedore::take(20)->get();
+        $searchGeneralSellers = Vendedore::take(10)->get();
     
         foreach ($searchGeneralSellers as $seller) {
             $sumaEntregados = PedidosShopify::where('id_comercial', $seller->id)

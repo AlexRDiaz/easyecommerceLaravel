@@ -41,6 +41,7 @@ class Transportadora extends Model
 	];
 
 	protected $fillable = [
+	
 		'nombre',
 		'costo_transportadora',
 		'telefono_1',
