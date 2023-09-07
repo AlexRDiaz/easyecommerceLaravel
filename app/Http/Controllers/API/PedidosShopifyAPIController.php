@@ -34,6 +34,7 @@ class PedidosShopifyAPIController extends Controller
         $searchTerm = $data['search'];
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
+        $orConditions = $data['multifilter'];
 
         if ($searchTerm != "") {
             $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
@@ -57,6 +58,16 @@ class PedidosShopifyAPIController extends Controller
                     } else {
                         $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
                     }
+                }
+            })
+            ->orWhere(function ($pedidos) use ($orConditions) {
+                //condiciones multifilter
+                foreach ($orConditions as $condition) {
+                    $pedidos->orWhere(function ($subquery) use ($condition) {
+                        foreach ($condition as $field => $value) {
+                            $subquery->orWhere($field, $value);
+                        }
+                    });
                 }
             })
             ->where((function ($pedidos) use ($Map) {
