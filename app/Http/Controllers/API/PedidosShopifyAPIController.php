@@ -161,42 +161,42 @@ class PedidosShopifyAPIController extends Controller
                 }
             }
         }));
-          // ! Ordenamiento ********************************** 
-          $orderByText = null;
-          $orderByDate = null;
-          $sort = $data['sort'];            
-          $sortParts = explode(':', $sort);
-  
-          $pt1 = $sortParts[0];
-  
-          $type = (stripos($pt1, 'fecha') !== false || stripos($pt1, 'marca') !== false) ? 'date' : 'text';
-  
-          $dataSort = [
-              [
-                  'field' => $sortParts[0],
-                  'type' => $type,
-                  'direction' => $sortParts[1],
-              ],
-          ];
-  
-          foreach ($dataSort as $value) {
-              $field = $value['field'];
-              $direction = $value['direction'];
-              $type = $value['type'];
-              
-              if ($type === "text") {
-                  $orderByText = [$field => $direction];
-              } else {
-                  $orderByDate = [$field => $direction];
-              }
-          }
-  
-          if ($orderByText !== null) {
-              $pedidos->orderBy(key($orderByText), reset($orderByText));
-          } else {
-              $pedidos->orderBy(DB::raw("STR_TO_DATE(" . key($orderByDate) . ", '%e/%c/%Y')"), reset($orderByDate));
-          }
-          // ! **************************************************
+        // ! Ordenamiento ********************************** 
+        $orderByText = null;
+        $orderByDate = null;
+        $sort = $data['sort'];            
+        $sortParts = explode(':', $sort);
+
+        $pt1 = $sortParts[0];
+
+        $type = (stripos($pt1, 'fecha') !== false || stripos($pt1, 'marca') !== false) ? 'date' : 'text';
+
+        $dataSort = [
+            [
+                'field' => $sortParts[0],
+                'type' => $type,
+                'direction' => $sortParts[1],
+            ],
+        ];
+
+        foreach ($dataSort as $value) {
+            $field = $value['field'];
+            $direction = $value['direction'];
+            $type = $value['type'];
+            
+            if ($type === "text") {
+                $orderByText = [$field => $direction];
+            } else {
+                $orderByDate = [$field => $direction];
+            }
+        }
+
+        if ($orderByText !== null) {
+            $pedidos->orderBy(key($orderByText), reset($orderByText));
+        } else {
+            $pedidos->orderBy(DB::raw("STR_TO_DATE(" . key($orderByDate) . ", '%e/%c/%Y')"), reset($orderByDate));
+        }
+        // ! **************************************************
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
 
         return response()->json($pedidos);
