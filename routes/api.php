@@ -36,6 +36,16 @@ Route::resource('schemas-tests', App\Http\Controllers\API\SchemasTestAPIControll
 
 //  ! MIA OPERATOR
  Route::post('operator/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getDevolucionesOperator']);
+//  ! MIA TRANSPORTADORAS
+
+Route::get('transportadoras', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getTransportadoras']);
+
+// ! MIA OPERATORESBYTRANSPORT
+
+Route::get('operatoresbytransport/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getOperatoresbyTransport']);
+
+// ! ***********************
+
  Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
 
 
