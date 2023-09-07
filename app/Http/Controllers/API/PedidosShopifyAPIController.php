@@ -292,10 +292,10 @@ class PedidosShopifyAPIController extends Controller
     public function getReturnSellers(Request $request)
     {
         $data = $request->json()->all();
-        $startDate = $data['start']; //! luego borrrar las fechas
-        $endDate = $data['end'];
-        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
-        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+        // $startDate = $data['start'];
+        // $endDate = $data['end'];
+        // $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        // $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
 
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
@@ -306,27 +306,31 @@ class PedidosShopifyAPIController extends Controller
         } else {
             $filteFields = [];
         }
-        /*
-                $orConditions = [
-                    ['status' => 'NOVEDAD'],
-                    ['status' => 'NO ENTREGADO'],
-                    ['status' => 'NO ENTREGADO']
-                ];
-        */
+
         // ! *************************************
         $orConditions = $data['ordefault'];
         $Map = $data['and'];
         $not = $data['not'];
         // ! *************************************
         // ! ordenamiento ↓
+
+        $orderByText = null;
+        $orderByDate = null;
+
         $orderBy = null;
         if (isset($data['sort'])) {
             $sort = $data['sort'];
             $sortParts = explode(':', $sort);
-            if (count($sortParts) === 2) {
+
+            if (count($sortParts) === 3) {
                 $field = $sortParts[0];
-                $direction = strtoupper($sortParts[1]) === 'DESC' ? 'DESC' : 'ASC';
-                $orderBy = [$field => $direction];
+                $fieldType = $sortParts[1];
+                $direction = strtoupper($sortParts[2]) === 'DESC' ? 'DESC' : 'ASC';
+                if ($fieldType === 'text') {
+                    $orderByText = [$field => $direction];
+                } else if ($fieldType === 'date') {
+                    $orderByDate = [$field => $direction];
+                }
             }
         }
 
@@ -339,6 +343,15 @@ class PedidosShopifyAPIController extends Controller
             ->with('pedidoFecha')
             ->with('ruta')
             ->with('subRuta')
+            ->orWhere(function ($query) use ($orConditions) {
+                foreach ($orConditions as $condition) {
+                    $query->orWhere(function ($subquery) use ($condition) {
+                        foreach ($condition as $field => $value) {
+                            $subquery->orWhere($field, $value);
+                        }
+                    });
+                }
+            })
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -350,17 +363,7 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             })
-            ->orWhere(function ($query) use ($orConditions) {
-                //condiciones OR
-                foreach ($orConditions as $condition) {
-                    $query->orWhere(function ($subquery) use ($condition) {
-                        foreach ($condition as $field => $value) {
-                            $subquery->orWhere($field, $value);
-                        }
-                    });
-                }
-            })
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            //->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
@@ -386,6 +389,7 @@ class PedidosShopifyAPIController extends Controller
                     }
 
                 }
+
             }
         }));
         // ! Ordena
@@ -394,7 +398,6 @@ class PedidosShopifyAPIController extends Controller
         }
         // ! **************************************************
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
-
         return response()->json($pedidos);
     }
 
@@ -466,8 +469,9 @@ class PedidosShopifyAPIController extends Controller
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
         $Map = $data['and'];
         $not = $data['not'];
-        $result = PedidosShopify::
-            with(['operadore.up_users'])
+
+        $result = PedidosShopify::with(['operadore.up_users'])
+
             ->with('transportadora')
             ->with('users.vendedores')
             ->with('novedades')
@@ -487,7 +491,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '=', $valor);
                         }
-
                     }
                 }
             }))->get();
@@ -527,6 +530,7 @@ class PedidosShopifyAPIController extends Controller
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
         $Map = $data['and'];
         $not = $data['not'];
+
         $result = PedidosShopify::
             with(['operadore.up_users'])
             ->with('transportadora')
@@ -548,10 +552,10 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '=', $valor);
                         }
-
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
+
             foreach ($not as $condition) {
                 foreach ($condition as $key => $valor) {
                     if (strpos($key, '.') !== false) {
@@ -563,10 +567,9 @@ class PedidosShopifyAPIController extends Controller
                     }
 
                 }
-            }
-        }))
 
-            ->get();
+            }
+        })) ->get();
 
 
         $stateTotals = [
@@ -629,7 +632,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '=', $valor);
                         }
-
                     }
                 }
             }))
@@ -752,6 +754,7 @@ class PedidosShopifyAPIController extends Controller
             }
         }
     }
+
 
 
 }
