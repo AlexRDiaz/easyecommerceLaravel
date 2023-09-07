@@ -36,6 +36,16 @@ Route::resource('schemas-tests', App\Http\Controllers\API\SchemasTestAPIControll
 
 //  ! MIA OPERATOR
  Route::post('operator/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getDevolucionesOperator']);
+//  ! MIA TRANSPORTADORAS
+
+Route::get('transportadoras', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getTransportadoras']);
+
+// ! MIA OPERATORESBYTRANSPORT
+
+Route::get('operatoresbytransport/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getOperatoresbyTransport']);
+
+// ! ***********************
+
  Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
 
 
@@ -45,7 +55,8 @@ Route::resource('schemas-tests', App\Http\Controllers\API\SchemasTestAPIControll
 
  Route::post('pedidos-shopify/routes/count', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getProductsDashboardRoutesCount']);
  Route::post('pedidos-shopify/products/values/transport', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesTransport']);
- 
+ Route::post('pedidos-shopify/products/values/seller', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesSeller']);
+
  
  Route::post('seller/invoice', [App\Http\Controllers\API\VendedoreAPIController::class, 'mybalanceVF']);
 
