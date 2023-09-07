@@ -113,20 +113,7 @@ class PedidosShopifyAPIController extends Controller
         // ! *************************************
         $Map = $data['and'];
         $not = $data['not'];
-        // ! *************************************
-        // ! ordenamiento ↓
-        $orderBy = null;
-        if (isset($data['sort'])) {
-            $sort = $data['sort'];
-            $sortParts = explode(':', $sort);
-            if (count($sortParts) === 2) {
-                $field = $sortParts[0];
-                $direction = strtoupper($sortParts[1]) === 'DESC' ? 'DESC' : 'ASC';
-                $orderBy = [$field => $direction];
-            }
-        }
-
-        // ! *************************************
+     
 
         $pedidos = PedidosShopify::with(['operadore.up_users'])
             ->with('transportadora')
@@ -174,11 +161,42 @@ class PedidosShopifyAPIController extends Controller
                 }
             }
         }));
-        // ! Ordena
-        if ($orderBy !== null) {
-            $pedidos->orderBy(key($orderBy), reset($orderBy));
-        }
-        // ! **************************************************
+          // ! Ordenamiento ********************************** 
+          $orderByText = null;
+          $orderByDate = null;
+          $sort = $data['sort'];            
+          $sortParts = explode(':', $sort);
+  
+          $pt1 = $sortParts[0];
+  
+          $type = (stripos($pt1, 'fecha') !== false || stripos($pt1, 'marca') !== false) ? 'date' : 'text';
+  
+          $dataSort = [
+              [
+                  'field' => $sortParts[0],
+                  'type' => $type,
+                  'direction' => $sortParts[1],
+              ],
+          ];
+  
+          foreach ($dataSort as $value) {
+              $field = $value['field'];
+              $direction = $value['direction'];
+              $type = $value['type'];
+              
+              if ($type === "text") {
+                  $orderByText = [$field => $direction];
+              } else {
+                  $orderByDate = [$field => $direction];
+              }
+          }
+  
+          if ($orderByText !== null) {
+              $pedidos->orderBy(key($orderByText), reset($orderByText));
+          } else {
+              $pedidos->orderBy(DB::raw("STR_TO_DATE(" . key($orderByDate) . ", '%e/%c/%Y')"), reset($orderByDate));
+          }
+          // ! **************************************************
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
 
         return response()->json($pedidos);
@@ -287,6 +305,10 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($pedidos);
     }
+
+
+  
+
 
 
     public function getReturnSellers(Request $request)
