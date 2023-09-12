@@ -161,15 +161,18 @@ class PedidosShopifyAPIController extends Controller
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
+                        $parts= explode("/",$key);
+                        $type = $parts[0];
+                        $filter = $parts[1];
+                        if (strpos($filter, '.') !== false) {
+                            $relacion = substr($filter, 0, strpos($filter, '.'));
+                            $propiedad = substr($filter, strpos($filter, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
                         } else {
-                            if(is_numeric($valor)){
-                                $pedidos->where($key, '=', $valor);
-                            }else{
-                                $pedidos->where($key, 'LIKE', '%' . $valor . '%');
+                            if($type == "equals"){
+                                $pedidos->where($filter, '=', $valor);
+                            }else {
+                                $pedidos->where($filter, 'LIKE', '%' . $valor . '%');
                             }
                         }
 
