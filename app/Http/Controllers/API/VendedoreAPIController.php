@@ -27,7 +27,19 @@ class VendedoreAPIController extends Controller
         return response()->json($pedido);
     }
 
- 
+    public function getVendedores()
+    {
+        $vendedores = Vendedore::whereNotNull('id_master')
+            ->where('id_master', '<>', '') // Agrega esta condición para excluir registros con id_master en blanco
+            ->select(DB::raw('CONCAT(nombre_comercial, "-", id_master) as id_nombre'))
+            ->distinct()
+            ->get()
+            ->pluck('id_nombre');
+    
+        return response()->json(['vendedores' => $vendedores]);
+    }
+    
+
     public function mybalanceVF() {
         $values = [];
     
