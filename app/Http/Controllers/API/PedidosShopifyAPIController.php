@@ -166,7 +166,11 @@ class PedidosShopifyAPIController extends Controller
                             $propiedad = substr($key, strpos($key, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
                         } else {
-                            $pedidos->where($key, '=', $valor);
+                            if(is_numeric($valor)){
+                                $pedidos->where($key, '=', $valor);
+                            }else{
+                                $pedidos->where($key, 'LIKE', '%' . $valor . '%');
+                            }
                         }
 
                     }

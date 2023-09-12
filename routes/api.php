@@ -44,6 +44,10 @@ Route::middleware(['cors'])->group(function () {
 
     Route::get('operatoresbytransport/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getOperatoresbyTransport']);
 
+    // ! MIA VENDEDORES
+
+    Route::get('vendedores', [App\Http\Controllers\API\VendedoreAPIController::class, 'getVendedores']);
+
     // ! ***********************
 
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
