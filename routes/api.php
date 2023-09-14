@@ -63,4 +63,10 @@ Route::middleware(['cors'])->group(function () {
 
 
     Route::post('seller/invoice', [App\Http\Controllers\API\VendedoreAPIController::class, 'mybalanceVF']);
+
+    // -- Update the 'accepted_terms_conditions' field for up_users --
+    Route::put('user/updateterms/{id}', [App\Http\Controllers\API\UserAPIController::class, 'updateAcceptedTerms']);
+
+
+
 });
