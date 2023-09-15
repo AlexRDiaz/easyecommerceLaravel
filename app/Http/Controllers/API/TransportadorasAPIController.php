@@ -23,7 +23,7 @@ class TransportadorasAPIController extends Controller
     }
     public function show($id)
     {
-        $trasnportadora = Transportadora::with(['admin_users', 'operadores', 'rutas'])
+        $trasnportadora = Transportadora::with(['admin_user', 'operadores', 'rutas'])
             ->findOrFail($id);
 
         return response()->json($trasnportadora);
@@ -50,12 +50,12 @@ class TransportadorasAPIController extends Controller
 
         // Obtener todos los IDs y usernames de up_users
         $usersData = [];
-        $datoparcil ="";
+        $datoparcil = "";
         foreach ($result as $transportadora) {
             foreach ($transportadora->operadores as $operador) {
-                $datoparcil=$operador->id;
+                $datoparcil = $operador->id;
                 foreach ($operador->up_users as $user) {
-                    $usersData[] = $user->username . '-' .$datoparcil ;
+                    $usersData[] = $user->username . '-' . $datoparcil;
                 }
             }
         }

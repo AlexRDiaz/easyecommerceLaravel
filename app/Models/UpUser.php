@@ -107,7 +107,8 @@ class UpUser extends Model implements Authenticatable,JWTSubject
 		'confirmed' => 'bool',
 		'blocked' => 'bool',
 		'created_by_id' => 'int',
-		'updated_by_id' => 'int'
+		'updated_by_id' => 'int',
+		'accepted_terms_conditions' => 'bool'
 	];
 
 	protected $hidden = [
@@ -133,7 +134,8 @@ class UpUser extends Model implements Authenticatable,JWTSubject
 		'telefono_1',
 		'telefono_2',
 		'created_by_id',
-		'updated_by_id'
+		'updated_by_id',
+		'accepted_terms_conditions'
 	];
 
 	public function admin_user()
@@ -178,4 +180,8 @@ class UpUser extends Model implements Authenticatable,JWTSubject
 		return $this->belongsToMany(Vendedore::class, 'up_users_vendedores_links', 'user_id', 'vendedor_id')
 					->withPivot('id', 'vendedor_order', 'user_order');
 	}
+	public function transportadora()
+    {
+        return $this->hasManyThrough(Transportadora::class, TransportadorasUsersPermissionsUserLink::class, 'user_id', 'id', 'id', 'transportadora_id');
+    }
 }

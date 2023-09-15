@@ -45,6 +45,10 @@ Route::middleware(['cors'])->group(function () {
 
     Route::get('operatoresbytransport/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getOperatoresbyTransport']);
 
+    // ! MIA VENDEDORES
+
+    Route::get('vendedores', [App\Http\Controllers\API\VendedoreAPIController::class, 'getVendedores']);
+
     // ! ***********************
 
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
@@ -61,6 +65,19 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('seller/invoice', [App\Http\Controllers\API\VendedoreAPIController::class, 'mybalanceVF']);
 
+
+    Route::get('user/verifyterms/{id}',[App\Http\Controllers\API\UserAPIController::class, 'verifyTerms']);
+    Route::put('user/updateterms/{id}', [App\Http\Controllers\API\UserAPIController::class, 'updateAcceptedTerms']);
+
+
     Route::post('/login', [UpUserAPIController::class, 'login']);
 
+    Route::get('users/{id}', [UpUserAPIController::class, 'users']);
+
+
 });
+
+    // -- Update the 'accepted_terms_conditions' field for up_users --
+   
+
+

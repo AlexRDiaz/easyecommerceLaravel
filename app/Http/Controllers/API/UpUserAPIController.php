@@ -103,7 +103,23 @@ class UpUserAPIController extends Controller
         // $request->session()->put('user_email', $user->email);
 
         return response()->json([
-            'token' => $token, 
+            'jwt' => $token, 
             'user' => $user], Response::HTTP_OK);
+    }
+
+
+    public function users($id){
+        $upUser = UpUser::with([
+            'roles_fronts',
+            'vendedores',
+            'transportadora',
+            'operadores',
+        ])->find($id);
+    
+        if (!$upUser) {
+            return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+    
+        return response()->json(['user' => $upUser], Response::HTTP_OK);
     }
 }
