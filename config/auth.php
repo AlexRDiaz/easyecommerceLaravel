@@ -18,6 +18,8 @@ return [
         'passwords' => 'users',
     ],
 
+    
+
     /*
     |--------------------------------------------------------------------------
     | Authentication Guards
@@ -40,7 +42,12 @@ return [
             'driver' => 'session',
             'provider' => 'users',
         ],
+        'api' => [
+            'driver' => 'jwt',
+            'provider' => 'up_users',
+        ],
     ],
+  
 
     /*
     |--------------------------------------------------------------------------
@@ -62,8 +69,9 @@ return [
     'providers' => [
         'users' => [
             'driver' => 'eloquent',
-            'model' => App\Models\User::class,
+            'model' => App\Models\UpUser::class, // Ruta al modelo UpUser personalizado
         ],
+
 
         // 'users' => [
         //     'driver' => 'database',

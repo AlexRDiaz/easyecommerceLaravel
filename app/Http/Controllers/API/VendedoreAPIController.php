@@ -86,4 +86,31 @@ class VendedoreAPIController extends Controller
         ];
     }
     
+
+
+   
+    public function credit(Request $req){
+        $vendedorId=$req['vendedor_id'];
+        $tipo=$req['tipo']; //credito por defecto
+        $monto=$req['monto'];
+        $idOrigen=$req['id_origen'];//id de pedido o retiro
+        $origen=$req['origen'];//tipo de pedido o retiro
+
+        $vendedor = Vendedore::findOrFail($vendedorId);
+        $vendedor->saldo+$monto;
+
+        $trans=new Transaction();
+        $trans->tipo=$tipo;
+        $trans->monto=$monto;
+        $trans->$saldo;
+        $trans->new Date();
+        $trans->idOrigen;
+        $trans->origen;
+        $trans->vendedorId;
+                
+        $insetedData =$this->TransactionRepository->create($trans);
+        $updatedData= $this->VendedorRepository->update($vendedor, $id);
+
+    }
+
 }

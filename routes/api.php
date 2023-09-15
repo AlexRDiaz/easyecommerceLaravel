@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\PedidosShopifyAPIController;
+use App\Http\Controllers\API\UpUserAPIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -59,4 +60,7 @@ Route::middleware(['cors'])->group(function () {
 
 
     Route::post('seller/invoice', [App\Http\Controllers\API\VendedoreAPIController::class, 'mybalanceVF']);
+
+    Route::post('/login', [UpUserAPIController::class, 'login']);
+
 });
