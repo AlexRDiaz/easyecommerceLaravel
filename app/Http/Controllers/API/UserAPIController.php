@@ -34,4 +34,6 @@ class UserAPIController extends Controller
 
         return response()->json(['message' => 'Estado de Términos y condiciones actualizados con éxito'], 200);
     }
+
+ 
 }

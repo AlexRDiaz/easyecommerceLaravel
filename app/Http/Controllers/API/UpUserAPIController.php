@@ -122,4 +122,37 @@ class UpUserAPIController extends Controller
     
         return response()->json(['user' => $upUser], Response::HTTP_OK);
     }
+
+
+    public function getSellers($id,$search=null){
+        $upUser = UpUser::with([
+            'roles_fronts',
+            'vendedores',
+            'transportadora',
+            'operadores',
+
+        ]) 
+        ->whereHas('vendedores', function ($query) use ($id) {
+                $query->where('id_master', $id);
+            });
+
+
+            if (!empty($search)) {
+                $upUser->where(function ($query) use ($search) {
+                    $query->where('username', 'like', '%' . $search . '%')
+                          ->orWhere('email', 'like', '%' . $search . '%');
+                });
+
+
+           
+
+            }
+
+
+            $resp = $upUser->get();
+            return response()->json(['consulta'=>$search,'users' => $resp], Response::HTTP_OK);
+
+        }  
+  
+    
 }

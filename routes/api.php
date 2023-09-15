@@ -74,6 +74,8 @@ Route::middleware(['cors'])->group(function () {
 
     Route::get('users/{id}', [UpUserAPIController::class, 'users']);
 
+    Route::get('/sellers/{id}/{search?}', [UpUserAPIController::class, 'getSellers']);
+  
 
 });
 
