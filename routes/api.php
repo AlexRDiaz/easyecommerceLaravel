@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Api\GenerateReportAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use Illuminate\Http\Request;
@@ -65,9 +66,15 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('seller/invoice', [App\Http\Controllers\API\VendedoreAPIController::class, 'mybalanceVF']);
 
-
     Route::get('user/verifyterms/{id}',[App\Http\Controllers\API\UserAPIController::class, 'verifyTerms']);
     Route::put('user/updateterms/{id}', [App\Http\Controllers\API\UserAPIController::class, 'updateAcceptedTerms']);
+
+
+
+    //Route::resource('/users', App\Http\Controllers\API\UpUserAPIController::class);
+    Route::post('/users', [UpUserAPIController::class, 'store']);
+    Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
+
 
 
     Route::post('/login', [UpUserAPIController::class, 'login']);
@@ -76,6 +83,15 @@ Route::middleware(['cors'])->group(function () {
 
     Route::get('/sellers/{id}/{search?}', [UpUserAPIController::class, 'getSellers']);
   
+
+
+    Route::prefix('generate-reports')->group(function () {
+        Route::get('/', [GenerateReportAPIController::class, 'index']);
+        Route::get('/{id}', [GenerateReportAPIController::class, 'show']);
+        Route::post('/', [GenerateReportAPIController::class, 'store']);
+        Route::put('/{id}', [GenerateReportAPIController::class, 'update']);
+        Route::delete('/{id}', [GenerateReportAPIController::class, 'destroy']);
+    });
 
 });
 

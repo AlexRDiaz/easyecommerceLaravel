@@ -3,7 +3,10 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Models\RolesFront;
+use App\Models\UpRole;
 use App\Models\UpUser;
+use App\Models\UpUsersRoleLink;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
@@ -48,7 +51,39 @@ class UpUserAPIController extends Controller
      */
     public function store(Request $request)
     {
-        // Agrega tu lógica para crear un nuevo UpUser aquí.
+         // Valida los datos de entrada (puedes agregar reglas de validación aquí)
+         $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|unique:up_users',
+        ]);
+
+        $user = new UpUser();
+        $user->username = $request->input('username');
+        $user->email = $request->input('email');
+    
+        $user->password = bcrypt('123456789'); // Puedes utilizar bcrypt para encriptar la contraseña
+        $user->fecha_alta =$request->input('FechaAlta'); // Fecha actual
+        $user->confirmed =$request->input('confirmed');
+        $user->estado = $request->input('VALIDADO');
+        $permisosCadena = json_encode($request->input('PERMISOS'));
+
+        $user->permisos = $permisosCadena;
+        $user->blocked = false;
+
+        $user->save();
+       $user->vendedores()->attach($request->input('vendedores'), [
+     
+       ]);
+       $newUpUsersRoleLink = new UpUsersRoleLink();
+       $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
+       $newUpUsersRoleLink->role_id = $request->input('role');   // Asigna el ID del rol existente
+       $newUpUsersRoleLink->save();
+
+    
+       $user->roles_fronts()->attach($request->input('role'));
+
+      return response()->json(['message' => 'Usuario interno creado con éxito', 'user_id' => $user->id], 201);
+
     }
 
     /**
@@ -60,6 +95,18 @@ class UpUserAPIController extends Controller
      */
     public function update(Request $request, $id)
     {
+    $upUser = UpUser::find($id);
+
+    if (!$upUser) {
+        return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+    }
+
+    $upUser->fill($request->all());
+
+    $upUser->save();
+
+    return response()->json(['message' => 'Usuario actualizado con éxito', 'user' => $upUser], Response::HTTP_OK);
+
         // Agrega tu lógica para actualizar un UpUser existente aquí.
     }
 
