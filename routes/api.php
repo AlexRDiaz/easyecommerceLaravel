@@ -68,6 +68,12 @@ Route::middleware(['cors'])->group(function () {
     Route::get('user/verifyterms/{id}',[App\Http\Controllers\API\UserAPIController::class, 'verifyTerms']);
     Route::put('user/updateterms/{id}', [App\Http\Controllers\API\UserAPIController::class, 'updateAcceptedTerms']);
 
+    // -- wallet-ordenesretiro
+    Route::post('seller/ordenesretiro/{id}', [App\Http\Controllers\API\OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
+    Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'getSaldo']);
+
+
+
 
 
 });
