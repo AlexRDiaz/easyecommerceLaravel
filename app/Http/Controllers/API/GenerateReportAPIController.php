@@ -137,10 +137,9 @@ class GenerateReportAPIController extends Controller
             $url = $uuid->toString() . 'report.xlsx';
             $export->store($url, 'public');
             $filePath = asset($url);
-
             $report = new GenerateReport();
             $report->fecha = $generateDate;
-            $report->archivo = $filePath;
+            $report->archivo = "/storage/".$url;
             $report->id_master = $idMaster;
             $report->save();
 

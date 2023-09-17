@@ -1,11 +1,12 @@
 <?php
+
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\Exportable;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class PedidosShopifyExport implements FromCollection,WithHeadings
+class PedidosShopifyExport implements FromCollection, WithHeadings
 {
     use Exportable;
 
@@ -24,8 +25,24 @@ class PedidosShopifyExport implements FromCollection,WithHeadings
     public function headings(): array
     {
         return [
-            'Fecha de Ingreso',
-            'Fecha de Entrega',
+            "Fecha de Ingreso",
+            "Fecha de Entrega",
+            "Codigo	Nombre",
+            "Ciudad",
+            "Direccion",
+            "Telefono",
+            "Cantidad",
+            "Producto",
+            "Producto Extra",
+            "Precio Total",
+            "Comentario",
+            "Estado de Confirmacion",
+            "Status",
+            "Estado de Entrega",
+            "Estado Devolucion",
+            "Costo Transporte",
+            "Costo Devolucion"
+
             // Otras columnas aquí...
         ];
     }
@@ -38,5 +55,4 @@ class PedidosShopifyExport implements FromCollection,WithHeadings
             // Mapea las otras propiedades aquí...
         ];
     }
-
 }
