@@ -49,6 +49,9 @@ Route::middleware(['cors'])->group(function () {
     // ! MIA VENDEDORES
 
     Route::get('vendedores', [App\Http\Controllers\API\VendedoreAPIController::class, 'getVendedores']);
+    // *
+    Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
+
 
     // ! ***********************
 
@@ -66,8 +69,8 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('seller/invoice', [App\Http\Controllers\API\VendedoreAPIController::class, 'mybalanceVF']);
 
-    Route::get('user/verifyterms/{id}',[App\Http\Controllers\API\UserAPIController::class, 'verifyTerms']);
-    Route::put('user/updateterms/{id}', [App\Http\Controllers\API\UserAPIController::class, 'updateAcceptedTerms']);
+    Route::get('user/verifyterms/{id}',[App\Http\Controllers\API\UpUserAPIController::class, 'verifyTerms']);
+    Route::put('user/updateterms/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateAcceptedTerms']);
 
     // -- wallet-ordenesretiro
     Route::post('seller/ordenesretiro/{id}', [App\Http\Controllers\API\OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
@@ -107,7 +110,5 @@ Route::middleware(['cors'])->group(function () {
 
 });
 
-    // -- Update the 'accepted_terms_conditions' field for up_users --
-   
 
 
