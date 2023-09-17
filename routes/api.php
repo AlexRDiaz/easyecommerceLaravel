@@ -83,7 +83,10 @@ Route::middleware(['cors'])->group(function () {
 
     Route::get('/sellers/{id}/{search?}', [UpUserAPIController::class, 'getSellers']);
   
+    Route::post('/report', [GenerateReportAPIController::class, 'generateExcel']);
 
+
+    
 
     Route::prefix('generate-reports')->group(function () {
         Route::get('/', [GenerateReportAPIController::class, 'index']);
@@ -91,6 +94,9 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/', [GenerateReportAPIController::class, 'store']);
         Route::put('/{id}', [GenerateReportAPIController::class, 'update']);
         Route::delete('/{id}', [GenerateReportAPIController::class, 'destroy']);
+        Route::get('/seller/{id}', [GenerateReportAPIController::class, 'getBySeller']);
+
+        
     });
 
 });

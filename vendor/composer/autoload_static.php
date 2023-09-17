@@ -650,6 +650,7 @@ class ComposerStaticInitb9e2304de93589e89d42114f3a350980
     public static $classMap = array (
         'App\\Console\\Kernel' => __DIR__ . '/../..' . '/app/Console/Kernel.php',
         'App\\Exceptions\\Handler' => __DIR__ . '/../..' . '/app/Exceptions/Handler.php',
+        'App\\Exports\\PedidosShopifyExport' => __DIR__ . '/../..' . '/app/Exports/PedidosShopifyExport.php',
         'App\\Http\\Controllers\\API\\GenerateReportAPIController' => __DIR__ . '/../..' . '/app/Http/Controllers/API/GenerateReportAPIController.php',
         'App\\Http\\Controllers\\API\\PedidosShopifyAPIController' => __DIR__ . '/../..' . '/app/Http/Controllers/API/PedidosShopifyAPIController.php',
         'App\\Http\\Controllers\\API\\TransportadorasAPIController' => __DIR__ . '/../..' . '/app/Http/Controllers/API/TransportadorasAPIController.php',

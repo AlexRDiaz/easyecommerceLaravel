@@ -8,6 +8,7 @@ $baseDir = dirname($vendorDir);
 return array(
     'App\\Console\\Kernel' => $baseDir . '/app/Console/Kernel.php',
     'App\\Exceptions\\Handler' => $baseDir . '/app/Exceptions/Handler.php',
+    'App\\Exports\\PedidosShopifyExport' => $baseDir . '/app/Exports/PedidosShopifyExport.php',
     'App\\Http\\Controllers\\API\\GenerateReportAPIController' => $baseDir . '/app/Http/Controllers/API/GenerateReportAPIController.php',
     'App\\Http\\Controllers\\API\\PedidosShopifyAPIController' => $baseDir . '/app/Http/Controllers/API/PedidosShopifyAPIController.php',
     'App\\Http\\Controllers\\API\\TransportadorasAPIController' => $baseDir . '/app/Http/Controllers/API/TransportadorasAPIController.php',
