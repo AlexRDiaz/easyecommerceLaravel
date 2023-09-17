@@ -96,16 +96,23 @@ class UpUserAPIController extends Controller
     public function update(Request $request, $id)
     {
     $upUser = UpUser::find($id);
+    $newPassword = $request->input('password');
 
     if (!$upUser) {
         return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
     }
 
-    $upUser->fill($request->all());
+    if ($newPassword) {
+        $upUser->password = bcrypt($newPassword);
+        $upUser->save();
+        return response()->json(['message' => 'Contraseña actualizada con éxito', 'user' => $upUser], Response::HTTP_OK);
 
-    $upUser->save();
-
-    return response()->json(['message' => 'Usuario actualizado con éxito', 'user' => $upUser], Response::HTTP_OK);
+    }
+    else {
+        $upUser->fill($request->all());
+        $upUser->save();
+        return response()->json(['message' => 'Usuario actualizado con éxito', 'user' => $upUser], Response::HTTP_OK);
+    }
 
         // Agrega tu lógica para actualizar un UpUser existente aquí.
     }
