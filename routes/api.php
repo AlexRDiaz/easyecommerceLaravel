@@ -34,6 +34,28 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
 
+    //  *************************   SELLER          *****************
+
+    Route::get('pedidos-shopifies/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrderbyId']);
+    // updateDateandStatus
+    Route::post('upd/pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateDateandStatus']);
+
+
+    // ********************************************************
+    // ! ↓ REGISTRO DE PEDIDOS
+    Route::post('pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'postOrdersPricipalOrders']);
+    
+    // ? para la fecha del pedido
+    Route::post('shopify/pedidos', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'createDateOrderLaravel']);
+
+    // ! ↓ traer todos los pedidos Laravel
+    Route::post('new-pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getPrincipalOrdersSellersFilterLaravel']);
+    // ! ↓ PEDIDOS updateOrderInternalStatus
+    Route::post('updOiS/pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderInternalStatus']);
+
+    // ! ↓ PEDIDOS updateOrderInfoSellerLaravel
+    Route::post('updtOrdIS/pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderInfoSellerLaravel']);
+
     //  ! ↓ LA ORIGINAL
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
 
@@ -54,6 +76,12 @@ Route::middleware(['cors'])->group(function () {
     Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
 
 
+    // ! TRANSACCIONES
+    Route::get("transacciones", [\App\Http\Controllers\API\TransaccionesAPIController::class,'index']);
+    // ! CREDIT TRANSACTION
+    Route::post("transacciones/credit", [\App\Http\Controllers\API\TransaccionesAPIController::class,'Credit']);
+    // ! CREDIT TRANSACTION
+    Route::post("transacciones/debit", [\App\Http\Controllers\API\TransaccionesAPIController::class,'Debit']);
     // ! ***********************
 
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);

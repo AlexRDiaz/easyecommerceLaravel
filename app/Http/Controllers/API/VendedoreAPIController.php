@@ -7,6 +7,8 @@ use App\Models\OrdenesRetiro;
 use App\Models\PedidosShopify;
 use App\Models\Vendedore;
 
+use App\Repositories\vendedorRepository;
+
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -14,6 +16,7 @@ use Illuminate\Support\Facades\DB;
 
 class VendedoreAPIController extends Controller
 {
+    
     public function index()
     {
         $pedidos = Vendedore::all();
