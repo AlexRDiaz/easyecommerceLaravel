@@ -863,8 +863,8 @@ class PedidosShopifyAPIController extends Controller
                         }
                     }
                 }
-            }
-        }))->get();
+            }))
+        ->get();
 
 
 
