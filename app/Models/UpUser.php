@@ -45,15 +45,70 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @package App\Models
  */
-class UpUser extends Model
+use Illuminate\Contracts\Auth\Authenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
+
+
+class UpUser extends Model implements Authenticatable,JWTSubject
+
 {
+	function getJWTIdentifier(){
+		return $this->getKey();
+	}
+	function getJWTCustomClaims(){
+		return [];
+	}
+
+
+    // Resto de la implementación de tu modelo
+    // ...
+
+    // Implementación de métodos requeridos por Authenticatable
+    public function getAuthIdentifierName()
+    {
+        return 'id'; // El nombre del campo de identificación en tu tabla
+    }
+
+    public function getAuthIdentifier()
+    {
+        return null; // Devuelve el valor de la clave primaria (por defecto, 'id')
+    }
+
+    public function getAuthPassword()
+    {
+        return $this->password; // Devuelve el campo de contraseña de tu modelo
+    }
+
+    public function getRememberToken()
+    {
+        return null; // Devuelve el campo de token de recuerdo (si lo tienes)
+    }
+
+    public function setRememberToken($value)
+    {
+       // Establece el campo de token de recuerdo (si lo tienes)
+    }
+
+    public function getRememberTokenName()
+    {
+        return 'remember_token'; // El nombre del campo de token de recuerdo (si lo tienes)
+    }
+
+
+
+
+
+
+
+	
 	protected $table = 'up_users';
 
 	protected $casts = [
 		'confirmed' => 'bool',
 		'blocked' => 'bool',
 		'created_by_id' => 'int',
-		'updated_by_id' => 'int'
+		'updated_by_id' => 'int',
+		'accepted_terms_conditions' => 'bool'
 	];
 
 	protected $hidden = [
@@ -79,7 +134,8 @@ class UpUser extends Model
 		'telefono_1',
 		'telefono_2',
 		'created_by_id',
-		'updated_by_id'
+		'updated_by_id',
+		'accepted_terms_conditions'
 	];
 
 	public function admin_user()
@@ -124,4 +180,8 @@ class UpUser extends Model
 		return $this->belongsToMany(Vendedore::class, 'up_users_vendedores_links', 'user_id', 'vendedor_id')
 					->withPivot('id', 'vendedor_order', 'user_order');
 	}
+	public function transportadora()
+    {
+        return $this->hasManyThrough(Transportadora::class, TransportadorasUsersPermissionsUserLink::class, 'user_id', 'id', 'id', 'transportadora_id');
+    }
 }

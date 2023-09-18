@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\Api\GenerateReportAPIController;
+use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
+use App\Http\Controllers\API\UpUserAPIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -69,6 +72,9 @@ Route::middleware(['cors'])->group(function () {
     // ! MIA VENDEDORES
 
     Route::get('vendedores', [App\Http\Controllers\API\VendedoreAPIController::class, 'getVendedores']);
+    // *
+    Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
+
 
     // ! TRANSACCIONES
     Route::get("transacciones", [\App\Http\Controllers\API\TransaccionesAPIController::class,'index']);
@@ -90,5 +96,59 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/products/values/seller', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesSeller']);
 
 
+    // *
+    Route::post('orders/post/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'shopifyPedidos']);
+
+
     Route::post('seller/invoice', [App\Http\Controllers\API\VendedoreAPIController::class, 'mybalanceVF']);
+
+    Route::get('user/verifyterms/{id}',[App\Http\Controllers\API\UpUserAPIController::class, 'verifyTerms']);
+    Route::put('user/updateterms/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateAcceptedTerms']);
+
+    // -- wallet-ordenesretiro
+
+    Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'getSaldo']);
+
+
+
+
+
+    //Route::resource('/users', App\Http\Controllers\API\UpUserAPIController::class);
+    Route::post('/users', [UpUserAPIController::class, 'store']);
+    Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
+
+
+
+    Route::post('/login', [UpUserAPIController::class, 'login']);
+
+    Route::get('users/{id}', [UpUserAPIController::class, 'users']);
+
+    Route::get('/sellers/{id}/{search?}', [UpUserAPIController::class, 'getSellers']);
+  
+    Route::post('/report', [GenerateReportAPIController::class, 'generateExcel']);
+
+
+    
+    Route::prefix('seller/ordenesretiro')->group(function () {
+        Route::get('/retiro/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroNew']);
+
+        Route::post('/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
+        Route::post('/withdrawal/{id}', [OrdenesRetiroAPIController::class, 'withdrawal']);
+        
+    });
+
+    
+
+    Route::prefix('generate-reports')->group(function () {
+        Route::get('/', [GenerateReportAPIController::class, 'index']);
+        Route::get('/{id}', [GenerateReportAPIController::class, 'show']);
+        Route::post('/', [GenerateReportAPIController::class, 'store']);
+        Route::put('/{id}', [GenerateReportAPIController::class, 'update']);
+        Route::delete('/{id}', [GenerateReportAPIController::class, 'destroy']);
+        Route::get('/seller/{id}', [GenerateReportAPIController::class, 'getBySeller']); 
+    });
+
 });
+
+
+

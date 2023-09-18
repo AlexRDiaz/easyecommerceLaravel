@@ -33,18 +33,32 @@ return [
     |
     */
 
+
+
+
+
     'mailers' => [
-        'smtp' => [
+       'smtp' => [
             'transport' => 'smtp',
-            'url' => env('MAIL_URL'),
-            'host' => env('MAIL_HOST', 'smtp.mailgun.org'),
+            'host' => env('MAIL_HOST', 'smtpout.secureserver.net'),
             'port' => env('MAIL_PORT', 587),
-            'encryption' => env('MAIL_ENCRYPTION', 'tls'),
-            'username' => env('MAIL_USERNAME'),
-            'password' => env('MAIL_PASSWORD'),
+            'encryption' => env('MAIL_ENCRYPTION', null), // Cambiado a 'tls'
+            'username' => env('MAIL_USERNAME', 'info@easyecomerce.com'),
+            'password' => env('MAIL_PASSWORD', '64WDBGR9Sm@!E5tM'),
             'timeout' => null,
-            'local_domain' => env('MAIL_EHLO_DOMAIN'),
+            'verify_peer' => false,
         ],
+    
+        // 'smtp' => [
+        //     'transport' => 'smtp',
+        //     'host' => env('MAIL_HOST', 'sandbox.smtp.mailtrap.io'),
+        //     'port' => env('MAIL_PORT', 587),
+        //     'encryption' => null, // Deja esto como null para desactivar la verificación de SSL
+        //     'username' => env('MAIL_USERNAME', '193845924894f9'),
+        //     'password' => env('MAIL_PASSWORD', '8a81860b82a699'),
+        //     'timeout' => null,
+        //     'verify_peer' => false,
+        // ],
 
         'ses' => [
             'transport' => 'ses',
