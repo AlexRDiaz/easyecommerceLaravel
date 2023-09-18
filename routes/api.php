@@ -68,6 +68,10 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/products/values/seller', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesSeller']);
 
 
+    // *
+    Route::post('orders/post/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'shopifyPedidos']);
+
+
     Route::post('seller/invoice', [App\Http\Controllers\API\VendedoreAPIController::class, 'mybalanceVF']);
 
     Route::get('user/verifyterms/{id}',[App\Http\Controllers\API\UpUserAPIController::class, 'verifyTerms']);

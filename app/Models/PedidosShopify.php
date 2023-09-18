@@ -192,6 +192,18 @@ class PedidosShopify extends Model
     {
         return $this->hasManyThrough(SubRuta::class, PedidosShopifiesSubRutaLink::class, 'pedidos_shopify_id', 'id', 'id', 'sub_ruta_id');
     }
+
+	public function upuser_pedidos_link()
+	{
+		return $this->belongsToMany(UpUser::class, UpUsersPedidosShopifiesLink::class, 'user_id')
+		->withPivot('id');
+	}
+
+	public function pedido_fecha_link()
+	{
+		return $this->belongsToMany(PedidoFecha::class, PedidosShopifiesPedidoFechaLink::class, 'pedido_fecha_id')
+		->withPivot('id');
+	}
 	// public function novedades()
     // {
     //     return $this->hasManyThrough(Novedade::class, NovedadesPedidosShopifyLink::class, 'pedidos_shopify_id', 'id', 'id', 'novedad_id');
