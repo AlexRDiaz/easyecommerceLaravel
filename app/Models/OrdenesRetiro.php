@@ -68,4 +68,10 @@ class OrdenesRetiro extends Model
     {
         return $this->hasManyThrough(UpUser::class, OrdenesRetirosUsersPermissionsUserLink::class, 'ordenes_retiro_id', 'id', 'id', 'user_id');
     }
+
+	public function users_permissions()
+	{
+		return $this->belongsToMany(UpUser::class, OrdenesRetirosUsersPermissionsUserLink::class, 'user_id')
+					->withPivot('id');
+	}
 }

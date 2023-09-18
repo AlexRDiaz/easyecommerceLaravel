@@ -3,14 +3,77 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Mail\ValidationCode;
+use App\Models\OrdenesRetiro;
+use App\Models\OrdenesRetirosUsersPermissionsUserLink;
 use App\Models\UpUser;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class OrdenesRetiroAPIController extends Controller
 {
+    public function withdrawal(Request $request, $id)
+    {
+        //     // Obtiene los datos del cuerpo de la solicitud
+        $data = $request->validate([
+            'monto' => 'required',
+            'fecha' => 'required',
+            'email' => 'required|email',
+        ]);
 
+        // //     // Obtener datos del request
+        $monto = $request->input('monto');
+        $fecha = $request->input('fecha');
+        $email  = $request->input('email');
+
+        // //     // Generar código único
+        $numerosUtilizados = [];
+        while (count($numerosUtilizados) < 10000000) {
+            $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+            if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                $numerosUtilizados[] = $numeroAleatorio;
+                break;
+            }
+        }
+        $resultCode = $numeroAleatorio;
+      //  $resultCode = implode('', array_slice($numerosUnicos, 0, 8));
+
+        
+        Mail::to($email)->send(new ValidationCode($resultCode,$monto));
+      
+        //     // Crea un registro de retiro
+            $withdrawal = new OrdenesRetiro();
+            $withdrawal->monto =$monto;
+            $withdrawal->fecha = $fecha;
+            $withdrawal->codigo_generado = $resultCode;
+            $withdrawal->estado = 'PENDIENTE';
+            $withdrawal->save();
+        
+            $ordenUser=new OrdenesRetirosUsersPermissionsUserLink(); 
+            $ordenUser->ordenes_retiro_id=$withdrawal->id;
+            $ordenUser->user_id=$id;
+            $ordenUser->save();
+
+
+
+        return response()->json(['code' => 200]);
+    }
+
+    public function getOrdenesRetiroNew($id, Request $request)
+    { 
+
+        $retiros= OrdenesRetiro::with('users_permissions_user')->whereHas('users_permissions_user', function ($query) use ($id) {
+            $query->where('up_users.id', $id);
+        })->get();
+        
+
+        return response()->json($retiros);
+
+    }
+    
     public function getOrdenesRetiro($id, Request $request)
+
     {
 
         $data = $request->json()->all();
@@ -80,5 +143,4 @@ class OrdenesRetiroAPIController extends Controller
             }
         }
     }
-
 }

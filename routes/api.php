@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\GenerateReportAPIController;
+use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use Illuminate\Http\Request;
@@ -73,7 +74,7 @@ Route::middleware(['cors'])->group(function () {
     Route::put('user/updateterms/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateAcceptedTerms']);
 
     // -- wallet-ordenesretiro
-    Route::post('seller/ordenesretiro/{id}', [App\Http\Controllers\API\OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
+
     Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'getSaldo']);
 
 
@@ -96,6 +97,15 @@ Route::middleware(['cors'])->group(function () {
 
 
     
+    Route::prefix('seller/ordenesretiro')->group(function () {
+        Route::get('/retiro/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroNew']);
+
+        Route::post('/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
+        Route::post('/withdrawal/{id}', [OrdenesRetiroAPIController::class, 'withdrawal']);
+        
+    });
+
+    
 
     Route::prefix('generate-reports')->group(function () {
         Route::get('/', [GenerateReportAPIController::class, 'index']);
@@ -103,9 +113,7 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/', [GenerateReportAPIController::class, 'store']);
         Route::put('/{id}', [GenerateReportAPIController::class, 'update']);
         Route::delete('/{id}', [GenerateReportAPIController::class, 'destroy']);
-        Route::get('/seller/{id}', [GenerateReportAPIController::class, 'getBySeller']);
-
-        
+        Route::get('/seller/{id}', [GenerateReportAPIController::class, 'getBySeller']); 
     });
 
 });

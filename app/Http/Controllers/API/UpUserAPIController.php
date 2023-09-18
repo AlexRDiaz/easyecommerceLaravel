@@ -80,7 +80,7 @@ class UpUserAPIController extends Controller
        $newUpUsersRoleLink->save();
 
     
-       $user->roles_fronts()->attach($request->input('role'));
+       $user->roles_fronts()->sync($request->input('role'));
 
       return response()->json(['message' => 'Usuario interno creado con éxito', 'user_id' => $user->id], 201);
 
