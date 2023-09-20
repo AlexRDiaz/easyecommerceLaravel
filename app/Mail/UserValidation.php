@@ -18,7 +18,6 @@ class UserValidation extends Mailable
      */
 
     public $resultCode;
-    public $monto;
 
 
     /**
@@ -48,7 +47,7 @@ class UserValidation extends Mailable
         return $this
             ->to('')
             ->subject('Código de Validación')
-            ->view('emails.validation_code');
+            ->view('emails.user_validation');
     }
     
 }

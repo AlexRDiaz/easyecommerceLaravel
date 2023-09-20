@@ -46,7 +46,7 @@ class ValidationCode extends Mailable
     public function build()
     {
         return $this
-            ->to('bugi2532@gmail.com')
+            ->to('')
             ->subject('Código de Validación')
             ->view('emails.validation_code');
     }

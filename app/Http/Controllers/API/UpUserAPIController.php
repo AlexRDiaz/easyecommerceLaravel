@@ -68,21 +68,18 @@ class UpUserAPIController extends Controller
         $user->confirmed =$request->input('confirmed');
         $user->estado = $request->input('VALIDADO');
         $permisosCadena = json_encode($request->input('PERMISOS'));
-
         $user->permisos = $permisosCadena;
         $user->blocked = false;
-
         $user->save();
-       $user->vendedores()->attach($request->input('vendedores'), [
-     
-       ]);
+        $user->vendedores()->attach($request->input('vendedores'), [
+        ]);
        $newUpUsersRoleLink = new UpUsersRoleLink();
        $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
        $newUpUsersRoleLink->role_id = $request->input('role');   // Asigna el ID del rol existente
        $newUpUsersRoleLink->save();
          
     
-       $user->roles_fronts()->sync($request->input('role'));
+      $user->roles_fronts()->sync($request->input('role'));
 
        $numerosUtilizados = [];
        while (count($numerosUtilizados) < 10000000) {
@@ -211,12 +208,7 @@ class UpUserAPIController extends Controller
                     $query->where('username', 'like', '%' . $search . '%')
                           ->orWhere('email', 'like', '%' . $search . '%');
                 });
-
-
-           
-
             }
-
 
             $resp = $upUser->get();
             return response()->json(['consulta'=>$search,'users' => $resp], Response::HTTP_OK);
