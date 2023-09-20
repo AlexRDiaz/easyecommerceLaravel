@@ -34,6 +34,20 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
 
+    //  ************************* LOGISTIC **************************
+
+    
+    // * --> PRINTEDGUIDES
+    
+    Route::post('pedidos-shopifies-prtgd', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintedGuidesLaravel']);
+
+    Route::post('upd/pedidossho-printedg', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderInteralStatusLogisticLaravel']);
+
+    Route::post('upd/pedidossho-LogisticStatusPrint', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderLogisticStatusPrintLaravel']);
+
+    Route::post('pedido-shopifie', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrderByIDLaravel']);
+
+    
     //  *************************   SELLER          *****************
 
     Route::get('pedidos-shopifies/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrderbyId']);
