@@ -117,7 +117,9 @@ class PedidosShopify extends Model
 		'created_by_id',
 		'updated_by_id',
 		'comentario_rechazado',
-		'revisado'
+		'revisado',
+		'costo_transportadora',
+		'costo_devolucion'
 	];
 
 	public function admin_user()
