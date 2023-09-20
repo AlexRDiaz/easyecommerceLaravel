@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Mail\UserValidation;
 use App\Models\RolesFront;
 use App\Models\UpRole;
 use App\Models\UpUser;
@@ -10,6 +11,7 @@ use App\Models\UpUsersRoleLink;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -78,9 +80,22 @@ class UpUserAPIController extends Controller
        $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
        $newUpUsersRoleLink->role_id = $request->input('role');   // Asigna el ID del rol existente
        $newUpUsersRoleLink->save();
-
+         
     
        $user->roles_fronts()->sync($request->input('role'));
+
+       $numerosUtilizados = [];
+       while (count($numerosUtilizados) < 10000000) {
+           $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+           if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+               $numerosUtilizados[] = $numeroAleatorio;
+               break;
+           }
+       }
+       $resultCode = $numeroAleatorio;
+       
+       Mail::to($user->email)->send(new UserValidation($resultCode));
+     
 
       return response()->json(['message' => 'Usuario interno creado con éxito', 'user_id' => $user->id], 201);
 
