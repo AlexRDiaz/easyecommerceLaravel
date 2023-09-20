@@ -10,6 +10,7 @@ use App\Models\GenerateReport;
 use App\Models\PedidosShopify;
 use Carbon\Carbon;
 use GuzzleHttp\Psr7\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 //use Maatwebsite\Excel\Excel;
 use Maatwebsite\Excel\Facades\Excel;
@@ -109,7 +110,7 @@ class GenerateReportAPIController extends Controller
         $status = $data['status'];
         $internal = $data['internal'];
 
-        $pedidos = PedidosShopify::select('marca_t_i','fecha_entrega','ciudad_shipping','direccion_shipping','telefono_shipping','cantidad_total','producto_p','producto_extra','precio_total','comentario','estado_interno','status','estado_logistico','estado_devolucion','costo_envio','costo_devolucion')->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
+        $pedidos = PedidosShopify::select('marca_t_i','fecha_entrega',DB::raw('concat(tienda_temporal, "-", numero_orden) as codigo'),'nombre_shipping','ciudad_shipping','direccion_shipping','telefono_shipping','cantidad_total','producto_p','producto_extra','precio_total','comentario','estado_interno','status','estado_logistico','estado_devolucion','costo_envio','costo_devolucion')->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])->where((function ($pedidos) use ($and) {
                 foreach ($and as $condition) {
                     foreach ($condition as $key => $valor) {
