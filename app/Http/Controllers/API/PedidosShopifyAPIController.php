@@ -1022,6 +1022,7 @@ class PedidosShopifyAPIController extends Controller
 
 
 
+
         $stateTotals = [
             'ENTREGADO' => 0,
             'NO ENTREGADO' => 0,

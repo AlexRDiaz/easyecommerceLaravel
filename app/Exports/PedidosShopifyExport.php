@@ -27,7 +27,8 @@ class PedidosShopifyExport implements FromCollection, WithHeadings
         return [
             "Fecha de Ingreso",
             "Fecha de Entrega",
-            "Codigo	Nombre",
+            "Codigo",
+            "Nombre",
             "Ciudad",
             "Direccion",
             "Telefono",
