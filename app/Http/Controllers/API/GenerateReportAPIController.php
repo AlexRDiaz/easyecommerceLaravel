@@ -145,7 +145,7 @@ class GenerateReportAPIController extends Controller
             $report->id_master = $idMaster;
             $report->save();
 
-            return response()->json(['message' => 'Reporte generado',,'download_url' => $filePath]);
+            return response()->json(['message' => 'Reporte generado','download_url' => $filePath]);
         } else {
             return response()->json(['message' => 'Sin datos']);
         }
