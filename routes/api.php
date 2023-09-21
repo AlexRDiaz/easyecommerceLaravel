@@ -158,8 +158,10 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/', [GenerateReportAPIController::class, 'store']);
         Route::put('/{id}', [GenerateReportAPIController::class, 'update']);
         Route::delete('/{id}', [GenerateReportAPIController::class, 'destroy']);
+
         Route::get('/seller/{id}', [GenerateReportAPIController::class, 'getBySeller']); 
     });
+    //test
 
 });
 
