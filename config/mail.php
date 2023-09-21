@@ -42,7 +42,7 @@ return [
             'transport' => 'smtp',
             'host' => env('MAIL_HOST', 'smtpout.secureserver.net'),
             'port' => env('MAIL_PORT', 587),
-            'encryption' => env('MAIL_ENCRYPTION', null), // Cambiado a 'tls'
+            'encryption' => env('MAIL_ENCRYPTION', 'tls'), // Cambiado a 'tls'
             'username' => env('MAIL_USERNAME', 'info@easyecomerce.com'),
             'password' => env('MAIL_PASSWORD', '64WDBGR9Sm@!E5tM'),
             'timeout' => null,
