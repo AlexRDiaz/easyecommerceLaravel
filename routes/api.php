@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\Api\GenerateReportAPIController;
+use App\Http\Controllers\API\GenerateReportAPIController;
 use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
