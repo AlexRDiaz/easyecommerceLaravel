@@ -1291,6 +1291,15 @@ class PedidosShopifyAPIController extends Controller
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
                 'cantidad_total' => $listOfProducts[0]['quantity'],
+                'estado_interno' => "PENDIENTE",
+                'status' => "PEDIDO PROGRAMADO",
+                'estado_logistico' => 'PENDIENTE',
+                'estado_pagado' => 'PENDIENTE',
+                'estado_pago_logistica' => 'PENDIENTE',
+                'estado_devolucion' => 'PENDIENTE',
+                'do' => 'PENDIENTE',
+                'dt' => 'PENDIENTE',
+                'dl' => 'PENDIENTE'
             ]);
 
             $createOrder->save();
