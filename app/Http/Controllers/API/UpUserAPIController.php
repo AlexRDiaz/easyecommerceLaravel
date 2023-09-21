@@ -8,6 +8,7 @@ use App\Models\RolesFront;
 use App\Models\UpRole;
 use App\Models\UpUser;
 use App\Models\UpUsersRoleLink;
+use App\Models\UpUsersRolesFrontLink;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
@@ -59,10 +60,21 @@ class UpUserAPIController extends Controller
             'email' => 'required|email|unique:up_users',
         ]);
 
+        $numerosUtilizados = [];
+        while (count($numerosUtilizados) < 10000000) {
+            $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+            if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                $numerosUtilizados[] = $numeroAleatorio;
+                break;
+            }
+        }
+        $resultCode = $numeroAleatorio;
+        
+
         $user = new UpUser();
         $user->username = $request->input('username');
         $user->email = $request->input('email');
-    
+        $user->codigo_generado=$resultCode;
         $user->password = bcrypt('123456789'); // Puedes utilizar bcrypt para encriptar la contraseña
         $user->fecha_alta =$request->input('FechaAlta'); // Fecha actual
         $user->confirmed =$request->input('confirmed');
@@ -73,28 +85,24 @@ class UpUserAPIController extends Controller
         $user->save();
         $user->vendedores()->attach($request->input('vendedores'), [
         ]);
+
        $newUpUsersRoleLink = new UpUsersRoleLink();
        $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
        $newUpUsersRoleLink->role_id = $request->input('role');   // Asigna el ID del rol existente
        $newUpUsersRoleLink->save();
-         
-    
-      $user->roles_fronts()->sync($request->input('role'));
 
-       $numerosUtilizados = [];
-       while (count($numerosUtilizados) < 10000000) {
-           $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
-           if (!in_array($numeroAleatorio, $numerosUtilizados)) {
-               $numerosUtilizados[] = $numeroAleatorio;
-               break;
-           }
-       }
-       $resultCode = $numeroAleatorio;
-       
+         
+       $userRoleFront =new UpUsersRolesFrontLink();
+      $userRoleFront->user_id=$user->id;
+      $userRoleFront->roles_front_id=$request->input('roles_front');
+      $userRoleFront->save();
+
+
+     
        Mail::to($user->email)->send(new UserValidation($resultCode));
      
 
-      return response()->json(['message' => 'Usuario interno creado con éxito', 'user_id' => $user->id], 201);
+      return response()->json(['message' => 'Usuario interno creado con éxito', 'user_id' => $user->id,'user_id'], 201);
 
     }
 
