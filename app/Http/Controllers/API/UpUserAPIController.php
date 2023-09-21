@@ -78,7 +78,7 @@ class UpUserAPIController extends Controller
         $user->password = bcrypt('123456789'); // Puedes utilizar bcrypt para encriptar la contraseña
         $user->fecha_alta =$request->input('FechaAlta'); // Fecha actual
         $user->confirmed =$request->input('confirmed');
-        $user->estado = $request->input('VALIDADO');
+        $user->estado = $request->input('estado');
         $permisosCadena = json_encode($request->input('PERMISOS'));
         $user->permisos = $permisosCadena;
         $user->blocked = false;
