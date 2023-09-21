@@ -110,7 +110,7 @@ class GenerateReportAPIController extends Controller
         $status = $data['status'];
         $internal = $data['internal'];
 
-        $pedidos = PedidosShopify::select('marca_t_i','fecha_entrega',DB::raw('concat(tienda_temporal, "-", numero_orden) as codigo'),'nombre_shipping','ciudad_shipping','direccion_shipping','telefono_shipping','cantidad_total','producto_p','producto_extra','precio_total','comentario','estado_interno','status','estado_logistico','estado_devolucion','costo_envio','costo_devolucion')->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
+        $pedidos = PedidosShopify::select('marca_t_i', 'fecha_entrega', DB::raw('concat(tienda_temporal, "-", numero_orden) as codigo'), 'nombre_shipping', 'ciudad_shipping', 'direccion_shipping', 'telefono_shipping', 'cantidad_total', 'producto_p', 'producto_extra', 'precio_total', 'comentario', 'estado_interno', 'status', 'estado_logistico', 'estado_devolucion', 'costo_envio', 'costo_devolucion')->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])->where((function ($pedidos) use ($and) {
                 foreach ($and as $condition) {
                     foreach ($condition as $key => $valor) {
@@ -137,14 +137,15 @@ class GenerateReportAPIController extends Controller
             $uuid = Uuid::uuid4(); // Genera un UUID aleatorio de tipo 4 (aleatorio).
             $url = $uuid->toString() . 'report.xlsx';
             $export->store($url, 'public');
-            $filePath = asset($url);
+            $filePath = Storage::url($url); // Utiliza Storage::url para obtener la URL correcta del archivo.
+
             $report = new GenerateReport();
             $report->fecha = $generateDate;
-            $report->archivo = "/storage/".$url;
+            $report->archivo =  $filePath; // Almacena solo la ruta relativa del archivo en la base de datos.
             $report->id_master = $idMaster;
             $report->save();
 
-            return response()->json(['message' => 'Reporte generado', 'download_url' => $filePath]);
+            return response()->json(['message' => 'Reporte generado', 'download_url' => $filePath,'download_url' => $filePath]);
         } else {
             return response()->json(['message' => 'Sin datos']);
         }
