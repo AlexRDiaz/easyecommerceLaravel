@@ -175,7 +175,8 @@ class UpUserAPIController extends Controller
         // Guardar algunos datos del usuario en la sesión
         // $request->session()->put('user_id', $user->id);
         // $request->session()->put('user_email', $user->email);
-
+        $mensaje = "usuario logueado";
+        error_log("usuario logueado");
         return response()->json([
             'jwt' => $token, 
             'user' => $user], Response::HTTP_OK);

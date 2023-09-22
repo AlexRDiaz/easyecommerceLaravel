@@ -1243,7 +1243,7 @@ class PedidosShopifyAPIController extends Controller
         ])->get();
 
         // IF ORDER NOT EXIST CREATE ORDER
-        if ($search->isEmpty()) {
+    //    if ($search->isEmpty()) {
             $dateOrder;
             // SEARCH DATE ORDER FOR RELLATION
             $searchDate = PedidoFecha::where('fecha', $fechaActual)->get();
@@ -1320,22 +1320,22 @@ class PedidosShopifyAPIController extends Controller
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
             ], 200);
-        } else {
-            return response()->json([
-                'error' => 'Esta orden ya existe',
-                'orden_a_ingresar' => [
-                    'numero_orden' => $order_number,
-                    'nombre' => $name,
-                    'direccion' => $address1,
-                    'telefono' => $phone,
-                    'precio_total' => $total_price,
-                    'nota_cliente' => $customer_note,
-                    'ciudad' => $city,
-                    'producto' => $listOfProducts
-                ],
-                'orden_existente' => $search,
-            ], 401);
-        }
+    //    } else {
+            // return response()->json([
+            //     'error' => 'Esta orden ya existe',
+            //     'orden_a_ingresar' => [
+            //         'numero_orden' => $order_number,
+            //         'nombre' => $name,
+            //         'direccion' => $address1,
+            //         'telefono' => $phone,
+            //         'precio_total' => $total_price,
+            //         'nota_cliente' => $customer_note,
+            //         'ciudad' => $city,
+            //         'producto' => $listOfProducts
+            //     ],
+            //     'orden_existente' => $search,
+            // ], 401);
+      //  }
     }
 }
 
