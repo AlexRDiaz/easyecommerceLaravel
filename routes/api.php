@@ -34,6 +34,9 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
 
+
+    Route::resource('orden_retiro', App\Http\Controllers\API\OrdenesRetiroAPIController::class)
+    ->except(['create', 'edit']);
     //  ************************* LOGISTIC **************************
 
     
