@@ -125,9 +125,9 @@ Route::middleware(['cors'])->group(function () {
     Route::put('pedidos-shopify/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'update']);
 
 
+    Route::put('pedidos-shopify/update/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateCampo']);
 
-
-
+    
     //Route::resource('/users', App\Http\Controllers\API\UpUserAPIController::class);
     Route::post('/users', [UpUserAPIController::class, 'store']);
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);

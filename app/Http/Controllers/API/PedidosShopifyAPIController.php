@@ -24,6 +24,24 @@ class PedidosShopifyAPIController extends Controller
         return response()->json($pedidos);
     }
 
+
+
+      public function updateCampo(Request $request, $id)
+    {
+        // Recuperar los datos del formulario
+        $data = $request->all();
+
+        // Encuentra el registro en base al ID
+        $pedido = PedidosShopify::findOrFail($id);
+
+        // Actualiza los campos específicos en base a los datos del formulario
+        $pedido->fill($data);
+        $pedido->save();
+
+        // Respuesta de éxito
+        return response()->json(['message' => 'Registro actualizado con éxito',"res"=>$pedido], 200);
+    }
+
     public function show($id)
     {
         $pedido = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
@@ -31,6 +49,8 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($pedido);
     }
+
+    
     public function getDevolucionesOperator(Request $request)
     {
         $data = $request->json()->all();

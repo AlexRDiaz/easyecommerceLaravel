@@ -13,6 +13,13 @@ use Illuminate\Support\Facades\Mail;
 
 class OrdenesRetiroAPIController extends Controller
 {
+    public function show($id)
+    {
+        $trasnportadora = OrdenesRetiro::findOrFail($id);
+
+        return response()->json($trasnportadora);
+
+    }
     public function withdrawal(Request $request, $id)
     {
         //     // Obtiene los datos del cuerpo de la solicitud
