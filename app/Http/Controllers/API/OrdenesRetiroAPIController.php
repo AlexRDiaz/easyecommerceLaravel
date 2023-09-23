@@ -27,12 +27,14 @@ class OrdenesRetiroAPIController extends Controller
             'monto' => 'required',
             'fecha' => 'required',
             'email' => 'required|email',
+            'id_vendedor' => 'required'
         ]);
 
         // //     // Obtener datos del request
         $monto = $request->input('monto');
         $fecha = $request->input('fecha');
         $email  = $request->input('email');
+        $idVendedor  = $request->input('id_vendedor');
 
         // //     // Generar código único
         $numerosUtilizados = [];
@@ -55,6 +57,7 @@ class OrdenesRetiroAPIController extends Controller
             $withdrawal->fecha = $fecha;
             $withdrawal->codigo_generado = $resultCode;
             $withdrawal->estado = 'PENDIENTE';
+            $withdrawal->id_vendedor = $idVendedor;
             $withdrawal->save();
         
             $ordenUser=new OrdenesRetirosUsersPermissionsUserLink(); 

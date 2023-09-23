@@ -26,6 +26,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $updated_at
  * @property int|null $created_by_id
  * @property int|null $updated_by_id
+ * @property string|null $id_vendedor
  * 
  * @property AdminUser|null $admin_user
  * @property Collection|OrdenesRetirosUsersPermissionsUserLink[] $ordenes_retiros_users_permissions_user_links
@@ -51,7 +52,8 @@ class OrdenesRetiro extends Model
 		'comprobante',
 		'comentario',
 		'created_by_id',
-		'updated_by_id'
+		'updated_by_id',
+		'id_vendedor'
 	];
 
 	public function admin_user()
