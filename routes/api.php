@@ -95,6 +95,8 @@ Route::middleware(['cors'])->group(function () {
 
     // ! TRANSACCIONES
     Route::get("transacciones", [\App\Http\Controllers\API\TransaccionesAPIController::class,'index']);
+    // ! LAST 30
+    Route::get("transacciones-lst", [\App\Http\Controllers\API\TransaccionesAPIController::class,'last30rows']);
     // ! CREDIT TRANSACTION
     Route::post("transacciones/credit", [\App\Http\Controllers\API\TransaccionesAPIController::class,'Credit']);
     // ! CREDIT TRANSACTION
