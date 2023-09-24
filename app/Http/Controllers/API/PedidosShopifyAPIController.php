@@ -718,6 +718,7 @@ class PedidosShopifyAPIController extends Controller
         $id = $data['id'];
         $estadoInterno = $data['estado_interno'];
         $fechaConfirmacion = $data['fecha_confirmacion'];
+        $nameComercial = $data['name_comercial'];
         $pedido = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
             ->where('id', $id)
             ->first();
@@ -728,6 +729,7 @@ class PedidosShopifyAPIController extends Controller
 
         $pedido->fecha_confirmacion = $fechaConfirmacion;
         $pedido->estado_interno = $estadoInterno;
+        $pedido->name_comercial = $nameComercial;
         $pedido->save();
 
         return response()->json($pedido);
