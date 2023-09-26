@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\GenerateReportAPIController;
 use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
+use App\Http\Controllers\API\RutaAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
@@ -167,6 +168,13 @@ Route::middleware(['cors'])->group(function () {
         Route::delete('/{id}', [GenerateReportAPIController::class, 'destroy']);
 
         Route::get('/seller/{id}', [GenerateReportAPIController::class, 'getBySeller']); 
+    });
+
+    //*
+    Route::prefix('rutas')->group(function () {
+        Route::get('/', [RutaAPIController::class, 'index']);
+        Route::get('/{id}', [RutaAPIController::class, 'show']);
+
     });
     //test
 
