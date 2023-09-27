@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\PedidoFecha;
 use App\Models\pedidos_shopifies;
 use App\Models\PedidosShopifiesPedidoFechaLink;
+use App\Models\PedidosShopifiesRutaLink;
+use App\Models\PedidosShopifiesTransportadoraLink;
 use App\Models\PedidosShopify;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
 use App\Models\Ruta;
@@ -26,7 +28,7 @@ class PedidosShopifyAPIController extends Controller
 
 
 
-      public function updateCampo(Request $request, $id)
+    public function updateCampo(Request $request, $id)
     {
         // Recuperar los datos del formulario
         $data = $request->all();
@@ -39,7 +41,7 @@ class PedidosShopifyAPIController extends Controller
         $pedido->save();
 
         // Respuesta de éxito
-        return response()->json(['message' => 'Registro actualizado con éxito',"res"=>$pedido], 200);
+        return response()->json(['message' => 'Registro actualizado con éxito', "res" => $pedido], 200);
     }
 
     public function show($id)
@@ -50,7 +52,7 @@ class PedidosShopifyAPIController extends Controller
         return response()->json($pedido);
     }
 
-    
+
     public function getDevolucionesOperator(Request $request)
     {
         $data = $request->json()->all();
@@ -222,13 +224,13 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($pedidos);
     }
-    
+
     // printed_guides
     public function updateOrderInteralStatusLogisticLaravel(Request $req)
     {
         $data = $req->json()->all();
         $id = $data['id'];
-        $estado_interno = $data['data'][0]['estado_interno']; 
+        $estado_interno = $data['data'][0]['estado_interno'];
         $estado_logistico = $data['data'][1]['estado_logistico'];
         $pedido = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta'])
             ->where('id', $id)
@@ -241,11 +243,11 @@ class PedidosShopifyAPIController extends Controller
         $pedido->save();
         return response()->json($pedido);
     }
-    public function updateOrderLogisticStatusPrintLaravel (Request $req)
+    public function updateOrderLogisticStatusPrintLaravel(Request $req)
     {
         $data = $req->json()->all();
         $id = $data['id'];
-        $estado_interno = $data['data'][0]['estado_interno']; 
+        $estado_interno = $data['data'][0]['estado_interno'];
         $estado_logistico = $data['data'][1]['estado_logistico'];
         $fecha_entega = $data['data'][2]['fecha_entrega'];
         $marca_tiempo_envio = $data['data'][3]['marca_tiempo_envio'];
@@ -270,7 +272,7 @@ class PedidosShopifyAPIController extends Controller
         $pageNumber = $data['page_number'];
         $searchTerm = $data['search'];
         if ($searchTerm != "") {
-            $filteFields = $data['or']; 
+            $filteFields = $data['or'];
         } else {
             $filteFields = [];
         }
@@ -301,7 +303,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '=', $valor);
                         }
-
                     }
                 }
             }))
@@ -315,7 +316,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '!=', $valor);
                         }
-
                     }
                 }
             }));
@@ -358,10 +358,9 @@ class PedidosShopifyAPIController extends Controller
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
 
         return response()->json($pedidos);
-
     }
 
-    public function getOrderByIDLaravel (Request $req)
+    public function getOrderByIDLaravel(Request $req)
     {
         $data = $req->json()->all();
         $id = $data['id'];
@@ -416,7 +415,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '=', $valor);
                         }
-
                     }
                 }
             }))
@@ -430,7 +428,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '!=', $valor);
                         }
-
                     }
                 }
             }));
@@ -588,11 +585,12 @@ class PedidosShopifyAPIController extends Controller
         return response()->json($pedido);
     }
     //  TODO: en desarrollo ↓↓↓↓
-    public function createDateOrderLaravel(Request $req)  {
+    public function createDateOrderLaravel(Request $req)
+    {
         $data = $req->json()->all();
         $fechaActual = $data['fecha'];
         $pedidoFecha = PedidoFecha::where('fecha', $fechaActual)->first();
-        $newpedidoFecha="";
+        $newpedidoFecha = "";
         if (!$pedidoFecha) {
             $newpedidoFecha = new PedidoFecha();
             $newpedidoFecha->fecha = $fechaActual;
@@ -610,13 +608,13 @@ class PedidosShopifyAPIController extends Controller
         $NombreShipping = $data['NombreShipping'];
         $DireccionShipping = $data['DireccionShipping'];
         $TelefonoShipping = $data['TelefonoShipping'];
-        
+
         $PrecioTotal = $data['PrecioTotal'];
         $formattedPrice = str_replace(",", ".", str_replace(["$", " "], "", $PrecioTotal));
-        
-        if($data['Observacion']!= null ){
+
+        if ($data['Observacion'] != null) {
             $Observacion = $data['Observacion'];
-        }else{
+        } else {
             $Observacion = "";
         }
         $CiudadShipping = $data['CiudadShipping'];
@@ -642,7 +640,7 @@ class PedidosShopifyAPIController extends Controller
         $pedido->precio_total = $formattedPrice;
         $pedido->observacion = $Observacion;
         $pedido->ciudad_shipping = $CiudadShipping;
-        $pedido->estado_interno = $Estado_Interno; 
+        $pedido->estado_interno = $Estado_Interno;
         $pedido->id_comercial = $IdComercial;
         $pedido->producto_p = $ProductoP;
         $pedido->producto_extra = $ProductoExtra;
@@ -652,10 +650,10 @@ class PedidosShopifyAPIController extends Controller
         $pedido->fecha_confirmacion = $Fecha_Confirmacion;
         $pedido->tienda_temporal = $Tienda_Temporal;
         $pedido->save();
-        
+
         $ultimoPedidoFechaLink = PedidosShopifiesPedidoFechaLink::where('pedido_fecha_id', $pedido_fecha)
-        ->orderBy('pedidos_shopify_order', 'desc')
-        ->first();
+            ->orderBy('pedidos_shopify_order', 'desc')
+            ->first();
 
         if ($ultimoPedidoFechaLink) {
             $pedidoShopifyOrder = $ultimoPedidoFechaLink->pedidos_shopify_order + 1;
@@ -666,12 +664,12 @@ class PedidosShopifyAPIController extends Controller
         $pedido->pedidos_shopifies_pedido_fecha_links()->create([
             'pedido_fecha_id' => $pedido_fecha,
             'pedidos_shopify_id' => $pedido->id,
-            'pedidos_shopify_order'=> $pedidoShopifyOrder
+            'pedidos_shopify_order' => $pedidoShopifyOrder
         ]);
         $pedido->up_users_pedidos_shopifies_links()->create([
             "user_id" => $users,
             "pedidos_shopify_id" => $pedido->id,
-            'pedidos_shopify_order'=> $pedidoShopifyOrder,
+            'pedidos_shopify_order' => $pedidoShopifyOrder,
             "user_order" => "1"
         ]);
         return response()->json(['message' => 'Pedido creado exitosamente'], 201);
@@ -710,7 +708,6 @@ class PedidosShopifyAPIController extends Controller
         $pedido->save();
 
         return response()->json($pedido);
-
     }
     public function updateOrderInternalStatus(Request $req)
     {
@@ -733,7 +730,6 @@ class PedidosShopifyAPIController extends Controller
         $pedido->save();
 
         return response()->json($pedido);
-
     }
     public function updateDateandStatus(Request $req)
     {
@@ -757,7 +753,7 @@ class PedidosShopifyAPIController extends Controller
         // return response()->json(['data' => $pedido]);
         return response()->json($pedido);
     }
-    
+
     public function getReturnSellers(Request $request)
     {
         $data = $request->json()->all();
@@ -1040,7 +1036,7 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }
-        ))->get();
+            ))->get();
 
 
 
@@ -1227,7 +1223,7 @@ class PedidosShopifyAPIController extends Controller
     }
 
 
-    public function shopifyPedidos(Request $request,$id)
+    public function shopifyPedidos(Request $request, $id)
     {
         //GENERATE DATE
         date_default_timezone_set('Etc/GMT+5');
@@ -1265,99 +1261,144 @@ class PedidosShopifyAPIController extends Controller
         ])->get();
 
         // IF ORDER NOT EXIST CREATE ORDER
-    //    if ($search->isEmpty()) {
-            $dateOrder;
-            // SEARCH DATE ORDER FOR RELLATION
-            $searchDate = PedidoFecha::where('fecha', $fechaActual)->get();
+        //    if ($search->isEmpty()) {
+        $dateOrder;
+        // SEARCH DATE ORDER FOR RELLATION
+        $searchDate = PedidoFecha::where('fecha', $fechaActual)->get();
 
-            // IF DATE ORDER NOT EXIST CREATE ORDER AND ADD ID ELSE IF ONLY ADD DATE ORDER ID VALUE
-            if ($searchDate->isEmpty()) {
-                // Crea un nuevo registro de fecha
-                $newDate = new PedidoFecha();
-                $newDate->fecha = $fechaActual;
-                $newDate->save();
+        // IF DATE ORDER NOT EXIST CREATE ORDER AND ADD ID ELSE IF ONLY ADD DATE ORDER ID VALUE
+        if ($searchDate->isEmpty()) {
+            // Crea un nuevo registro de fecha
+            $newDate = new PedidoFecha();
+            $newDate->fecha = $fechaActual;
+            $newDate->save();
 
-                // Obtén el ID del nuevo registro
-                $dateOrder = $newDate->id;
-            } else {
-                // Si la fecha existe, obtén el ID del primer resultado
-                $dateOrder = $searchDate[0]->id;
-            }
-
-
-            // Obtener la fecha y hora actual
-            $ahora = now();
-            $dia = $ahora->day;
-            $mes = $ahora->month;
-            $anio = $ahora->year;
-            $hora = $ahora->hour;
-            $minuto = $ahora->minute;
-
-            // Formatear la fecha y hora actual
-            $fechaHoraActual = "$dia/$mes/$anio $hora:$minuto";
+            // Obtén el ID del nuevo registro
+            $dateOrder = $newDate->id;
+        } else {
+            // Si la fecha existe, obtén el ID del primer resultado
+            $dateOrder = $searchDate[0]->id;
+        }
 
 
-            // Crear una nueva orden
-            $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
-            $createOrder = new PedidosShopify([
-                'marca_t_i' => $fechaHoraActual,
-                'tienda_temporal' => $productos[0]['vendor'],
-                'numero_orden' => $order_number,
-                'direccion_shipping' => $address1,
-                'nombre_shipping' => $name,
-                'telefono_shipping' => $phone,
-                'precio_total' => $formattedPrice,
-                'observacion' => $customer_note ?? "",
-                'ciudad_shipping' => $city,
-                'id_comercial' => $id,
-                'producto_p' => $listOfProducts[0]['title'],
-                'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
-                'cantidad_total' => $listOfProducts[0]['quantity'],
-                'estado_interno' => "PENDIENTE",
-                'status' => "PEDIDO PROGRAMADO",
-                'estado_logistico' => 'PENDIENTE',
-                'estado_pagado' => 'PENDIENTE',
-                'estado_pago_logistica' => 'PENDIENTE',
-                'estado_devolucion' => 'PENDIENTE',
-                'do' => 'PENDIENTE',
-                'dt' => 'PENDIENTE',
-                'dl' => 'PENDIENTE'
-            ]);
+        // Obtener la fecha y hora actual
+        $ahora = now();
+        $dia = $ahora->day;
+        $mes = $ahora->month;
+        $anio = $ahora->year;
+        $hora = $ahora->hour;
+        $minuto = $ahora->minute;
 
-            $createOrder->save();
-
-            $createPedidoFecha = new  PedidosShopifiesPedidoFechaLink();
-            $createPedidoFecha->pedidos_shopify_id = $createOrder->id;
-            $createPedidoFecha->pedido_fecha_id = $dateOrder;
-            $createPedidoFecha->save();
-
-            $createUserPedido = new UpUsersPedidosShopifiesLink();
-            $createUserPedido->user_id = $id;
-            $createUserPedido->pedidos_shopify_id = $createOrder->id;
-            $createUserPedido->save();
+        // Formatear la fecha y hora actual
+        $fechaHoraActual = "$dia/$mes/$anio $hora:$minuto";
 
 
-            /////
-            return response()->json([
-                'message' => 'La orden se ha registrado con éxito.',
-                'orden_ingresada' => $createOrder,
-            ], 200);
-    //    } else {
-            // return response()->json([
-            //     'error' => 'Esta orden ya existe',
-            //     'orden_a_ingresar' => [
-            //         'numero_orden' => $order_number,
-            //         'nombre' => $name,
-            //         'direccion' => $address1,
-            //         'telefono' => $phone,
-            //         'precio_total' => $total_price,
-            //         'nota_cliente' => $customer_note,
-            //         'ciudad' => $city,
-            //         'producto' => $listOfProducts
-            //     ],
-            //     'orden_existente' => $search,
-            // ], 401);
-      //  }
+        // Crear una nueva orden
+        $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
+        $createOrder = new PedidosShopify([
+            'marca_t_i' => $fechaHoraActual,
+            'tienda_temporal' => $productos[0]['vendor'],
+            'numero_orden' => $order_number,
+            'direccion_shipping' => $address1,
+            'nombre_shipping' => $name,
+            'telefono_shipping' => $phone,
+            'precio_total' => $formattedPrice,
+            'observacion' => $customer_note ?? "",
+            'ciudad_shipping' => $city,
+            'id_comercial' => $id,
+            'producto_p' => $listOfProducts[0]['title'],
+            'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
+            'cantidad_total' => $listOfProducts[0]['quantity'],
+            'estado_interno' => "PENDIENTE",
+            'status' => "PEDIDO PROGRAMADO",
+            'estado_logistico' => 'PENDIENTE',
+            'estado_pagado' => 'PENDIENTE',
+            'estado_pago_logistica' => 'PENDIENTE',
+            'estado_devolucion' => 'PENDIENTE',
+            'do' => 'PENDIENTE',
+            'dt' => 'PENDIENTE',
+            'dl' => 'PENDIENTE'
+        ]);
+
+        $createOrder->save();
+
+        $createPedidoFecha = new  PedidosShopifiesPedidoFechaLink();
+        $createPedidoFecha->pedidos_shopify_id = $createOrder->id;
+        $createPedidoFecha->pedido_fecha_id = $dateOrder;
+        $createPedidoFecha->save();
+
+        $createUserPedido = new UpUsersPedidosShopifiesLink();
+        $createUserPedido->user_id = $id;
+        $createUserPedido->pedidos_shopify_id = $createOrder->id;
+        $createUserPedido->save();
+
+
+        /////
+        return response()->json([
+            'message' => 'La orden se ha registrado con éxito.',
+            'orden_ingresada' => $createOrder,
+        ], 200);
+        //    } else {
+        // return response()->json([
+        //     'error' => 'Esta orden ya existe',
+        //     'orden_a_ingresar' => [
+        //         'numero_orden' => $order_number,
+        //         'nombre' => $name,
+        //         'direccion' => $address1,
+        //         'telefono' => $phone,
+        //         'precio_total' => $total_price,
+        //         'nota_cliente' => $customer_note,
+        //         'ciudad' => $city,
+        //         'producto' => $listOfProducts
+        //     ],
+        //     'orden_existente' => $search,
+        // ], 401);
+        //  }
+    }
+
+    // *
+    public function updateOrderRouteAndTransport(Request $request, $id)
+    {
+        $data = $request->json()->all();
+
+        $newrouteId = $data['ruta'];
+        $newtransportadoraId = $data['transportadora'];
+
+        $order = PedidosShopify::with(['ruta', 'transportadora'])->find($id);
+        if (!$order) {
+            return response()->json(['message' => 'Orden no encontrada'], 404);
+        }
+
+        //44966
+        //44939
+        // return response()->json($order);
+
+        $resRuta = $order->pedidos_shopifies_ruta_links;
+        $resRutaNum = count($resRuta);
+        // return response()->json($resRuta);
+        // return response()->json(['resRuta' => $resRuta, 'num' => $resRutaNum], 200);
+
+
+        if ($resRutaNum === 0) {
+            $createPedidoRuta = new  PedidosShopifiesRutaLink();
+            $createPedidoRuta->pedidos_shopify_id = $order->id;
+            $createPedidoRuta->ruta_id = $newrouteId;
+            $createPedidoRuta->save();
+
+            $createPedidoTransportadora = new PedidosShopifiesTransportadoraLink();
+            $createPedidoTransportadora->pedidos_shopify_id = $order->id;
+            $createPedidoTransportadora->transportadora_id = $newtransportadoraId;
+            $createPedidoTransportadora->save();
+            return response()->json(['orden' => 'Ruta&Transportadora asignada exitosamente'], 200);
+        } else {
+            $pedidoRuta = PedidosShopifiesRutaLink::where('pedidos_shopify_id', $id)->first();
+            $pedidoRuta->ruta_id = $newrouteId;
+            $pedidoRuta->save();
+
+            $pedidoTrasportadora = PedidosShopifiesTransportadoraLink::where('pedidos_shopify_id', $id)->first();
+            $pedidoTrasportadora->transportadora_id = $newtransportadoraId;
+            $pedidoTrasportadora->save();
+            return response()->json(['orden' => 'Ruta&Transportadora actualizada exitosamente'], 200);
+        }
     }
 }
-
