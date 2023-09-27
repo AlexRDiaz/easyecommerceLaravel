@@ -5,6 +5,7 @@ use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\RutaAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
+use App\Http\Controllers\API\VendedoreAPIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -92,6 +93,7 @@ Route::middleware(['cors'])->group(function () {
     Route::get('vendedores', [App\Http\Controllers\API\VendedoreAPIController::class, 'getVendedores']);
     // *
     Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
+    Route::get('/vendedores/saldo/{id}', [VendedoreAPIController::class, 'getSaldo']);
 
 
     // ! TRANSACCIONES
@@ -144,6 +146,7 @@ Route::middleware(['cors'])->group(function () {
 
     Route::get('users/{id}', [UpUserAPIController::class, 'users']);
 
+    
     Route::get('/sellers/{id}/{search?}', [UpUserAPIController::class, 'getSellers']);
   
     Route::post('/report', [GenerateReportAPIController::class, 'generateExcel']);

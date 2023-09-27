@@ -199,6 +199,8 @@ class UpUserAPIController extends Controller
     }
 
 
+   
+
     public function getSellers($id,$search=null){
         $upUser = UpUser::with([
             'roles_fronts',

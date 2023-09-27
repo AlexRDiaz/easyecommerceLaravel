@@ -133,19 +133,23 @@ class GenerateReportAPIController extends Controller
         $response = $pedidos->get();
 
         if (!empty($response)) {
-            $export = new PedidosShopifyExport($response);
+          //  $export = new PedidosShopifyExport($response);
             $uuid = Uuid::uuid4(); // Genera un UUID aleatorio de tipo 4 (aleatorio).
-            $url = $uuid->toString() . 'report.xlsx';
-            $export->store($url, 'public');
-            $filePath = Storage::url($url); // Utiliza Storage::url para obtener la URL correcta del archivo.
+            $fileName= $uuid->toString() . '.xlsx';
+           // $export->store($url, 'sales');
+           $excelFile = Excel::download(new PedidosShopifyExport($response), $fileName);
+           Storage::disk('sales')->put($fileName, $excelFile);
+//$m=Storage::disk('sales')->url($fileName);
 
-            $report = new GenerateReport();
-            $report->fecha = $generateDate;
-            $report->archivo =  $filePath; // Almacena solo la ruta relativa del archivo en la base de datos.
-            $report->id_master = $idMaster;
-            $report->save();
+           // $filePath = Storage::url($export); // Utiliza Storage::url para obtener la URL correcta del archivo.
 
-            return response()->json(['message' => 'Reporte generado','download_url' => $filePath]);
+            // $report = new GenerateReport();
+            // $report->fecha = $generateDate;
+            // $report->archivo =  $filePath; // Almacena solo la ruta relativa del archivo en la base de datos.
+            // $report->id_master = $idMaster;
+            // $report->save();
+            return Storage::disk('sales')->download($fileName);
+         // return response()->json(['message' => 'Reporte generado','download_url' => $m,'location_url' =>""]);
         } else {
             return response()->json(['message' => 'Sin datos']);
         }
