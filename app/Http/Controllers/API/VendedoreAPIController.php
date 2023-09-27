@@ -31,11 +31,13 @@ class VendedoreAPIController extends Controller
     }
 
     public function getSaldo($id){
-        $saldo = Vendedore::find($id)->saldo;
+        $saldo = Vendedore::whereHas('up_users', function ($query) use ($id) {
+            $query->where('up_users.id', $id);
+        })->first();
         if (!$saldo) {
             return response()->json(['message' => 'UpUser not found'], Response::HTTP_NOT_FOUND);
         }
-        return response()->json(['saldo' => $saldo], Response::HTTP_OK);
+        return response()->json(['saldo' => $saldo['saldo']], Response::HTTP_OK);
     }
 
     public function getVendedores()

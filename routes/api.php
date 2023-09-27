@@ -105,6 +105,12 @@ Route::middleware(['cors'])->group(function () {
     // ! CREDIT TRANSACTION
     Route::post("transacciones/debit", [\App\Http\Controllers\API\TransaccionesAPIController::class,'Debit']);
     // ! ***********************
+     // !  TRANSACTIONS BY ID SELLER
+     Route::get("transacciones/bySeller/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsById']);
+     // ! ***********************
+
+    
+
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
 
 

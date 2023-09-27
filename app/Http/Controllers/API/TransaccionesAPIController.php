@@ -113,6 +113,14 @@ class TransaccionesAPIController extends Controller
         return response()->json("Monto debitado");
 
     }
+    public function getTransactionsById($id)
+    {
+        $transaccions = Transaccion::where("id_vendedor",$id)->orderBy('marca_de_tiempo', 'desc')->get();
+        
+        return response()->json($transaccions);
+
+
+    }
 }
 
 
