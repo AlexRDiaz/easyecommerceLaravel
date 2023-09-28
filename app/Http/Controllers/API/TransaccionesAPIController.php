@@ -115,7 +115,7 @@ class TransaccionesAPIController extends Controller
     }
     public function getTransactionsById($id)
     {
-        $transaccions = Transaccion::where("id_vendedor",$id)->orderBy('marca_de_tiempo', 'desc')->get();
+        $transaccions = Transaccion::where("id_vendedor",$id)->orderBy('id', 'desc')->get();
         
         return response()->json($transaccions);
 
