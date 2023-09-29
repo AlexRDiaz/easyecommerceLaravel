@@ -92,6 +92,7 @@ class TransaccionesAPIController extends Controller
         $startDate = $data['act_date'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
         $vendedorId = $data['id'];
+        $vendedorId = $data['id'];
         $tipo = "debit";
         $monto = $data['monto'];
         $idOrigen = $data['id_origen'];
