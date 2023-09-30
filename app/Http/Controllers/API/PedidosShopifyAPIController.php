@@ -1401,4 +1401,44 @@ class PedidosShopifyAPIController extends Controller
             return response()->json(['orden' => 'Ruta&Transportadora actualizada exitosamente'], 200);
         }
     }
+
+    //  *
+    public function getByDateRangeAll(Request $request)
+    {
+        $data = $request->json()->all();
+
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+        $and = $data['and'];
+
+        $status = $data['status'];
+        $internal = $data['internal'];
+
+        $pedidos = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
+        //select('marca_t_i', 'fecha_entrega', DB::raw('concat(tienda_temporal, "-", numero_orden) as codigo'), 'nombre_shipping', 'ciudad_shipping', 'direccion_shipping', 'telefono_shipping', 'cantidad_total', 'producto_p', 'producto_extra', 'precio_total', 'comentario', 'estado_interno', 'status', 'estado_logistico', 'estado_devolucion', 'costo_envio', 'costo_devolucion')
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])->where((function ($pedidos) use ($and) {
+                foreach ($and as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
+                    }
+                }
+            }));
+        if (!empty($status)) {
+            $pedidos->whereIn('status', $status);
+        }
+        if (!empty($internal)) {
+            $pedidos->whereIn('estado_interno', $internal);
+        }
+        $response = $pedidos->get();
+
+        return response()->json($response);
+    }
 }
