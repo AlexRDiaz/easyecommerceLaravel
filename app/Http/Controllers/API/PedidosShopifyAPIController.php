@@ -110,18 +110,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! **************************************************
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
 
@@ -203,18 +203,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordena
         if ($orderBy !== null) {
             $pedidos->orderBy(key($orderBy), reset($orderBy));
@@ -520,18 +520,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordenamiento ********************************** 
         $orderByText = null;
         $orderByDate = null;
@@ -822,18 +822,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordena
         $orderByText = null;
         $orderByDate = null;
@@ -1024,20 +1024,19 @@ class PedidosShopifyAPIController extends Controller
                 }
             }))->where((function ($pedidos) use ($not) {
 
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
             }
-
-        }
-                ))->get();
+            ))->get();
 
 
 
@@ -1258,103 +1257,104 @@ class PedidosShopifyAPIController extends Controller
 
         $search = PedidosShopify::where([
             'numero_orden' => $order_number,
-            'tienda_temporal' => $productos[0]['vendor'],
+            // 'tienda_temporal' => $productos[0]['vendor'],
             'id_comercial' => $id,
         ])->get();
 
+        //
         // IF ORDER NOT EXIST CREATE ORDER
-        //    if ($search->isEmpty()) {
-        $dateOrder;
-        // SEARCH DATE ORDER FOR RELLATION
-        $searchDate = PedidoFecha::where('fecha', $fechaActual)->get();
+        if ($search->isEmpty()) {
+            $dateOrder;
+            // SEARCH DATE ORDER FOR RELLATION
+            $searchDate = PedidoFecha::where('fecha', $fechaActual)->get();
 
-        // IF DATE ORDER NOT EXIST CREATE ORDER AND ADD ID ELSE IF ONLY ADD DATE ORDER ID VALUE
-        if ($searchDate->isEmpty()) {
-            // Crea un nuevo registro de fecha
-            $newDate = new PedidoFecha();
-            $newDate->fecha = $fechaActual;
-            $newDate->save();
+            // IF DATE ORDER NOT EXIST CREATE ORDER AND ADD ID ELSE IF ONLY ADD DATE ORDER ID VALUE
+            if ($searchDate->isEmpty()) {
+                // Crea un nuevo registro de fecha
+                $newDate = new PedidoFecha();
+                $newDate->fecha = $fechaActual;
+                $newDate->save();
 
-            // Obtén el ID del nuevo registro
-            $dateOrder = $newDate->id;
+                // Obtén el ID del nuevo registro
+                $dateOrder = $newDate->id;
+            } else {
+                // Si la fecha existe, obtén el ID del primer resultado
+                $dateOrder = $searchDate[0]->id;
+            }
+
+
+            // Obtener la fecha y hora actual
+            $ahora = now();
+            $dia = $ahora->day;
+            $mes = $ahora->month;
+            $anio = $ahora->year;
+            $hora = $ahora->hour;
+            $minuto = $ahora->minute;
+
+            // Formatear la fecha y hora actual
+            $fechaHoraActual = "$dia/$mes/$anio $hora:$minuto";
+
+            // Crear una nueva orden
+            $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
+            $createOrder = new PedidosShopify([
+                'marca_t_i' => $fechaHoraActual,
+                'tienda_temporal' => $productos[0]['vendor'],
+                'numero_orden' => $order_number,
+                'direccion_shipping' => $address1,
+                'nombre_shipping' => $name,
+                'telefono_shipping' => $phone,
+                'precio_total' => $formattedPrice,
+                'observacion' => $customer_note ?? "",
+                'ciudad_shipping' => $city,
+                'id_comercial' => $id,
+                'producto_p' => $listOfProducts[0]['title'],
+                'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
+                'cantidad_total' => $listOfProducts[0]['quantity'],
+                'estado_interno' => "PENDIENTE",
+                'status' => "PEDIDO PROGRAMADO",
+                'estado_logistico' => 'PENDIENTE',
+                'estado_pagado' => 'PENDIENTE',
+                'estado_pago_logistica' => 'PENDIENTE',
+                'estado_devolucion' => 'PENDIENTE',
+                'do' => 'PENDIENTE',
+                'dt' => 'PENDIENTE',
+                'dl' => 'PENDIENTE'
+            ]);
+
+            $createOrder->save();
+
+            $createPedidoFecha = new PedidosShopifiesPedidoFechaLink();
+            $createPedidoFecha->pedidos_shopify_id = $createOrder->id;
+            $createPedidoFecha->pedido_fecha_id = $dateOrder;
+            $createPedidoFecha->save();
+
+            $createUserPedido = new UpUsersPedidosShopifiesLink();
+            $createUserPedido->user_id = $id;
+            $createUserPedido->pedidos_shopify_id = $createOrder->id;
+            $createUserPedido->save();
+
+
+            /////
+            return response()->json([
+                'message' => 'La orden se ha registrado con éxito.',
+                'orden_ingresada' => $createOrder,
+            ], 200);
         } else {
-            // Si la fecha existe, obtén el ID del primer resultado
-            $dateOrder = $searchDate[0]->id;
+            return response()->json([
+                'error' => 'Esta orden ya existe',
+                'orden_a_ingresar' => [
+                    'numero_orden' => $order_number,
+                    'nombre' => $name,
+                    'direccion' => $address1,
+                    'telefono' => $phone,
+                    'precio_total' => $total_price,
+                    'nota_cliente' => $customer_note,
+                    'ciudad' => $city,
+                    'producto' => $listOfProducts
+                ],
+                'orden_existente' => $search,
+            ], 401);
         }
-
-
-        // Obtener la fecha y hora actual
-        $ahora = now();
-        $dia = $ahora->day;
-        $mes = $ahora->month;
-        $anio = $ahora->year;
-        $hora = $ahora->hour;
-        $minuto = $ahora->minute;
-
-        // Formatear la fecha y hora actual
-        $fechaHoraActual = "$dia/$mes/$anio $hora:$minuto";
-
-   // Crear una nueva orden
-        $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
-        $createOrder = new PedidosShopify([
-            'marca_t_i' => $fechaHoraActual,
-            'tienda_temporal' => $productos[0]['vendor'],
-            'numero_orden' => $order_number,
-            'direccion_shipping' => $address1,
-            'nombre_shipping' => $name,
-            'telefono_shipping' => $phone,
-            'precio_total' => $formattedPrice,
-            'observacion' => $customer_note ?? "",
-            'ciudad_shipping' => $city,
-            'id_comercial' => $id,
-            'producto_p' => $listOfProducts[0]['title'],
-            'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
-            'cantidad_total' => $listOfProducts[0]['quantity'],
-            'estado_interno' => "PENDIENTE",
-            'status' => "PEDIDO PROGRAMADO",
-            'estado_logistico' => 'PENDIENTE',
-            'estado_pagado' => 'PENDIENTE',
-            'estado_pago_logistica' => 'PENDIENTE',
-            'estado_devolucion' => 'PENDIENTE',
-            'do' => 'PENDIENTE',
-            'dt' => 'PENDIENTE',
-            'dl' => 'PENDIENTE'
-        ]);
-
-        $createOrder->save();
-
-        $createPedidoFecha = new PedidosShopifiesPedidoFechaLink();
-        $createPedidoFecha->pedidos_shopify_id = $createOrder->id;
-        $createPedidoFecha->pedido_fecha_id = $dateOrder;
-        $createPedidoFecha->save();
-
-        $createUserPedido = new UpUsersPedidosShopifiesLink();
-        $createUserPedido->user_id = $id;
-        $createUserPedido->pedidos_shopify_id = $createOrder->id;
-        $createUserPedido->save();
-
-
-        /////
-        return response()->json([
-            'message' => 'La orden se ha registrado con éxito.',
-            'orden_ingresada' => $createOrder,
-        ], 200);
-        //    } else {
-        // return response()->json([
-        //     'error' => 'Esta orden ya existe',
-        //     'orden_a_ingresar' => [
-        //         'numero_orden' => $order_number,
-        //         'nombre' => $name,
-        //         'direccion' => $address1,
-        //         'telefono' => $phone,
-        //         'precio_total' => $total_price,
-        //         'nota_cliente' => $customer_note,
-        //         'ciudad' => $city,
-        //         'producto' => $listOfProducts
-        //     ],
-        //     'orden_existente' => $search,
-        // ], 401);
-        //  }
     }
 
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
@@ -1413,18 +1413,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordenamiento ********************************** 
         $orderByText = null;
         $orderByDate = null;
@@ -1496,7 +1496,6 @@ class PedidosShopifyAPIController extends Controller
             'no_entregados' => $cantidadNoEntregados,
             'suma_total' => $sumaTotal
         ]);
-    
     }
 
 
@@ -1562,7 +1561,7 @@ class PedidosShopifyAPIController extends Controller
         $internal = $data['internal'];
 
         $pedidos = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
-        //select('marca_t_i', 'fecha_entrega', DB::raw('concat(tienda_temporal, "-", numero_orden) as codigo'), 'nombre_shipping', 'ciudad_shipping', 'direccion_shipping', 'telefono_shipping', 'cantidad_total', 'producto_p', 'producto_extra', 'precio_total', 'comentario', 'estado_interno', 'status', 'estado_logistico', 'estado_devolucion', 'costo_envio', 'costo_devolucion')
+            //select('marca_t_i', 'fecha_entrega', DB::raw('concat(tienda_temporal, "-", numero_orden) as codigo'), 'nombre_shipping', 'ciudad_shipping', 'direccion_shipping', 'telefono_shipping', 'cantidad_total', 'producto_p', 'producto_extra', 'precio_total', 'comentario', 'estado_interno', 'status', 'estado_logistico', 'estado_devolucion', 'costo_envio', 'costo_devolucion')
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])->where((function ($pedidos) use ($and) {
                 foreach ($and as $condition) {
                     foreach ($condition as $key => $valor) {
@@ -1582,7 +1581,7 @@ class PedidosShopifyAPIController extends Controller
         if (!empty($internal)) {
             $pedidos->whereIn('estado_interno', $internal);
         }
-        $pedidos->orderBy('marca_t_i', 'asc'); 
+        $pedidos->orderBy('marca_t_i', 'asc');
         $response = $pedidos->get();
 
         return response()->json($response);
