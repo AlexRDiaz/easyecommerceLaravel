@@ -29,14 +29,11 @@ class TransaccionesAPIController extends Controller
 
     public function last30rows()
     {
-        $ultimosRegistros = DB::table('transaccion')
-            ->orderBy('id', 'desc')
+        $ultimosRegistros = Transaccion::orderBy('id', 'desc')
             ->limit(30)
             ->get();
-
+    
         return response()->json($ultimosRegistros);
-
-
     }
     public function index()
     {

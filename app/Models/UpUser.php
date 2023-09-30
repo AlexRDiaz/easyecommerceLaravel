@@ -49,58 +49,59 @@ use Illuminate\Contracts\Auth\Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
 
-class UpUser extends Model implements Authenticatable,JWTSubject
-
+class UpUser extends Model implements Authenticatable, JWTSubject
 {
-	function getJWTIdentifier(){
+	function getJWTIdentifier()
+	{
 		return $this->getKey();
 	}
-	function getJWTCustomClaims(){
+	function getJWTCustomClaims()
+	{
 		return [];
 	}
 
 
-    // Resto de la implementación de tu modelo
-    // ...
+	// Resto de la implementación de tu modelo
+	// ...
 
-    // Implementación de métodos requeridos por Authenticatable
-    public function getAuthIdentifierName()
-    {
-        return 'id'; // El nombre del campo de identificación en tu tabla
-    }
+	// Implementación de métodos requeridos por Authenticatable
+	public function getAuthIdentifierName()
+	{
+		return 'id'; // El nombre del campo de identificación en tu tabla
+	}
 
-    public function getAuthIdentifier()
-    {
-        return null; // Devuelve el valor de la clave primaria (por defecto, 'id')
-    }
+	public function getAuthIdentifier()
+	{
+		return null; // Devuelve el valor de la clave primaria (por defecto, 'id')
+	}
 
-    public function getAuthPassword()
-    {
-        return $this->password; // Devuelve el campo de contraseña de tu modelo
-    }
+	public function getAuthPassword()
+	{
+		return $this->password; // Devuelve el campo de contraseña de tu modelo
+	}
 
-    public function getRememberToken()
-    {
-        return null; // Devuelve el campo de token de recuerdo (si lo tienes)
-    }
+	public function getRememberToken()
+	{
+		return null; // Devuelve el campo de token de recuerdo (si lo tienes)
+	}
 
-    public function setRememberToken($value)
-    {
-       // Establece el campo de token de recuerdo (si lo tienes)
-    }
+	public function setRememberToken($value)
+	{
+		// Establece el campo de token de recuerdo (si lo tienes)
+	}
 
-    public function getRememberTokenName()
-    {
-        return 'remember_token'; // El nombre del campo de token de recuerdo (si lo tienes)
-    }
-
-
+	public function getRememberTokenName()
+	{
+		return 'remember_token'; // El nombre del campo de token de recuerdo (si lo tienes)
+	}
 
 
 
 
 
-	
+
+
+
 	protected $table = 'up_users';
 
 	protected $casts = [
@@ -156,7 +157,7 @@ class UpUser extends Model implements Authenticatable,JWTSubject
 	public function operadores()
 	{
 		return $this->belongsToMany(Operadore::class, 'up_users_operadore_links', 'user_id')
-					->withPivot('id');
+			->withPivot('id');
 	}
 
 	public function up_users_pedidos_shopifies_links()
@@ -172,16 +173,55 @@ class UpUser extends Model implements Authenticatable,JWTSubject
 	public function roles_fronts()
 	{
 		return $this->belongsToMany(RolesFront::class, 'up_users_roles_front_links', 'user_id')
-					->withPivot('id', 'user_order');
+			->withPivot('id', 'user_order');
 	}
 
 	public function vendedores()
 	{
 		return $this->belongsToMany(Vendedore::class, 'up_users_vendedores_links', 'user_id', 'vendedor_id')
-					->withPivot('id', 'vendedor_order', 'user_order');
+			->withPivot('id', 'vendedor_order', 'user_order');
 	}
 	public function transportadora()
-    {
-        return $this->hasManyThrough(Transportadora::class, TransportadorasUsersPermissionsUserLink::class, 'user_id', 'id', 'id', 'transportadora_id');
-    }
+	{
+		return $this->hasManyThrough(Transportadora::class, TransportadorasUsersPermissionsUserLink::class, 'user_id', 'id', 'id', 'transportadora_id');
+	}
+
+
+	public function upUsersPedidos()
+	{
+
+		return $this->hasMany(PedidosShopify::class, 'id_comercial');
+	}
+	public function pedidosRutas()
+	{
+		return $this->hasManyThrough(
+			PedidosShopify::class,
+				// Modelo final que se quiere alcanzar
+			PedidosShopifiesRutaLink::class,
+			// Modelo intermedio
+			'id_comercial',
+			// Clave foránea en el modelo intermedio
+			'ruta_id',
+			// Clave foránea en el modelo final
+			'id',
+			// Clave local en el modelo de origen (upuser)
+		);
+	}
+	public function pedidosTransportadoras()
+	{
+		return $this->hasManyThrough(
+			PedidosShopify::class,
+				// Modelo final que se quiere alcanzar
+			PedidosShopifiesTransportadoraLink::class,
+			// Modelo intermedio
+			'id_comercial',
+			// Clave foránea en el modelo intermedio
+			'transportadora_id',
+			// Clave foránea en el modelo final
+			'id',
+			// Clave local en el modelo de origen (upuser)
+		);
+	}
+
+
 }

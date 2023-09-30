@@ -51,12 +51,24 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('pedido-shopifie', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrderByIDLaravel']);
 
+    // * --> GUIDES_SENT
     
+    Route::post('send-guides/printg', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintGuidesInSendGuidesPrincipalLaravel']);
+
+
     //  *************************   SELLER          *****************
 
     Route::get('pedidos-shopifies/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrderbyId']);
     // updateDateandStatus
     Route::post('upd/pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateDateandStatus']);
+
+    Route::get('rutas_transport/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getRutasOfTransport']);
+
+    Route::get('transport_rutas/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getTransportadorasOfRuta']);
+
+    Route::post('obtener-pedidos-por-ruta', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'obtenerPedidosPorRuta']);
+
+    // Route::post('obtener-pedidos-por-trans', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'obtenerPedidosPorTransportadora']);
 
 
     // ********************************************************
@@ -176,7 +188,13 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/{id}', [RutaAPIController::class, 'show']);
 
     });
-    //test
+
+
+    // upUsersPedidos
+    //testgetUserPedidos
+    // getUserPedidos
+
+    Route::get('up-user-pedidos/{id}', [UpUserAPIController::class, 'getUserPedidos']);
 
 });
 
