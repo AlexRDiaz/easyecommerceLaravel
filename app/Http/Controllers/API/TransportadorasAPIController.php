@@ -117,6 +117,18 @@ class TransportadorasAPIController extends Controller
         // return response()->json(['operadores' => $usersData]);
     }
 
+    public function getTransportsByRoute($idRoute)
+    {
+        $transportadoras = Transportadora::whereHas('rutas', function ($query) use ($idRoute) {
+            $query->where('rutas.id', '=', $idRoute);
+        })->get();
+
+        if ($transportadoras->isEmpty()) {
+            return response()->json([], 200);
+        }
+
+        return response()->json($transportadoras);
+    }
 
 
 

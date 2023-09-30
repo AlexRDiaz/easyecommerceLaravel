@@ -118,6 +118,7 @@ class PedidosShopify extends Model
 		'updated_by_id',
 		'comentario_rechazado',
 		'revisado',
+		'costo_envio',
 		'costo_transportadora',
 		'costo_devolucion'
 	];

@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\PedidoFecha;
 use App\Models\pedidos_shopifies;
 use App\Models\PedidosShopifiesPedidoFechaLink;
+use App\Models\PedidosShopifiesRutaLink;
+use App\Models\PedidosShopifiesTransportadoraLink;
 use App\Models\PedidosShopify;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
 use App\Models\Ruta;
@@ -301,7 +303,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '=', $valor);
                         }
-
                     }
                 }
             }))
@@ -315,7 +316,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '!=', $valor);
                         }
-
                     }
                 }
             }));
@@ -358,7 +358,6 @@ class PedidosShopifyAPIController extends Controller
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
 
         return response()->json($pedidos);
-
     }
 
     public function getOrderByIDLaravel(Request $req)
@@ -416,7 +415,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '=', $valor);
                         }
-
                     }
                 }
             }))
@@ -430,7 +428,6 @@ class PedidosShopifyAPIController extends Controller
                         } else {
                             $pedidos->where($key, '!=', $valor);
                         }
-
                     }
                 }
             }));
@@ -711,7 +708,6 @@ class PedidosShopifyAPIController extends Controller
         $pedido->save();
 
         return response()->json($pedido);
-
     }
     public function updateOrderInternalStatus(Request $req)
     {
@@ -734,7 +730,6 @@ class PedidosShopifyAPIController extends Controller
         $pedido->save();
 
         return response()->json($pedido);
-
     }
     public function updateDateandStatus(Request $req)
     {
@@ -1040,8 +1035,10 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }
+
         }
                 ))->get();
+
 
 
 
@@ -1297,8 +1294,7 @@ class PedidosShopifyAPIController extends Controller
         // Formatear la fecha y hora actual
         $fechaHoraActual = "$dia/$mes/$anio $hora:$minuto";
 
-
-        // Crear una nueva orden
+   // Crear una nueva orden
         $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
         $createOrder = new PedidosShopify([
             'marca_t_i' => $fechaHoraActual,
@@ -1492,48 +1488,156 @@ class PedidosShopifyAPIController extends Controller
         $cantidadEntregados = $entregados->count();
         $cantidadNoEntregados = $noEntregados->count();
 
+
         // Calcular la suma total de ambos
         $sumaTotal = $cantidadEntregados + $cantidadNoEntregados;
-
-        return response()->json([
-            'entregados' => $cantidadEntregados,
-            'no_entregados' => $cantidadNoEntregados,
-            'suma_total' => $sumaTotal
+        // Crear una nueva orden
+        $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
+        $createOrder = new PedidosShopify([
+            'marca_t_i' => $fechaHoraActual,
+            'tienda_temporal' => $productos[0]['vendor'],
+            'numero_orden' => $order_number,
+            'direccion_shipping' => $address1,
+            'nombre_shipping' => $name,
+            'telefono_shipping' => $phone,
+            'precio_total' => $formattedPrice,
+            'observacion' => $customer_note ?? "",
+            'ciudad_shipping' => $city,
+            'id_comercial' => $id,
+            'producto_p' => $listOfProducts[0]['title'],
+            'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
+            'cantidad_total' => $listOfProducts[0]['quantity'],
+            'estado_interno' => "PENDIENTE",
+            'status' => "PEDIDO PROGRAMADO",
+            'estado_logistico' => 'PENDIENTE',
+            'estado_pagado' => 'PENDIENTE',
+            'estado_pago_logistica' => 'PENDIENTE',
+            'estado_devolucion' => 'PENDIENTE',
+            'do' => 'PENDIENTE',
+            'dt' => 'PENDIENTE',
+            'dl' => 'PENDIENTE'
         ]);
 
-        // return response()->json($pedidos);
+        $createOrder->save();
+
+        $createPedidoFecha = new  PedidosShopifiesPedidoFechaLink();
+        $createPedidoFecha->pedidos_shopify_id = $createOrder->id;
+        $createPedidoFecha->pedido_fecha_id = $dateOrder;
+        $createPedidoFecha->save();
+
+        $createUserPedido = new UpUsersPedidosShopifiesLink();
+        $createUserPedido->user_id = $id;
+        $createUserPedido->pedidos_shopify_id = $createOrder->id;
+        $createUserPedido->save();
+
+
+        /////
+        return response()->json([
+            'message' => 'La orden se ha registrado con éxito.',
+            'orden_ingresada' => $createOrder,
+        ], 200);
+        //    } else {
+        // return response()->json([
+        //     'error' => 'Esta orden ya existe',
+        //     'orden_a_ingresar' => [
+        //         'numero_orden' => $order_number,
+        //         'nombre' => $name,
+        //         'direccion' => $address1,
+        //         'telefono' => $phone,
+        //         'precio_total' => $total_price,
+        //         'nota_cliente' => $customer_note,
+        //         'ciudad' => $city,
+        //         'producto' => $listOfProducts
+        //     ],
+        //     'orden_existente' => $search,
+        // ], 401);
+        //  }
     }
 
-    // public function obtenerPedidosPorTransportadora(Request $request)
-    // {
-    //     $transportadoraId = $request->input('transportadora_Id');
-    //     $rutaId = $request->input('ruta_id');
+    // *
+    public function updateOrderRouteAndTransport(Request $request, $id)
+    {
+        $data = $request->json()->all();
 
-    //     // Obtener los IDs y estados de los pedidos con la ruta específica
-    //     $pedidos = PedidosShopify::whereHas('pedidos_shopifies_transportadora_links', function ($query) use ($transportadoraId) {
-    //         $query->where('transportadora_id', $transportadoraId);
-    //     })->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])->get();
+        $newrouteId = $data['ruta'];
+        $newtransportadoraId = $data['transportadora'];
 
-    //     // Filtrar los pedidos entregados
-    //     $entregados = $pedidos->where('status', 'ENTREGADO');
+        $order = PedidosShopify::with(['ruta', 'transportadora'])->find($id);
+        if (!$order) {
+            return response()->json(['message' => 'Orden no encontrada'], 404);
+        }
 
-    //     // Filtrar los pedidos no entregados
-    //     $noEntregados = $pedidos->where('status', 'NO ENTREGADO');
+        //44966
+        //44939
+        // return response()->json($order);
 
-    //     // Contar la cantidad de pedidos entregados y no entregados
-    //     $cantidadEntregados = $entregados->count();
-    //     $cantidadNoEntregados = $noEntregados->count();
-
-    //     // Calcular la suma total de ambos
-    //     $sumaTotal = $cantidadEntregados + $cantidadNoEntregados;
-
-    //     return response()->json([
-    //         'entregados' => $cantidadEntregados,
-    //         'no_entregados' => $cantidadNoEntregados,
-    //         'suma_total' => $sumaTotal
-    //     ]);
-    // }
+        $resRuta = $order->pedidos_shopifies_ruta_links;
+        $resRutaNum = count($resRuta);
+        // return response()->json($resRuta);
+        // return response()->json(['resRuta' => $resRuta, 'num' => $resRutaNum], 200);
 
 
+        if ($resRutaNum === 0) {
+            $createPedidoRuta = new  PedidosShopifiesRutaLink();
+            $createPedidoRuta->pedidos_shopify_id = $order->id;
+            $createPedidoRuta->ruta_id = $newrouteId;
+            $createPedidoRuta->save();
 
+            $createPedidoTransportadora = new PedidosShopifiesTransportadoraLink();
+            $createPedidoTransportadora->pedidos_shopify_id = $order->id;
+            $createPedidoTransportadora->transportadora_id = $newtransportadoraId;
+            $createPedidoTransportadora->save();
+            return response()->json(['orden' => 'Ruta&Transportadora asignada exitosamente'], 200);
+        } else {
+            $pedidoRuta = PedidosShopifiesRutaLink::where('pedidos_shopify_id', $id)->first();
+            $pedidoRuta->ruta_id = $newrouteId;
+            $pedidoRuta->save();
+
+            $pedidoTrasportadora = PedidosShopifiesTransportadoraLink::where('pedidos_shopify_id', $id)->first();
+            $pedidoTrasportadora->transportadora_id = $newtransportadoraId;
+            $pedidoTrasportadora->save();
+            return response()->json(['orden' => 'Ruta&Transportadora actualizada exitosamente'], 200);
+        }
+    }
+
+    //  *
+    public function getByDateRangeAll(Request $request)
+    {
+        $data = $request->json()->all();
+
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+        $and = $data['and'];
+
+        $status = $data['status'];
+        $internal = $data['internal'];
+
+        $pedidos = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
+        //select('marca_t_i', 'fecha_entrega', DB::raw('concat(tienda_temporal, "-", numero_orden) as codigo'), 'nombre_shipping', 'ciudad_shipping', 'direccion_shipping', 'telefono_shipping', 'cantidad_total', 'producto_p', 'producto_extra', 'precio_total', 'comentario', 'estado_interno', 'status', 'estado_logistico', 'estado_devolucion', 'costo_envio', 'costo_devolucion')
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])->where((function ($pedidos) use ($and) {
+                foreach ($and as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
+                    }
+                }
+            }));
+        if (!empty($status)) {
+            $pedidos->whereIn('status', $status);
+        }
+        if (!empty($internal)) {
+            $pedidos->whereIn('estado_interno', $internal);
+        }
+        $pedidos->orderBy('marca_t_i', 'asc'); 
+        $response = $pedidos->get();
+
+        return response()->json($response);
+    }
 }

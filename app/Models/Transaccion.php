@@ -13,6 +13,7 @@ class Transaccion extends Model
         'id',
         'tipo',
         'monto',
+        'valor_anterior',
         'valor_actual',
         'marca_de_tiempo',
         'id_origen',
