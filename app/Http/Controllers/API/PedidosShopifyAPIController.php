@@ -1488,71 +1488,18 @@ class PedidosShopifyAPIController extends Controller
         $cantidadEntregados = $entregados->count();
         $cantidadNoEntregados = $noEntregados->count();
 
-
         // Calcular la suma total de ambos
         $sumaTotal = $cantidadEntregados + $cantidadNoEntregados;
-        // Crear una nueva orden
-        $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
-        $createOrder = new PedidosShopify([
-            'marca_t_i' => $fechaHoraActual,
-            'tienda_temporal' => $productos[0]['vendor'],
-            'numero_orden' => $order_number,
-            'direccion_shipping' => $address1,
-            'nombre_shipping' => $name,
-            'telefono_shipping' => $phone,
-            'precio_total' => $formattedPrice,
-            'observacion' => $customer_note ?? "",
-            'ciudad_shipping' => $city,
-            'id_comercial' => $id,
-            'producto_p' => $listOfProducts[0]['title'],
-            'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
-            'cantidad_total' => $listOfProducts[0]['quantity'],
-            'estado_interno' => "PENDIENTE",
-            'status' => "PEDIDO PROGRAMADO",
-            'estado_logistico' => 'PENDIENTE',
-            'estado_pagado' => 'PENDIENTE',
-            'estado_pago_logistica' => 'PENDIENTE',
-            'estado_devolucion' => 'PENDIENTE',
-            'do' => 'PENDIENTE',
-            'dt' => 'PENDIENTE',
-            'dl' => 'PENDIENTE'
-        ]);
 
-        $createOrder->save();
-
-        $createPedidoFecha = new  PedidosShopifiesPedidoFechaLink();
-        $createPedidoFecha->pedidos_shopify_id = $createOrder->id;
-        $createPedidoFecha->pedido_fecha_id = $dateOrder;
-        $createPedidoFecha->save();
-
-        $createUserPedido = new UpUsersPedidosShopifiesLink();
-        $createUserPedido->user_id = $id;
-        $createUserPedido->pedidos_shopify_id = $createOrder->id;
-        $createUserPedido->save();
-
-
-        /////
         return response()->json([
-            'message' => 'La orden se ha registrado con éxito.',
-            'orden_ingresada' => $createOrder,
-        ], 200);
-        //    } else {
-        // return response()->json([
-        //     'error' => 'Esta orden ya existe',
-        //     'orden_a_ingresar' => [
-        //         'numero_orden' => $order_number,
-        //         'nombre' => $name,
-        //         'direccion' => $address1,
-        //         'telefono' => $phone,
-        //         'precio_total' => $total_price,
-        //         'nota_cliente' => $customer_note,
-        //         'ciudad' => $city,
-        //         'producto' => $listOfProducts
-        //     ],
-        //     'orden_existente' => $search,
-        // ], 401);
-        //  }
+            'entregados' => $cantidadEntregados,
+            'no_entregados' => $cantidadNoEntregados,
+            'suma_total' => $sumaTotal
+        ]);
+    
     }
+
+
 
     // *
     public function updateOrderRouteAndTransport(Request $request, $id)
