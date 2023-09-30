@@ -1437,6 +1437,7 @@ class PedidosShopifyAPIController extends Controller
         if (!empty($internal)) {
             $pedidos->whereIn('estado_interno', $internal);
         }
+        $pedidos->orderBy('marca_t_i', 'asc'); 
         $response = $pedidos->get();
 
         return response()->json($response);
