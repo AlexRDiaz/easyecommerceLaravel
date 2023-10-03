@@ -1586,4 +1586,18 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($response);
     }
+    public function generateTransportCosts (){
+
+        $id = 76;
+        $pedido = PedidosShopify::where('id', $id)
+            ->first();
+
+         $numero=$pedido->numero_orden;   
+       
+        
+         DB::table('test')->insert([
+           'counter' => $numero,
+       ]);// Supongamos que estás filtrando por una columna "id" específica
+        return response()->json($pedido);
+    }
 }
