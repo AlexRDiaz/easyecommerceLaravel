@@ -76,4 +76,9 @@ class Transportadora extends Model
 	{
 		return $this->hasMany(TransportadorasUsersPermissionsUserLink::class);
 	}
+
+	public function pedidos()
+	{
+		return $this->hasManyThrough(PedidosShopify::class, PedidosShopifiesTransportadoraLink::class, 'transportadora_id', 'id', 'id', 'pedidos_shopify_id');
+	}
 }

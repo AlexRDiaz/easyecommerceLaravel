@@ -3,6 +3,7 @@
 namespace App\Console\Commands;
 
 use App\Http\Controllers\API\PedidosShopifyAPIController;
+use App\Http\Controllers\API\TransportadorasAPIController;
 use Illuminate\Console\Command;
 
 class YourCustomCommand extends Command
@@ -30,6 +31,9 @@ class YourCustomCommand extends Command
     //   DB::table('test')->insert([
     //     'counter' => 1,
     // ]);
-        app(PedidosShopifyAPIController::class)->generateTransportCosts();
+        // app(PedidosShopifyAPIController::class)->generateTransportCosts();
+
+        app(TransportadorasAPIController::class)->getShippingCostPerDay();
+
     }
 }
