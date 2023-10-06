@@ -40,7 +40,8 @@ class RolesFront extends Model
 		'titulo',
 		'published_at',
 		'created_by_id',
-		'updated_by_id'
+		'updated_by_id',
+		'accesos'
 	];
 
 	public function admin_user()

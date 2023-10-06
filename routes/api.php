@@ -40,8 +40,21 @@ Route::middleware(['cors'])->group(function () {
     Route::resource('orden_retiro', App\Http\Controllers\API\OrdenesRetiroAPIController::class)
         ->except(['create', 'edit']);
     //  ************************* LOGISTIC **************************
+    
+    // ! esta es solo para ver lo que tiene registrado en cada usuario en los permisos
+    Route::get('permisos', [App\Http\Controllers\API\UpUserAPIController::class, 'getPermisos']);
+    // * obtiene los datos de cada rol con su id y accesos
+    Route::get('access-total', [App\Http\Controllers\API\RolesFrontAPIController::class, 'index']);
 
+    Route::post('upd-access', [App\Http\Controllers\API\UpUserAPIController::class, 'updatePermissions']);
 
+    
+    Route::post('upd-rolesaccess', [App\Http\Controllers\API\UpUserAPIController::class, 'newPermission']);
+    
+
+    
+
+    
     // * --> PRINTEDGUIDES
 
     Route::post('pedidos-shopifies-prtgd', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintedGuidesLaravel']);
