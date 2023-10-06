@@ -1472,7 +1472,7 @@ class PedidosShopifyAPIController extends Controller
 
         // Obtener los pedidos con la ruta y la transportadora específica
         $pedidos = PedidosShopify::whereHas('pedidos_shopifies_ruta_links', function ($query) use ($rutaId) {
-            $query->where('ruta_id', $rutaId);
+            $query->where('ruta_id', $rutaId)->where('estado_interno', 'CONFIRMADO')->where('estado_logistico', 'ENVIADO');
         })
             ->whereHas('pedidos_shopifies_transportadora_links', function ($query) use ($transportadoraId) {
                 $query->where('transportadora_id', $transportadoraId);
@@ -1484,16 +1484,21 @@ class PedidosShopifyAPIController extends Controller
         // Filtrar los pedidos no entregados
         $noEntregados = $pedidos->where('status', 'NO ENTREGADO');
 
+        // Filtrar los pedidos no entregados
+        $novedad = $pedidos->where('status', 'NOVEDAD');
+
         // Contar la cantidad de pedidos entregados y no entregados
         $cantidadEntregados = $entregados->count();
         $cantidadNoEntregados = $noEntregados->count();
+        $cantidadNovedad = $novedad->count();
 
         // Calcular la suma total de ambos
-        $sumaTotal = $cantidadEntregados + $cantidadNoEntregados;
+        $sumaTotal = $cantidadEntregados + $cantidadNoEntregados + $cantidadNovedad;
 
         return response()->json([
             'entregados' => $cantidadEntregados,
             'no_entregados' => $cantidadNoEntregados,
+            'novedad' => $cantidadNovedad,
             'suma_total' => $sumaTotal
         ]);
     }
