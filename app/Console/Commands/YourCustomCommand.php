@@ -33,7 +33,7 @@ class YourCustomCommand extends Command
     // ]);
         // app(PedidosShopifyAPIController::class)->generateTransportCosts();
 
-        app(TransportadorasAPIController::class)->getShippingCostPerDay();
+        app(TransportadorasShippingCostAPIController::class)->getShippingCostPerDay();
 
     }
 }
