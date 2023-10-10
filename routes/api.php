@@ -101,8 +101,17 @@ Route::middleware(['cors'])->group(function () {
     // ! ↓ PEDIDOS updateOrderInfoSellerLaravel
     Route::post('updtOrdIS/pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderInfoSellerLaravel']);
 
-    //  ! ↓ LA ORIGINAL
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
+
+    //  ! ↓ LA ORIGINAL
+    Route::middleware(['jwt.auth'])->group(function () {
+        // Rutas protegidas que requieren autenticación JWT
+
+        // Agrega más rutas protegidas aquí según sea necesario
+    });
+
+
+
 
     //  ! MIA OPERATOR
     Route::post('operator/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getDevolucionesOperator']);
@@ -120,6 +129,7 @@ Route::middleware(['cors'])->group(function () {
     // *
     Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
     Route::get('/vendedores/saldo/{id}', [VendedoreAPIController::class, 'getSaldo']);
+    Route::get('/vendedores/refereds/{id}', [VendedoreAPIController::class, 'getRefereds']);
 
 
     // ! TRANSACCIONES
@@ -134,7 +144,10 @@ Route::middleware(['cors'])->group(function () {
      // !  TRANSACTIONS BY ID SELLER
      Route::get("transacciones/bySeller/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsById']);
      // ! ***********************
-
+     // !  Rollback transactions
+     Route::post("transacciones/rollback/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'rollbackTransaction']);
+     // ! ***********************
+     
     
 
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
@@ -170,8 +183,11 @@ Route::middleware(['cors'])->group(function () {
 
     //Route::resource('/users', App\Http\Controllers\API\UpUserAPIController::class);
     Route::post('/users', [UpUserAPIController::class, 'store']);
+    Route::post('/users/general', [UpUserAPIController::class, 'storeGeneral']);
+
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
 
+    Route::get('/users/master/{id}', [UpUserAPIController::class, 'getSellerMaster']);
 
 
     Route::post('/login', [UpUserAPIController::class, 'login']);

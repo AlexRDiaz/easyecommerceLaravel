@@ -18,7 +18,9 @@ class Transaccion extends Model
         'marca_de_tiempo',
         'id_origen',
         'origen',
-        'id_vendedor'
+        'id_vendedor',
+        'comentario'
+        
     ];
     protected $casts = [
         
