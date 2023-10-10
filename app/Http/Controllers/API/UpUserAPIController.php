@@ -9,6 +9,7 @@ use App\Models\UpRole;
 use App\Models\UpUser;
 use App\Models\UpUsersRoleLink;
 use App\Models\UpUsersRolesFrontLink;
+use App\Models\Vendedore;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
@@ -106,6 +107,90 @@ class UpUserAPIController extends Controller
 
     }
 
+    public function storeGeneral(Request $request)
+    {
+        // // Valida los datos de entrada (puedes agregar reglas de validación aquí)
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|unique:up_users',
+        ]);
+
+        $numerosUtilizados = [];
+        while (count($numerosUtilizados) < 10000000) {
+            $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+            if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                $numerosUtilizados[] = $numeroAleatorio;
+                break;
+            }
+        }
+        $resultCode = $numeroAleatorio;
+
+
+        $user = new UpUser();
+        $user->username = $request->input('username');
+        $user->email = $request->input('email');
+        $user->codigo_generado = $resultCode;
+        $user->password = bcrypt($request->input('password')); // Puedes utilizar bcrypt para encriptar la contraseña
+        $user->fecha_alta = $request->input('FechaAlta'); // Fecha actual
+        $user->confirmed = $request->input('confirmed');
+        $user->estado = "NO VALIDADO";
+        $user->provider="local";
+        $user->confirmed=1;
+        $user->fecha_alta=$request->input('fecha_alta');
+        $permisosCadena = json_encode(["DashBoard","Reporte de Ventas","Agregar Usuarios Vendedores","Ingreso de Pedidos","Estado Entregas Pedidos","Pedidos No Deseados","Billetera","Devoluciones","Retiros en Efectivo","Mi Billetera","Conoce a tu Transporte"]);
+        $user->permisos = $permisosCadena;
+        $user->blocked = false;
+        $user->save();
+        $user->vendedores()->attach($request->input('vendedores'), [
+        ]);
+
+        
+
+        $newUpUsersRoleLink = new UpUsersRoleLink();
+        $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
+        $newUpUsersRoleLink->role_id = $request->input('role'); // Asigna el ID del rol existente
+        $newUpUsersRoleLink->save();
+
+
+        $userRoleFront = new UpUsersRolesFrontLink();
+        $userRoleFront->user_id = $user->id;
+        $userRoleFront->roles_front_id = 2;
+        $userRoleFront->save();
+         
+        $seller = new Vendedore();
+        $seller->nombre_comercial=$request->input('nombre_comercial');
+        $seller->telefono_1=$request->input('telefono1');
+        $seller->telefono_2=$request->input('telefono2');
+        $seller->nombre_comercial=$request->input('nombre_comercial');
+        $seller->fecha_alta=$request->input('fecha_alta');
+        $seller->id_master=$user->id;
+        $seller->url_tienda=$request->input('url_tienda');
+        $seller->costo_envio=$request->input('costo_envio');
+        $seller->costo_devolucion=$request->input('costo_devolucion');
+        $seller->referer=$request->input('referer');
+        $seller->save();
+
+        $user->vendedores()->attach($seller->id, [
+        ]);
+
+
+        Mail::to($user->email)->send(new UserValidation($resultCode));
+
+
+        return response()->json(['message' => 'Vendedor creado con éxito'], 200);
+
+    }
+    
+    public function getSellerMaster($id){
+        $vendedores = UpUser::find($id)->vendedores;
+
+    if (!$vendedores) {
+        return response()->json(['message' => 'Vendedores not found'], Response::HTTP_NOT_FOUND);
+    }
+   
+    return response()->json($vendedores[0], Response::HTTP_OK);
+
+    }
     /**
      * Update the specified resource in storage.
      *
