@@ -4,6 +4,7 @@ use App\Http\Controllers\API\GenerateReportAPIController;
 use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\RutaAPIController;
+use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
 use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
@@ -216,6 +217,7 @@ Route::middleware(['cors'])->group(function () {
 
     Route::prefix('shippingcost')->group(function () {
         Route::get('/', [TransportadorasShippingCostAPIController::class, 'index']);
+        Route::post('/getbydate', [TransportadorasShippingCostAPIController::class, 'byDate']);
         Route::post('/{id}', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'getByTransportadora']);
         Route::put('/{id}', [TransportadorasShippingCostAPIController::class, 'update']);
         Route::get('/perday', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'getShippingCostPerDay']);
@@ -223,13 +225,14 @@ Route::middleware(['cors'])->group(function () {
 
     });
 
-    //  *createFromOrder
+    // 
     Route::prefix('transaccionespedidotransportadora')->group(function () {
         Route::get('/', [TransaccionPedidoTransportadoraAPIController::class, 'index']);
-        // Route::post('/', [GenerateReportAPIController::class, 'store']);
-        Route::post('/', [App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController::class, 'createFromOrder']);
+        Route::post('/getByDate', [TransaccionPedidoTransportadoraAPIController::class, 'getByDate']);
+        Route::post('/', [TransaccionPedidoTransportadoraAPIController::class, 'store']);
         Route::put('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'update']);
-        Route::post('byrangedate', [App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController::class, 'getByTransportadoraRangeDate']);
+        Route::post('/bydates', [TransaccionPedidoTransportadoraAPIController::class, 'getByTransportadoraDates']);
+        Route::delete('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'destroy']);
 
     });
 

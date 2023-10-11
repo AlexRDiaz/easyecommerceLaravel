@@ -146,14 +146,13 @@ class TransportadorasShippingCostAPIController extends Controller
         $total_proceeds = 0;
         $total_day = 0;
 
-        // $currentDate = now()->format('j/n/Y');
-        $currentDate = '9/10/2023';
-        $currentDate =  Carbon::createFromFormat('j/n/Y', $currentDate)->format('j/n/Y');
+        $currentDate = now()->format('j/n/Y');
+        // $currentDate = '11/10/2023';
+        // $currentDate =  Carbon::createFromFormat('j/n/Y', $currentDate)->format('j/n/Y');
 
-        // $currentDateTime = date('Y-m-d H:i:s');
-        $desiredTime = '01:13:13';
-        $currentDateTime = Carbon::createFromFormat('d/n/Y H:i:s', $currentDate . ' ' . $desiredTime)->format('Y-m-d H:i:s');
-
+        $currentDateTime = date('Y-m-d H:i:s');
+        // $desiredTime = '01:13:13';
+        // $currentDateTime = Carbon::createFromFormat('d/n/Y H:i:s', $currentDate . ' ' . $desiredTime)->format('Y-m-d H:i:s');
 
         foreach ($transportadoras as $transportadora) {
 
@@ -210,5 +209,29 @@ class TransportadorasShippingCostAPIController extends Controller
         }
 
         return response()->json(['data' => $shippingCostsMonthly], 200);
+    }
+
+    public function byDate(Request $request)
+    {
+        $data = $request->json()->all();
+        $idTransportadora = $data['id_transportadora'];
+        $fecha = $data['fecha'];
+        $dateFormatted = Carbon::createFromFormat('j/n/Y', $fecha)->format('Y-m-d');
+        // $dateFormatted="2023-10-11";
+
+        //'2023-10-11 01:13:13'
+        $dailyCosts = TransportadorasShippingCost::where('id_transportadora', $idTransportadora)
+            ->whereDate('time_stamp', $dateFormatted)
+            ->get();
+        //esta para que tome el valor mas reciente en esa fecha
+        // $dailyCosts = TransportadorasShippingCost::where('id_transportadora', $idTransportadora)
+        //     ->whereDate('time_stamp', $dateFormatted)
+        //     ->first();
+
+        if ($dailyCosts->isEmpty()) {
+            return response()->json(["message" => "No existe un registro anterior"], 200);
+        }
+
+        return response()->json(['message' => "Ya existe un registro", "dailyCosts" => $dailyCosts], 200);
     }
 }

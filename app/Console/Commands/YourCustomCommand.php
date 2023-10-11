@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\TransportadorasAPIController;
+use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use Illuminate\Console\Command;
 
 class YourCustomCommand extends Command
