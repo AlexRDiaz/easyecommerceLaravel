@@ -28,6 +28,54 @@ class TransaccionesAPIController extends Controller
 
     }
 
+    
+
+    public function getExistTransaction(Request $request)
+    {
+        $data = $request->json()->all();
+        $tipo= $data['tipo'];
+        $idOrigen= $data['id_origen'];
+        $origen= $data['origen'];
+        $idVendedor= $data['id_vendedor'];
+
+
+
+        $pedido = Transaccion::where('tipo',$tipo)->where('id_origen',$idOrigen)->where('origen',$origen)->where('id_vendedor',$idVendedor)
+            ->get();
+
+        return response()->json($pedido);
+    }
+
+      public function getTransactionsByDate(Request $request)
+    {
+        $data = $request->json()->all();
+        $search = $data['search'];
+        if($data['start']==null){
+            $data['start']= "2023-01-10 00:00:00";
+       }
+       if($data['end']==null){
+        $data['end']= "2223-01-10 00:00:00";
+      }
+        $startDate = Carbon::parse($data['start']);
+        $endDate = Carbon::parse($data['end']);
+        
+      
+       
+        
+        $filteredData = Transaccion::whereBetween('marca_de_tiempo', [$startDate, $endDate]);
+        if($search!=""){
+        $filteredData->where("id_origen",'like', '%'.$search.'%');
+        }
+        
+        
+        
+        return response()->json($filteredData->get());
+
+
+    }
+
+
+
     public function last30rows()
     {
         $ultimosRegistros = Transaccion::orderBy('id', 'desc')

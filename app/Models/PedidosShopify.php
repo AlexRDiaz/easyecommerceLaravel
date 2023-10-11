@@ -120,7 +120,8 @@ class PedidosShopify extends Model
 		'revisado',
 		'costo_envio',
 		'costo_transportadora',
-		'costo_devolucion'
+		'costo_devolucion',
+		'fecha_impreso'
 	];
 
 	public function admin_user()
