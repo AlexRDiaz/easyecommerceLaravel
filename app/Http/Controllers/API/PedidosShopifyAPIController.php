@@ -1469,7 +1469,7 @@ class PedidosShopifyAPIController extends Controller
     {
         $rutaId = $request->input('ruta_id');
         $transportadoraId = $request->input('transportadora_id');
-
+    
         // Obtener los pedidos con la ruta y la transportadora específica
         $pedidos = PedidosShopify::whereHas('pedidos_shopifies_ruta_links', function ($query) use ($rutaId) {
             $query->where('ruta_id', $rutaId)->where('estado_interno', 'CONFIRMADO')->where('estado_logistico', 'ENVIADO');
@@ -1478,23 +1478,30 @@ class PedidosShopifyAPIController extends Controller
                 $query->where('transportadora_id', $transportadoraId);
             })
             ->get();
+    
         // Filtrar los pedidos entregados
-        $entregados = $pedidos->where('status', 'ENTREGADO');
-
+        $entregados = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'ENTREGADO';
+        });
+    
         // Filtrar los pedidos no entregados
-        $noEntregados = $pedidos->where('status', 'NO ENTREGADO');
-
-        // Filtrar los pedidos no entregados
-        $novedad = $pedidos->where('status', 'NOVEDAD');
-
-        // Contar la cantidad de pedidos entregados y no entregados
+        $noEntregados = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'NO ENTREGADO';
+        });
+    
+        // Filtrar los pedidos con novedad
+        $novedad = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'NOVEDAD';
+        });
+    
+        // Contar la cantidad de pedidos entregados, no entregados y con novedad
         $cantidadEntregados = $entregados->count();
         $cantidadNoEntregados = $noEntregados->count();
         $cantidadNovedad = $novedad->count();
-
+    
         // Calcular la suma total de ambos
         $sumaTotal = $cantidadEntregados + $cantidadNoEntregados + $cantidadNovedad;
-
+    
         return response()->json([
             'entregados' => $cantidadEntregados,
             'no_entregados' => $cantidadNoEntregados,
@@ -1502,8 +1509,7 @@ class PedidosShopifyAPIController extends Controller
             'suma_total' => $sumaTotal
         ]);
     }
-
-
+    
 
     // *
     public function updateOrderRouteAndTransport(Request $request, $id)

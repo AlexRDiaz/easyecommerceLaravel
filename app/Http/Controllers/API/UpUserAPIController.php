@@ -4,7 +4,10 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Mail\UserValidation;
+use App\Models\PedidosShopify;
 use App\Models\RolesFront;
+use App\Models\Ruta;
+use App\Models\Transportadora;
 use App\Models\UpRole;
 use App\Models\UpUser;
 use App\Models\UpUsersRoleLink;
@@ -335,7 +338,7 @@ class UpUserAPIController extends Controller
         });
 
         return response()->json([
-            // 'pedidos' => $pedidosInfo,
+            'pedidos' => $pedidosInfo,
             'listarutas_transportadoras' => $groupedRutasTransportadoras,
             'entregados_count' => $entregadosCount,
             'no_entregados_count' => $noEntregadosCount,
@@ -343,6 +346,79 @@ class UpUserAPIController extends Controller
             'total_pedidos' => $entregadosCount + $noEntregadosCount + $novedad,
         ]);
     }
+
+    // ! FUNCION PARECIDA A NERFEO TRANS:) 
+    public function getUserPedidosByTransportadora($idTransportadora, Request $request)
+{
+    $transportadora = Transportadora::find($idTransportadora);
+
+    if (!$transportadora) {
+        return response()->json(['error' => 'Transportadora no encontrada'], 404);
+    }
+
+    $pedidos = PedidosShopify::whereHas('pedidos_shopifies_transportadora_links', function ($query) use ($idTransportadora) {
+        $query->where('transportadora_id', $idTransportadora);
+    })
+    ->where('estado_logistico', 'ENVIADO')
+    ->where('estado_interno', 'CONFIRMADO')
+    ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'])
+    ->get();
+
+    $entregadosCount = $pedidos->where('status', 'ENTREGADO')->count();
+    $noEntregadosCount = $pedidos->where('status', 'NO ENTREGADO')->count();
+    $novedadCount = $pedidos->where('status', 'NOVEDAD')->count();
+    $totalPedidos = $entregadosCount + $noEntregadosCount + $novedadCount;
+
+    return response()->json([
+        'identification' => $transportadora->nombre . '-' . $transportadora->id,
+        'entregados_count' => $entregadosCount,
+        'no_entregados_count' => $noEntregadosCount,
+        'novedad_count' => $novedadCount,
+        'total_pedidos' => $totalPedidos,
+    ]);
+}
+
+    // ! FUNCION PARECIDA A NERFEO ROUTES:) 
+
+    public function getUserPedidosByRuta($idRuta, Request $request)
+    {
+        $ruta = Ruta::find($idRuta);
+
+        if (!$ruta) {
+            return response()->json(['error' => 'Ruta no encontrada'], 404);
+        }
+
+        $pedidos = PedidosShopify::whereHas('pedidos_shopifies_ruta_links', function ($query) use ($idRuta) {
+            $query->where('ruta_id', $idRuta);
+        })
+            ->where('estado_interno', 'CONFIRMADO')
+            ->where('estado_logistico', 'ENVIADO')
+            ->get();
+
+        $entregadosCount = 0;
+        $noEntregadosCount = 0;
+        $novedad = 0;
+
+        foreach ($pedidos as $pedido) {
+            $status = $pedido->status;
+            if ($status === 'ENTREGADO') {
+                $entregadosCount++;
+            } else if ($status === 'NO ENTREGADO') {
+                $noEntregadosCount++;
+            } else if ($status === 'NOVEDAD') {
+                $novedad++;
+            }
+        }
+
+        return response()->json([
+            'identification' => $ruta->titulo . '-' . $ruta->id,
+            'entregados_count' => $entregadosCount,
+            'no_entregados_count' => $noEntregadosCount,
+            'novedad_count' => $novedad,
+            'total_pedidos' => $entregadosCount + $noEntregadosCount + $novedad,
+        ]);
+    }
+
 
     public function getPermisos()
     {
@@ -363,7 +439,7 @@ class UpUserAPIController extends Controller
 
     // UserController.php
 
-// 
+    // 
 
 
     public function updatePermissions(Request $request)
@@ -422,30 +498,71 @@ class UpUserAPIController extends Controller
         $active = $datosVista['active'];
         $viewName = $datosVista['view_name'];
         $idRol = $datosVista['id_rol'];
-    
+
         // Paso 1: Obtener el modelo RolesFront
         $role = RolesFront::find($idRol);
-    
+
         if ($role) {
             // Paso 2: Obtener el valor actual del campo accesos y convertirlo a un array
             $accesosArray = json_decode($role->accesos, true) ?: [];
-    
+
             // Paso 3: Actualizar el array con los nuevos valores proporcionados
             $nuevoAcceso = ['active' => $active, 'view_name' => $viewName];
             $accesosArray[] = $nuevoAcceso; // Añadir el nuevo acceso al final del array
-    
+
             // Paso 4: Convertir el array actualizado a formato JSON
             $nuevoValorAccesos = json_encode($accesosArray);
-    
+
             // Paso 5: Actualizar el campo accesos en la base de datos
             $role->update(['accesos' => $nuevoValorAccesos]);
-    
+
             // Puedes devolver una respuesta exitosa si es necesario
             return response()->json(['message' => 'Acceso actualizado correctamente']);
         } else {
             // Devolver una respuesta en caso de que no se encuentre el modelo
             return response()->json(['error' => 'Rol no encontrado'], 404);
         }
+    }
+
+    public function deletePermissions(Request $request)
+    {
+        $datosVista = $request->input('datos_vista');
+
+        $viewName = $datosVista['view_name'];
+        $idRol = $datosVista['id_rol'];
+
+        // Obtener todos los usuarios que tienen el rol específico
+        $users = UpUser::whereHas('roles_fronts', function ($query) use ($idRol) {
+            $query->where('roles_fronts.id', $idRol);
+        })->get();
+
+        foreach ($users as $user) {
+            $permissions = json_decode($user->permisos, true) ?? [];
+
+            // Eliminar el valor de 'view_name'
+            $permissions = array_diff($permissions, [$viewName]);
+
+            // Actualizar los permisos en la tabla up_users
+            $user->update(['permisos' => json_encode(array_values($permissions))]);
+        }
+
+        foreach ($users as $user) {
+
+            // Actualizar la columna accesos en la tabla roles_fronts
+            $role = $user->roles_fronts->where('id', $idRol)->first();
+            if ($role) {
+                $accessos = json_decode($role->accesos, true);
+
+                // Eliminar la opción con 'view_name'
+                $accessos = array_filter($accessos, function ($option) use ($viewName) {
+                    return $option['view_name'] !== $viewName;
+                });
+
+                $role->update(['accesos' => json_encode(array_values($accessos))]);
+            }
+        }
+        return response()->json(['message' => 'Permisos eliminados en roles y en cada usuario con éxito'], 200);
+
     }
 
 

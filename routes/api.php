@@ -52,7 +52,10 @@ Route::middleware(['cors'])->group(function () {
     Route::post('upd-rolesaccess', [App\Http\Controllers\API\UpUserAPIController::class, 'newPermission']);
     
 
-    
+    // eliminacion de accesos enviando el active con false
+    Route::post('dlt-rolesaccess', [App\Http\Controllers\API\UpUserAPIController::class, 'deletePermissions']);
+
+
 
     
     // * --> PRINTEDGUIDES
@@ -218,6 +221,10 @@ Route::middleware(['cors'])->group(function () {
     // getUserPedidos
 
     Route::get('up-user-pedidos/{id}', [UpUserAPIController::class, 'getUserPedidos']);
+    Route::get('up-user-pedidos-trans/{id}', [UpUserAPIController::class, 'getUserPedidosByTransportadora']);
+    Route::get('up-user-pedidos-routes/{id}', [UpUserAPIController::class, 'getUserPedidosByRuta']);
+
+
 
     // *
     Route::get('transportadorasbyroute/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getTransportsByRoute']);
