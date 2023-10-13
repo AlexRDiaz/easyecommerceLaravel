@@ -5,14 +5,17 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 // use App\Models\pedidos_shopifies;
 use App\Models\Operadore;
+use App\Models\PedidosShopify;
 use App\Models\Ruta;
 use App\Models\Transportadora;
+use App\Models\TransportadorasShippingCost;
 // use App\Models\Ruta;
 use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-
+use LengthException;
 
 class TransportadorasAPIController extends Controller
 {
@@ -28,7 +31,6 @@ class TransportadorasAPIController extends Controller
             ->findOrFail($id);
 
         return response()->json($trasnportadora);
-
     }
 
     public function getTransportadoras(Request $request)
@@ -43,39 +45,39 @@ class TransportadorasAPIController extends Controller
     {
         // Obtener la transportadora con sus rutas relacionadas
         $transportadora = Transportadora::with(['rutas'])->find($transportadoraId);
-    
+
         // Verificar si la transportadora existe
         if (!$transportadora) {
             return response()->json(['error' => 'Transportadora no encontrada'], 404);
         }
-    
+
         // Obtener las rutas de la transportadora y formatear los resultados
         $rutas = $transportadora->rutas->map(function ($ruta) {
             return $ruta->titulo . ' - ' . $ruta->id;
         });
-    
+
         // Hacer algo con las rutas formateadas (por ejemplo, devolverlas en una respuesta JSON)
         return response()->json(['rutas' => $rutas]);
     }
-   
+
     public function getTransportadorasOfRuta($rutaId)
-{
-    // Obtener la ruta con sus transportadoras relacionadas
-    $ruta = Ruta::with(['transportadoras'])->find($rutaId);
-    
-    // Verificar si la ruta existe
-    if (!$ruta) {
-        return response()->json(['error' => 'Ruta no encontrada'], 404);
+    {
+        // Obtener la ruta con sus transportadoras relacionadas
+        $ruta = Ruta::with(['transportadoras'])->find($rutaId);
+
+        // Verificar si la ruta existe
+        if (!$ruta) {
+            return response()->json(['error' => 'Ruta no encontrada'], 404);
+        }
+
+        // Obtener las transportadoras de la ruta y formatear los resultados
+        $transportadoras = $ruta->transportadoras->map(function ($transportadora) {
+            return $transportadora->nombre . ' - ' . $transportadora->id;
+        });
+
+        // Hacer algo con las transportadoras formateadas (por ejemplo, devolverlas en una respuesta JSON)
+        return response()->json(['transportadoras' => $transportadoras]);
     }
-    
-    // Obtener las transportadoras de la ruta y formatear los resultados
-    $transportadoras = $ruta->transportadoras->map(function ($transportadora) {
-        return $transportadora->nombre . ' - ' . $transportadora->id;
-    });
-    
-    // Hacer algo con las transportadoras formateadas (por ejemplo, devolverlas en una respuesta JSON)
-    return response()->json(['transportadoras' => $transportadoras]);
-}
 
     public function getOperatoresbyTransport(Request $request, $id)
     {
@@ -130,16 +132,4 @@ class TransportadorasAPIController extends Controller
         return response()->json($transportadoras);
     }
 
-
-
 }
-
-
-
-
-
-
-
-
-
-?>

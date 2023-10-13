@@ -14,10 +14,16 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
-        $schedule->command('app:your-custom-command')->everyMinute(); // Cambia 'your:custom-command' al nombre de tu comando personalizado
+        // $schedule->command('app:your-custom-command')->everyMinute(); // Cambia 'your:custom-command' al nombre de tu comando personalizado
+        // $schedule->command('app:your-custom-command')->dailyAt('16:33');
+        // date_default_timezone_set('Etc/GMT+5');
+        // $schedule->command('app:your-custom-command')->everyThirtySeconds();
+        // $schedule->command('app:your-custom-command')->daily();
+
+        $schedule->command('app:your-custom-command')->dailyAt('23:59');
 
 
-      //  error_log("usuario logueado");
+        //  error_log("usuario logueado");
     }
 
 
@@ -26,7 +32,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }
