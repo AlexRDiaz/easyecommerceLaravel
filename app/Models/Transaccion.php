@@ -17,6 +17,7 @@ class Transaccion extends Model
         'valor_actual',
         'marca_de_tiempo',
         'id_origen',
+        'codigo',
         'origen',
         'id_vendedor',
         'comentario'
