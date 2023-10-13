@@ -72,68 +72,6 @@ class TransportadorasShippingCostAPIController extends Controller
         //
     }
 
-    public function getShippingCostPerDayV0()
-    {
-
-        $transportadoras = Transportadora::all();
-        // $transportadoraId = 19;
-        // $transportadora = Transportadora::find($transportadoraId);
-
-        $shipping_total = 0;
-        $count_orders = 0;
-        $total_proceeds = 0;
-        $total_day = 0;
-
-        $currentDate = now()->format('j/n/Y');
-        // $currentDate = '5/9/2023';
-        // $currentDate =  Carbon::createFromFormat('j/n/Y', $currentDate)->format('j/n/Y');
-
-        $currentDateTime = date('Y-m-d H:i:s');
-        // $desiredTime = '01:13:13';
-        // $currentDateTime = Carbon::createFromFormat('d/n/Y H:i:s', $currentDate . ' ' . $desiredTime)->format('Y-m-d H:i:s');
-
-
-        foreach ($transportadoras as $transportadora) {
-
-            $transportadoraId = $transportadora->id;
-            $costo_transportadora = $transportadora->costo_transportadora;
-
-            $transportadoraPedidos = Transportadora::with(['pedidos' => function ($query) use ($currentDate) {
-                $query->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])
-                    ->where('fecha_entrega', $currentDate);
-            }])
-                ->where('id', $transportadoraId)
-                ->get();
-
-            $pedidos = $transportadoraPedidos->pluck('pedidos');
-            $total_proceeds = 0;
-            foreach ($pedidos as $pedido) {
-                foreach ($pedido as $detallePedido) {
-                    if ($detallePedido["status"] == "ENTREGADO") {
-                        $precioTotal = floatval($detallePedido["precio_total"]);
-                        $total_proceeds += $precioTotal;
-                    }
-                }
-            }
-
-            $total_proceeds = round($total_proceeds, 2);
-            $count_orders =  $pedidos->flatten()->count();
-            $shipping_total = $costo_transportadora * $count_orders;
-            $total_day = $total_proceeds - $shipping_total;
-
-            $newTransportadoraShippingCost = new TransportadorasShippingCost();
-            $newTransportadoraShippingCost->status = 'PENDIENTE';
-            $newTransportadoraShippingCost->time_stamp = $currentDateTime;
-            $newTransportadoraShippingCost->daily_proceeds = $total_proceeds;
-            $newTransportadoraShippingCost->daily_shipping_cost = $shipping_total;
-            $newTransportadoraShippingCost->daily_total = $total_day;
-            $newTransportadoraShippingCost->id_transportadora = $transportadoraId;
-            $newTransportadoraShippingCost->save();
-        }
-
-        return response()->json([], 200);
-    }
-
     public function getShippingCostPerDay()
     {
 
@@ -252,16 +190,10 @@ class TransportadorasShippingCostAPIController extends Controller
         $idTransportadora = $data['id_transportadora'];
         $fecha = $data['fecha'];
         $dateFormatted = Carbon::createFromFormat('j/n/Y', $fecha)->format('Y-m-d');
-        // $dateFormatted="2023-10-11";
 
-        //'2023-10-11 01:13:13'
         $dailyCosts = TransportadorasShippingCost::where('id_transportadora', $idTransportadora)
             ->whereDate('time_stamp', $dateFormatted)
             ->get();
-        //esta para que tome el valor mas reciente en esa fecha
-        // $dailyCosts = TransportadorasShippingCost::where('id_transportadora', $idTransportadora)
-        //     ->whereDate('time_stamp', $dateFormatted)
-        //     ->first();
 
         if ($dailyCosts->isEmpty()) {
             return response()->json(["message" => "No existe un registro anterior"], 200);
