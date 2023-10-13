@@ -22,6 +22,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string|null $fecha_alta
  * @property string|null $id_master
  * @property string|null $url_tienda
+ * @property string|null $referer
+ * @property string|null $referer_cost
  * @property string|null $monto_inicial
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
@@ -51,6 +53,8 @@ class Vendedore extends Model
 		'fecha_alta',
 		'id_master',
 		'url_tienda',
+		'referer',
+		'referer_cost',
 		'monto_inicial',
 		'created_by_id',
 		'updated_by_id'

@@ -3,8 +3,12 @@
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
+use App\Mail\UserValidation;
 use App\Models\OrdenesRetiro;
 use App\Models\PedidosShopify;
+use App\Models\UpUser;
+use App\Models\UpUsersRoleLink;
+use App\Models\UpUsersRolesFrontLink;
 use App\Models\Vendedore;
 
 use App\Repositories\vendedorRepository;
@@ -13,6 +17,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class VendedoreAPIController extends Controller
 {
@@ -51,8 +56,20 @@ class VendedoreAPIController extends Controller
     
         return response()->json(['vendedores' => $vendedores]);
     }
+
+    public function getRefereds($id)
+    {
+        // Valida los datos de entrada (puedes agregar reglas de validación aquí)
+        $referedSellers =  Vendedore::where('referer',$id)->with('up_users')->get();
+        
+        return response()->json($referedSellers, 200);
+
+    }
     
 
+
+    
+    
     
     public function update(Request $request, $id)
     {

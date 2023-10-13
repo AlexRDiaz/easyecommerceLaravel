@@ -9,6 +9,7 @@ use App\Models\UpRole;
 use App\Models\UpUser;
 use App\Models\UpUsersRoleLink;
 use App\Models\UpUsersRolesFrontLink;
+use App\Models\Vendedore;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
@@ -106,6 +107,90 @@ class UpUserAPIController extends Controller
 
     }
 
+    public function storeGeneral(Request $request)
+    {
+        // // Valida los datos de entrada (puedes agregar reglas de validación aquí)
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|unique:up_users',
+        ]);
+
+        $numerosUtilizados = [];
+        while (count($numerosUtilizados) < 10000000) {
+            $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+            if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                $numerosUtilizados[] = $numeroAleatorio;
+                break;
+            }
+        }
+        $resultCode = $numeroAleatorio;
+
+
+        $user = new UpUser();
+        $user->username = $request->input('username');
+        $user->email = $request->input('email');
+        $user->codigo_generado = $resultCode;
+        $user->password = bcrypt($request->input('password')); // Puedes utilizar bcrypt para encriptar la contraseña
+        $user->fecha_alta = $request->input('FechaAlta'); // Fecha actual
+        $user->confirmed = $request->input('confirmed');
+        $user->estado = "NO VALIDADO";
+        $user->provider="local";
+        $user->confirmed=1;
+        $user->fecha_alta=$request->input('fecha_alta');
+        $permisosCadena = json_encode(["DashBoard","Reporte de Ventas","Agregar Usuarios Vendedores","Ingreso de Pedidos","Estado Entregas Pedidos","Pedidos No Deseados","Billetera","Devoluciones","Retiros en Efectivo","Mi Billetera","Conoce a tu Transporte"]);
+        $user->permisos = $permisosCadena;
+        $user->blocked = false;
+        $user->save();
+        $user->vendedores()->attach($request->input('vendedores'), [
+        ]);
+
+        
+
+        $newUpUsersRoleLink = new UpUsersRoleLink();
+        $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
+        $newUpUsersRoleLink->role_id = $request->input('role'); // Asigna el ID del rol existente
+        $newUpUsersRoleLink->save();
+
+
+        $userRoleFront = new UpUsersRolesFrontLink();
+        $userRoleFront->user_id = $user->id;
+        $userRoleFront->roles_front_id = 2;
+        $userRoleFront->save();
+         
+        $seller = new Vendedore();
+        $seller->nombre_comercial=$request->input('nombre_comercial');
+        $seller->telefono_1=$request->input('telefono1');
+        $seller->telefono_2=$request->input('telefono2');
+        $seller->nombre_comercial=$request->input('nombre_comercial');
+        $seller->fecha_alta=$request->input('fecha_alta');
+        $seller->id_master=$user->id;
+        $seller->url_tienda=$request->input('url_tienda');
+        $seller->costo_envio=$request->input('costo_envio');
+        $seller->costo_devolucion=$request->input('costo_devolucion');
+        $seller->referer=$request->input('referer');
+        $seller->save();
+
+        $user->vendedores()->attach($seller->id, [
+        ]);
+
+
+        Mail::to($user->email)->send(new UserValidation($resultCode));
+
+
+        return response()->json(['message' => 'Vendedor creado con éxito'], 200);
+
+    }
+    
+    public function getSellerMaster($id){
+        $vendedores = UpUser::find($id)->vendedores;
+
+    if (!$vendedores) {
+        return response()->json(['message' => 'Vendedores not found'], Response::HTTP_NOT_FOUND);
+    }
+   
+    return response()->json($vendedores[0], Response::HTTP_OK);
+
+    }
     /**
      * Update the specified resource in storage.
      *
@@ -256,37 +341,41 @@ class UpUserAPIController extends Controller
     public function getUserPedidos($id, Request $request)
     {
         $user = UpUser::with('upUsersPedidos.pedidos_shopifies_ruta_links.ruta', 'upUsersPedidos.pedidos_shopifies_transportadora_links.transportadora')->find($id);
-        
+
         if (!$user) {
             return response()->json(['error' => 'Usuario no encontrado'], 404);
         }
-        
-        $pedidos = $user->upUsersPedidos;
-        
+
+        $pedidos = $user->upUsersPedidos->where('estado_interno', 'CONFIRMADO')->where('estado_logistico', 'ENVIADO');
+
+
         $allRutasTransportadoras = collect();
         $pedidosInfo = [];
         $entregadosCount = 0;
         $noEntregadosCount = 0;
-        
+        $novedad = 0;
+
         foreach ($pedidos as $pedido) {
             $rutasInfo = $pedido->pedidos_shopifies_ruta_links->map(function ($link) {
                 return $link->ruta->titulo . '-' . $link->ruta->id;
             })->implode(', ');
-        
+
             $transportadorasInfo = $pedido->pedidos_shopifies_transportadora_links->map(function ($link) {
                 return $link->transportadora->nombre . '-' . $link->transportadora->id;
             })->implode(', ');
-        
+
             $allRutasTransportadoras->push($rutasInfo . '|' . $transportadorasInfo);
-        
+
             $status = $pedido->status;
-        
+
             if ($status === 'ENTREGADO') {
                 $entregadosCount++;
             } else if ($status === 'NO ENTREGADO') {
                 $noEntregadosCount++;
+            } else if ($status === 'NOVEDAD') {
+                $novedad++;
             }
-        
+
             $pedidosInfo[] = [
                 'pedido_id' => $pedido->id,
                 'rutas' => $rutasInfo,
@@ -294,26 +383,29 @@ class UpUserAPIController extends Controller
                 'status' => $status,
             ];
         }
-        
+
         // Obtener listas únicas sin repeticiones
         $uniqueRutasTransportadoras = $allRutasTransportadoras->unique()->values();
-    
+
         $rutaTransportadoraCount = collect();
-    
+
         foreach ($uniqueRutasTransportadoras as $uniqueInfo) {
             list($rutas, $transportadora) = explode('|', $uniqueInfo);
-    
+
             $counts = collect($pedidosInfo)->where('rutas', $rutas)->where('transportadoras', $transportadora)->countBy('status')->toArray();
-    
+
             $rutaTransportadoraCount->push([
+                'pedidos_info' => $pedidosInfo,
                 'rutas' => $rutas,
                 'transportadoras' => $transportadora,
                 'entregados_count' => $counts['ENTREGADO'] ?? 0,
                 'no_entregados_count' => $counts['NO ENTREGADO'] ?? 0,
-                'total_pedidos' => ($counts['ENTREGADO'] ?? 0) + ($counts['NO ENTREGADO'] ?? 0),
+                'novedad_count' => $counts['NOVEDAD'] ?? 0,
+                'total_pedidos' => ($counts['ENTREGADO'] ?? 0) + ($counts['NO ENTREGADO'] ?? 0) + ($counts['NOVEDAD'] ?? 0),
+
             ]);
         }
-    
+
         // Agrupar internamente por la propiedad "rutas"
         $groupedRutasTransportadoras = $rutaTransportadoraCount->groupBy('rutas')->map(function ($group) {
             return $group->map(function ($item) {
@@ -321,18 +413,125 @@ class UpUserAPIController extends Controller
                     'transportadoras' => $item['transportadoras'],
                     'entregados_count' => $item['entregados_count'],
                     'no_entregados_count' => $item['no_entregados_count'],
+                    'novedad_count' => $item['novedad_count'],
                     'total_pedidos' => $item['total_pedidos'],
                 ];
             });
         });
-    
+
         return response()->json([
             // 'pedidos' => $pedidosInfo,
             'listarutas_transportadoras' => $groupedRutasTransportadoras,
             'entregados_count' => $entregadosCount,
             'no_entregados_count' => $noEntregadosCount,
-            'total_pedidos' => $entregadosCount + $noEntregadosCount,
+            'novedad_count' => $novedad,
+            'total_pedidos' => $entregadosCount + $noEntregadosCount + $novedad,
         ]);
     }
+
+    public function getPermisos()
+    {
+        // Obtén todos los registros de la tabla up_users_roles_front_links
+        $registros = UpUser::all();
+
+        // Si deseas devolver solo los campos 'id' y 'permisos', puedes hacer un mapeo
+        $permisos = $registros->map(function ($registro) {
+            return [
+                'id' => $registro->id,
+                'permisos' => $registro->permisos,
+                // Asegúrate de que 'permisos' sea el nombre correcto del campo
+            ];
+        });
+
+        return $permisos;
+    }
+
+    // UserController.php
+
+// 
+
+
+    public function updatePermissions(Request $request)
+    {
+        $datosVista = $request->input('datos_vista');
+
+        $active = $datosVista['active'];
+        $viewName = $datosVista['view_name'];
+        $idRol = $datosVista['id_rol'];
+
+        // Obtener todos los usuarios que tienen el rol específico
+        $users = UpUser::whereHas('roles_fronts', function ($query) use ($idRol) {
+            $query->where('roles_fronts.id', $idRol);
+        })->get();
+
+        // Actualizar los permisos de los usuarios y roles_fronts
+        foreach ($users as $user) {
+            $permissions = json_decode($user->permisos, true) ?? [];
+
+            // Agregar o quitar el valor de 'view_name' según 'active'
+            if ($active) {
+                // Agregar el valor solo si 'active' es true y no existe
+                if (!in_array($viewName, $permissions)) {
+                    $permissions[] = $viewName;
+                }
+            } else {
+                // Quitar el valor solo si 'active' es false y existe
+                $permissions = array_diff($permissions, [$viewName]);
+            }
+
+            // Actualizar los permisos en la tabla up_users
+            $user->update(['permisos' => json_encode(array_values($permissions))]);
+
+            // Actualizar la columna accesos en la tabla roles_fronts
+            $role = $user->roles_fronts->where('id', $idRol)->first();
+            if ($role) {
+                $accessos = json_decode($role->accesos, true);
+
+                // Buscar la opción con 'view_name' igual a $viewName y actualizar 'active'
+                foreach ($accessos as &$option) {
+                    if ($option['view_name'] === $viewName) {
+                        $option['active'] = $active;
+                    }
+                }
+
+                $role->update(['accesos' => json_encode($accessos)]);
+            }
+        }
+
+        return response()->json(['message' => 'Permisos actualizados con éxito'], 200);
+    }
+
+    public function newPermission(Request $request)
+    {
+        $datosVista = $request->input('datos_vista');
+        $active = $datosVista['active'];
+        $viewName = $datosVista['view_name'];
+        $idRol = $datosVista['id_rol'];
     
+        // Paso 1: Obtener el modelo RolesFront
+        $role = RolesFront::find($idRol);
+    
+        if ($role) {
+            // Paso 2: Obtener el valor actual del campo accesos y convertirlo a un array
+            $accesosArray = json_decode($role->accesos, true) ?: [];
+    
+            // Paso 3: Actualizar el array con los nuevos valores proporcionados
+            $nuevoAcceso = ['active' => $active, 'view_name' => $viewName];
+            $accesosArray[] = $nuevoAcceso; // Añadir el nuevo acceso al final del array
+    
+            // Paso 4: Convertir el array actualizado a formato JSON
+            $nuevoValorAccesos = json_encode($accesosArray);
+    
+            // Paso 5: Actualizar el campo accesos en la base de datos
+            $role->update(['accesos' => $nuevoValorAccesos]);
+    
+            // Puedes devolver una respuesta exitosa si es necesario
+            return response()->json(['message' => 'Acceso actualizado correctamente']);
+        } else {
+            // Devolver una respuesta en caso de que no se encuentre el modelo
+            return response()->json(['error' => 'Rol no encontrado'], 404);
+        }
+    }
+
+
 }
