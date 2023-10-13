@@ -147,7 +147,7 @@ class TransportadorasShippingCostAPIController extends Controller
         $total_day = 0;
 
         $currentDate = now()->format('j/n/Y');
-        // $currentDate = '11/10/2023';
+        // $currentDate = '12/10/2023';
         // $currentDate =  Carbon::createFromFormat('j/n/Y', $currentDate)->format('j/n/Y');
 
         $currentDateTime = date('Y-m-d H:i:s');
@@ -159,34 +159,69 @@ class TransportadorasShippingCostAPIController extends Controller
             $transportadoraId = $transportadora->id;
             $costo_transportadora = $transportadora->costo_transportadora;
 
-            $pedidos = TransaccionPedidoTransportadora::where('id_transportadora', $transportadoraId)
-                ->where('fecha_entrega', $currentDate)
+            $dateFormatted = Carbon::createFromFormat('j/n/Y', $currentDate)->format('Y-m-d');
+            $transportadoraShippingCost = TransportadorasShippingCost::where('id_transportadora', $transportadoraId)
+                ->whereDate('time_stamp', $dateFormatted)
                 ->get();
 
-            // $pedidos = $transportadoraPedidos->pluck('pedidos');
-            $total_proceeds = 0;
-            foreach ($pedidos as $pedido) {
-                // foreach ($pedido as $detallePedido) {
-                if ($pedido["status"] == "ENTREGADO") {
-                    $precioTotal = floatval($pedido["precio_total"]);
-                    $total_proceeds += $precioTotal;
+            if ($transportadoraShippingCost->count() === 0) {
+
+                $pedidos = TransaccionPedidoTransportadora::where('id_transportadora', $transportadoraId)
+                    ->where('fecha_entrega', $currentDate)
+                    ->get();
+
+                $total_proceeds = 0;
+                foreach ($pedidos as $pedido) {
+                    if ($pedido["status"] == "ENTREGADO") {
+                        $precioTotal = floatval($pedido["precio_total"]);
+                        $total_proceeds += $precioTotal;
+                    }
                 }
-                // }
+
+                $total_proceeds = round($total_proceeds, 2);
+                $count_orders =  $pedidos->flatten()->count();
+                $shipping_total = $costo_transportadora * $count_orders;
+                $total_day = $total_proceeds - $shipping_total;
+
+                $newTransportadoraShippingCost = new TransportadorasShippingCost();
+                $newTransportadoraShippingCost->status = 'PENDIENTE';
+                $newTransportadoraShippingCost->time_stamp = $currentDateTime;
+                $newTransportadoraShippingCost->daily_proceeds = $total_proceeds;
+                $newTransportadoraShippingCost->daily_shipping_cost = $shipping_total;
+                $newTransportadoraShippingCost->daily_total = $total_day;
+                $newTransportadoraShippingCost->id_transportadora = $transportadoraId;
+                $newTransportadoraShippingCost->save();
+                // return response()->json(["message" => "este registro NO existe", "fecha" => $dateFormatted, "id_transportadora" => $newTransportadoraShippingCost], 200);
+            } else {
+                //update
+                $firstResult = $transportadoraShippingCost->first();
+                $idTSC = $firstResult->id;
+                $transportadoraShipping = TransportadorasShippingCost::findOrFail($idTSC);
+                $pedidos = TransaccionPedidoTransportadora::where('id_transportadora', $transportadoraId)
+                    ->where('fecha_entrega', $currentDate)
+                    ->get();
+
+                $total_proceeds = 0;
+                foreach ($pedidos as $pedido) {
+                    if ($pedido["status"] == "ENTREGADO") {
+                        $precioTotal = floatval($pedido["precio_total"]);
+                        $total_proceeds += $precioTotal;
+                    }
+                }
+
+                $total_proceeds = round($total_proceeds, 2);
+                $count_orders =  $pedidos->flatten()->count();
+                $shipping_total = $costo_transportadora * $count_orders;
+                $total_day = $total_proceeds - $shipping_total;
+
+                $transportadoraShipping->update([
+                    'status' => 'PENDIENTE',
+                    'daily_proceeds' => $total_proceeds,
+                    'daily_shipping_cost' => $shipping_total,
+                    'daily_total' => $total_day
+                ]);
+                // return response()->json(["message" => "Updated este registro ya existe", "id" => $idTSC, "data" => $transportadoraShippingCost], 200);
             }
-
-            $total_proceeds = round($total_proceeds, 2);
-            $count_orders =  $pedidos->flatten()->count();
-            $shipping_total = $costo_transportadora * $count_orders;
-            $total_day = $total_proceeds - $shipping_total;
-
-            $newTransportadoraShippingCost = new TransportadorasShippingCost();
-            $newTransportadoraShippingCost->status = 'PENDIENTE';
-            $newTransportadoraShippingCost->time_stamp = $currentDateTime;
-            $newTransportadoraShippingCost->daily_proceeds = $total_proceeds;
-            $newTransportadoraShippingCost->daily_shipping_cost = $shipping_total;
-            $newTransportadoraShippingCost->daily_total = $total_day;
-            $newTransportadoraShippingCost->id_transportadora = $transportadoraId;
-            $newTransportadoraShippingCost->save();
         }
 
         return response()->json([], 200);
