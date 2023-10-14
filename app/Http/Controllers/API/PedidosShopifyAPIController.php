@@ -1355,7 +1355,7 @@ class PedidosShopifyAPIController extends Controller
 
             $client = new Client();
     
-            $response = $client->post("http://localhost:8000/api/pedidos-shopify/testChatby", [
+            $response = $client->post("https://easyecommercelaravel-production.up.railway.app/api/pedidos-shopify/testChatby", [
                 'json' => [
                     "email" => "mandeservicecompany@gmail.com",
                     "password" => "123456789"
