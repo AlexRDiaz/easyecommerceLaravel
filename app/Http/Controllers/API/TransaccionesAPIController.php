@@ -65,7 +65,7 @@ class TransaccionesAPIController extends Controller
         
         $filteredData = Transaccion::whereBetween('marca_de_tiempo', [$startDate, $endDate]);
         if($search!=""){
-        $filteredData->where("id_origen",'like', '%'.$search.'%');
+        $filteredData->where("codigo",'like', '%'.$search.'%');
         }
         if($and!=[]){
         $filteredData->where((function ($pedidos) use ($and) {

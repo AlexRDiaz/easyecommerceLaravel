@@ -11,8 +11,10 @@ use App\Models\PedidosShopifiesTransportadoraLink;
 use App\Models\PedidosShopify;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
 use App\Models\Ruta;
+use App\Models\UpUser;
 use App\Models\UpUsersPedidosShopifiesLink;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -1332,12 +1334,41 @@ class PedidosShopifyAPIController extends Controller
             $createUserPedido->user_id = $id;
             $createUserPedido->pedidos_shopify_id = $createOrder->id;
             $createUserPedido->save();
+             
+            $user = UpUser::with([
+                'vendedores',
+            ])->find($id);
+              
+        
+            // if($user->enable_autome){
+            //   if($user->webhook_autome!=null){
+              //    $responseAutome=$this->sendToAutome($user->webhook_autome,$createOrder);
 
+            //   }
+            
+            // }
 
+             //$vendedor=$user->vendedores[0];  
+            
             /////
+
+
+            $client = new Client();
+    
+            $response = $client->post("http://localhost:8000/api/pedidos-shopify/testChatby", [
+                'json' => [
+                    "email" => "mandeservicecompany@gmail.com",
+                    "password" => "123456789"
+                ]
+            ]);
+        
+
             return response()->json([
+               'respuesta de autome'=>json_decode($response->getBody()->getContents()),
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
+                'search'=>'MANDE',
+                'and'=>[]
             ], 200);
         } else {
             return response()->json([
@@ -1356,6 +1387,43 @@ class PedidosShopifyAPIController extends Controller
             ], 401);
         }
     }
+
+    public function sendToAutome($url, $data)
+    {
+        $client = new Client();
+        $response = $client->post($url, [
+            'data' => [
+                "id"=>  $data->id,
+                "marca_t_i"=>$data->marca_t_i,
+                "tienda_temporal"=>$data->tienda_temporal,
+                "numero_orden"=>$data->numero_orden,
+                "direccion_shipping"=> $data->direccion_shipping,
+                "nombre_shipping"=> $data->nombre_shipping,
+                "telefono_shipping"=> $data->telefono_shipping,
+                "precio_total"=> $data->precio_total,
+                "observacion"=>$data->observacion,
+                "ciudad_shipping"=> $data->ciudad_shipping,
+                "id_comercial"=>$data->id_comercial,
+                "producto_p"=>$data->id_comercial,
+                "producto_extra"=>$data->id_comercial,
+                "cantidad_total"=> $data->id_comercial,
+                "status"=>$data->id_comercial,
+            ]
+        ]);
+        $responseBody = $response->getBody()->getContents();
+    
+        return response()->json(['data' => $data,'response'=>$responseBody]);
+    }
+
+
+    public function testChatby(Request $request){
+        $data = $request->json()->all();
+        return $data;
+    }
+
+
+
+    
 
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
     {
