@@ -1334,41 +1334,62 @@ class PedidosShopifyAPIController extends Controller
             $createUserPedido->user_id = $id;
             $createUserPedido->pedidos_shopify_id = $createOrder->id;
             $createUserPedido->save();
-             
+
             $user = UpUser::with([
                 'vendedores',
             ])->find($id);
-              
-            $responseAutome="";
-            if($user->enable_autome){
-              if($user->webhook_autome!=null){
-                 $responseAutome=$this->sendToAutome($user->webhook_autome,$createOrder);
 
-              }
-            
+            // $responseAutome="";
+            if ($user->enable_autome) {
+                if ($user->webhook_autome != null) {
+
+                    $client = new Client();
+
+                    $response = $client->post($user->webhook_autome, [
+                        'json' => [
+                            "id" =>  $createOrder->id,
+                            "marca_t_i" => $createOrder->marca_t_i,
+                            "tienda_temporal" => $createOrder->tienda_temporal,
+                            "numero_orden" => $createOrder->numero_orden,
+                            "direccion_shipping" => $createOrder->direccion_shipping,
+                            "nombre_shipping" => $createOrder->nombre_shipping,
+                            "telefono_shipping" => $createOrder->telefono_shipping,
+                            "precio_total" => $createOrder->precio_total,
+                            "observacion" => $createOrder->observacion,
+                            "ciudad_shipping" => $createOrder->ciudad_shipping,
+                            "id_comercial" => $createOrder->id_comercial,
+                            "producto_p" => $createOrder->producto_p,
+                            "producto_extra" => $createOrder->producto_extra,
+                            "cantidad_total" => $createOrder->cantidad_total,
+                            "status" => $createOrder->status
+                        ]
+                    ]);
+                }
             }
 
-             $vendedor=$user->vendedores[0];  
-            
-            /////
 
-
-            // $client = new Client();
-    
-            // $response = $client->post("https://easyecommercelaravel-production.up.railway.app/api/pedidos-shopify/testChatby", [
-            //     'json' => [
-            //         "email" => "mandeservicecompany@gmail.com",
-            //         "password" => "123456789"
-            //     ]
-            // ]);
-        
+            // "id" =>  $createOrder->id,
+            // "marca_t_i" => $createOrder->marca_t_i,
+            // "tienda_temporal" => $createOrder->tienda_temporal,
+            // "numero_orden" => $createOrder->numero_orden,
+            // "direccion_shipping" => $createOrder->direccion_shipping,
+            // "nombre_shipping" => $createOrder->nombre_shipping,
+            // "telefono_shipping" => $createOrder->telefono_shipping,
+            // "precio_total" => $createOrder->precio_total,
+            // "observacion" => $createOrder->observacion,
+            // "ciudad_shipping" => $createOrder->ciudad_shipping,
+            // "id_comercial" => $createOrder->id_comercial,
+            // "producto_p" => $createOrder->id_comercial,
+            // "producto_extra" => $createOrder->id_comercial,
+            // "cantidad_total" => $createOrder->id_comercial,
+            // "status" => $createOrder->id_comercial,
 
             return response()->json([
-               'autome_response'=>$responseAutome,
+                'autome_response' => json_decode($response->getBody()->getContents()),
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
-                'search'=>'MANDE',
-                'and'=>[]
+                'search' => 'MANDE',
+                'and' => []
             ], 200);
         } else {
             return response()->json([
@@ -1393,36 +1414,37 @@ class PedidosShopifyAPIController extends Controller
         $client = new Client();
         $response = $client->post($url, [
             'data' => [
-                "id"=>  $data->id,
-                "marca_t_i"=>$data->marca_t_i,
-                "tienda_temporal"=>$data->tienda_temporal,
-                "numero_orden"=>$data->numero_orden,
-                "direccion_shipping"=> $data->direccion_shipping,
-                "nombre_shipping"=> $data->nombre_shipping,
-                "telefono_shipping"=> $data->telefono_shipping,
-                "precio_total"=> $data->precio_total,
-                "observacion"=>$data->observacion,
-                "ciudad_shipping"=> $data->ciudad_shipping,
-                "id_comercial"=>$data->id_comercial,
-                "producto_p"=>$data->id_comercial,
-                "producto_extra"=>$data->id_comercial,
-                "cantidad_total"=> $data->id_comercial,
-                "status"=>$data->id_comercial,
+                "id" =>  $data->id,
+                "marca_t_i" => $data->marca_t_i,
+                "tienda_temporal" => $data->tienda_temporal,
+                "numero_orden" => $data->numero_orden,
+                "direccion_shipping" => $data->direccion_shipping,
+                "nombre_shipping" => $data->nombre_shipping,
+                "telefono_shipping" => $data->telefono_shipping,
+                "precio_total" => $data->precio_total,
+                "observacion" => $data->observacion,
+                "ciudad_shipping" => $data->ciudad_shipping,
+                "id_comercial" => $data->id_comercial,
+                "producto_p" => $data->id_comercial,
+                "producto_extra" => $data->id_comercial,
+                "cantidad_total" => $data->id_comercial,
+                "status" => $data->id_comercial,
             ]
         ]);
-    
+
         return response()->json_decode($response->getBody()->getContents());
     }
 
 
-    public function testChatby(Request $request){
+    public function testChatby(Request $request)
+    {
         $data = $request->json()->all();
         return $data;
     }
 
 
 
-    
+
 
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
     {
@@ -1658,18 +1680,19 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($response);
     }
-    public function generateTransportCosts (){
+    public function generateTransportCosts()
+    {
 
         $id = 76;
         $pedido = PedidosShopify::where('id', $id)
             ->first();
 
-         $numero=$pedido->numero_orden;   
-       
-        
-         DB::table('test')->insert([
-           'counter' => $numero,
-       ]);// Supongamos que estás filtrando por una columna "id" específica
+        $numero = $pedido->numero_orden;
+
+
+        DB::table('test')->insert([
+            'counter' => $numero,
+        ]); // Supongamos que estás filtrando por una columna "id" específica
         return response()->json($pedido);
     }
 }
