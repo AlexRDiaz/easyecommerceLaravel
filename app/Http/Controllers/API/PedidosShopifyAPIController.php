@@ -1364,7 +1364,7 @@ class PedidosShopifyAPIController extends Controller
         
 
             return response()->json([
-               'autome_response'=>json_decode($responseAutome->getBody()->getContents()),
+               'autome_response'=>$responseAutome,
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
                 'search'=>'MANDE',
