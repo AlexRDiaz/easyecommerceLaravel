@@ -1339,32 +1339,32 @@ class PedidosShopifyAPIController extends Controller
                 'vendedores',
             ])->find($id);
               
-        
-            // if($user->enable_autome){
-            //   if($user->webhook_autome!=null){
-              //    $responseAutome=$this->sendToAutome($user->webhook_autome,$createOrder);
+            $responseAutome="";
+            if($user->enable_autome){
+              if($user->webhook_autome!=null){
+                 $responseAutome=$this->sendToAutome($user->webhook_autome,$createOrder);
 
-            //   }
+              }
             
-            // }
+            }
 
-             //$vendedor=$user->vendedores[0];  
+             $vendedor=$user->vendedores[0];  
             
             /////
 
 
-            $client = new Client();
+            // $client = new Client();
     
-            $response = $client->post("https://easyecommercelaravel-production.up.railway.app/api/pedidos-shopify/testChatby", [
-                'json' => [
-                    "email" => "mandeservicecompany@gmail.com",
-                    "password" => "123456789"
-                ]
-            ]);
+            // $response = $client->post("https://easyecommercelaravel-production.up.railway.app/api/pedidos-shopify/testChatby", [
+            //     'json' => [
+            //         "email" => "mandeservicecompany@gmail.com",
+            //         "password" => "123456789"
+            //     ]
+            // ]);
         
 
             return response()->json([
-               'respuesta de autome'=>json_decode($response->getBody()->getContents()),
+               'autome_response'=>json_decode($responseAutome->getBody()->getContents()),
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
                 'search'=>'MANDE',
@@ -1410,9 +1410,8 @@ class PedidosShopifyAPIController extends Controller
                 "status"=>$data->id_comercial,
             ]
         ]);
-        $responseBody = $response->getBody()->getContents();
     
-        return response()->json(['data' => $data,'response'=>$responseBody]);
+        return response()->json_decode($response->getBody()->getContents());
     }
 
 
