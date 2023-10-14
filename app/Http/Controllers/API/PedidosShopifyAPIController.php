@@ -46,6 +46,25 @@ class PedidosShopifyAPIController extends Controller
         return response()->json(['message' => 'Registro actualizado con éxito', "res" => $pedido], 200);
     }
 
+    public function updateStatus(Request $request, $id)
+    {
+        // Recuperar los datos del formulario
+     
+    // Recuperar el nuevo estado del pedido
+    $data = $request->all();
+    $newStatus = $data['status'];
+
+    // Encuentra el registro en base al ID
+    $pedido = PedidosShopify::findOrFail($id);
+
+    // Actualiza el estado del pedido
+    $pedido->status = $newStatus;
+    $pedido->save();
+
+    // Respuesta de éxito
+    return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status], 200);
+}
+
     public function show($id)
     {
         $pedido = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
@@ -1334,12 +1353,10 @@ class PedidosShopifyAPIController extends Controller
             $createUserPedido->user_id = $id;
             $createUserPedido->pedidos_shopify_id = $createOrder->id;
             $createUserPedido->save();
-
             $user = UpUser::with([
                 'vendedores',
             ])->find($id);
 
-            // $responseAutome="";
             if ($user->enable_autome) {
                 if ($user->webhook_autome != null) {
 
