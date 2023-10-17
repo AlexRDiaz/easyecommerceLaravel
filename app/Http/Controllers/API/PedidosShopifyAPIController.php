@@ -317,13 +317,13 @@ class PedidosShopifyAPIController extends Controller
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
+                                                if (strpos($key, '.') !== false) {
                             $relacion = substr($key, 0, strpos($key, '.'));
                             $propiedad = substr($key, strpos($key, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
                         } else {
                             $pedidos->where($key, '=', $valor);
-                        }
+                                                    }
                     }
                 }
             }))
@@ -1466,7 +1466,7 @@ class PedidosShopifyAPIController extends Controller
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
     {
         $data = $request->json()->all();
-        $startDate = $data['start'];
+                $startDate = $data['start'];
 
         $populate = $data['populate'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
@@ -1711,5 +1711,106 @@ class PedidosShopifyAPIController extends Controller
             'counter' => $numero,
         ]); // Supongamos que estás filtrando por una columna "id" específica
         return response()->json($pedido);
+    }
+
+    //      *
+    public function getOrdersSendGuides(Request $request)
+    {
+        $data = $request->json()->all();
+        // return response()->json(['message' => $request], 200);
+
+        $pageSize = $data['page_size'];
+        $pageNumber = $data['page_number'];
+        $searchTerm = $data['search'];
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
+        }
+        // ! *************************************
+        $Map = $data['and'];
+        $not = $data['not'];
+        // ! *************************************
+
+        $pedidos = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta'])
+        ->whereHas('transportadora', function ($query) use ($pageSize) {
+            $query->where('transportadora_id', 19);
+        })
+            ->where(function ($pedidos) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
+                    }
+                }
+            }))
+            ->where((function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
+                    }
+                }
+            }));
+        // ! Ordenamiento ********************************** 
+        $orderByText = null;
+        $orderByDate = null;
+        $sort = $data['sort'];
+        $sortParts = explode(':', $sort);
+
+        $pt1 = $sortParts[0];
+
+        $type = (stripos($pt1, 'fecha') !== false || stripos($pt1, 'marca') !== false) ? 'date' : 'text';
+
+        $dataSort = [
+            [
+                'field' => $sortParts[0],
+                'type' => $type,
+                'direction' => $sortParts[1],
+            ],
+        ];
+
+        foreach ($dataSort as $value) {
+            $field = $value['field'];
+            $direction = $value['direction'];
+            $type = $value['type'];
+
+            if ($type === "text") {
+                $orderByText = [$field => $direction];
+            } else {
+                $orderByDate = [$field => $direction];
+            }
+        }
+
+        if ($orderByText !== null) {
+            $pedidos->orderBy(key($orderByText), reset($orderByText));
+        } else {
+            $pedidos->orderBy(DB::raw("STR_TO_DATE(" . key($orderByDate) . ", '%e/%c/%Y')"), reset($orderByDate));
+        }
+        // ! **************************************************
+        $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
+
+        return response()->json($pedidos);
     }
 }

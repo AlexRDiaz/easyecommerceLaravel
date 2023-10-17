@@ -55,6 +55,11 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $updated_by_id
  * @property string|null $comentario_rechazado
  * @property bool|null $revisado
+ * @property float|null $costo_envio
+ * @property float|null $costo_devolucion
+ * @property float|null $costo_transportadora
+ * @property string|null $fecha_impreso
+ * @property int|null $printed_by
  * 
  * @property AdminUser|null $admin_user
  * @property Collection|Novedade[] $novedades
@@ -64,6 +69,7 @@ use Illuminate\Database\Eloquent\Model;
  * @property Collection|PedidosShopifiesSubRutaLink[] $pedidos_shopifies_sub_ruta_links
  * @property Collection|PedidosShopifiesTransportadoraLink[] $pedidos_shopifies_transportadora_links
  * @property Collection|ProductoShopifiesPedidosShopifyLink[] $producto_shopifies_pedidos_shopify_links
+ * @property Collection|TransaccionPedidoTransportadora[] $transaccion_pedido_transportadoras
  * @property Collection|UpUsersPedidosShopifiesLink[] $up_users_pedidos_shopifies_links
  *
  * @package App\Models
@@ -75,7 +81,8 @@ class PedidosShopify extends Model
 	protected $casts = [
 		'created_by_id' => 'int',
 		'updated_by_id' => 'int',
-		'revisado' => 'bool'
+		'revisado' => 'bool',
+		'printed_by' => 'int'
 	];
 
 	protected $fillable = [
@@ -121,7 +128,8 @@ class PedidosShopify extends Model
 		'costo_envio',
 		'costo_transportadora',
 		'costo_devolucion',
-		'fecha_impreso'
+		'fecha_impreso',
+		'printed_by'
 	];
 
 	public function admin_user()
