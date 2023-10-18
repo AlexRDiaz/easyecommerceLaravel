@@ -11,6 +11,7 @@ use App\Repositories\transaccionesRepository;
 use App\Repositories\vendedorRepository;
 
 use Carbon\Carbon;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -40,7 +41,9 @@ class TransaccionesAPIController extends Controller
 
 
 
-        $pedido = Transaccion::where('tipo',$tipo)->where('id_origen',$idOrigen)->where('origen',$origen)->where('id_vendedor',$idVendedor)
+        $pedido = Transaccion::where('tipo',$tipo)
+        ->where('id_origen',$idOrigen)
+        ->where('origen',$origen)->where('id_vendedor',$idVendedor)
             ->get();
 
         return response()->json($pedido);
@@ -225,24 +228,67 @@ class TransaccionesAPIController extends Controller
     }
 
     public function rollbackTransaction($id){
-        $transaction = Transaccion::findOrFail($id);
-        $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
-          if($transaction->tipo=="credit"){
-         
-        
-               
-            $vendedor[0]->saldo=$vendedor[0]->saldo-$transaction->monto;
+        $transactions = Transaccion::where("id_origen",$id)->get();
+        $pedido = PedidosShopify::where("id",$id)->first();
 
+
+         foreach ($transactions as $transaction) {
+            $vendedor= UpUser::find($transaction->id_vendedor)->vendedores;
+
+            if($transaction->tipo=="credit"){
+
+
+                $transactionResetValues=new Transaccion();
+                $transactionResetValues->tipo="debit";
+                $transactionResetValues->monto=$transaction->monto;
+                $transactionResetValues->valor_anterior=$vendedor[0]->saldo;
+                $transactionResetValues->valor_actual=$vendedor[0]->saldo-$transaction->monto;
+                $transactionResetValues->marca_de_tiempo=new DateTime();
+                $transactionResetValues->id_origen=$transaction->id_origen;
+                $transactionResetValues->codigo=$transaction->codigo;
+                $transactionResetValues->origen="reembolso";
+                $transactionResetValues->id_vendedor=$transaction->id_vendedor;
+                $transactionResetValues->comentario="error de transaccion";
+                $transactionResetValues->save();
+
+                $vendedor[0]->saldo=$vendedor[0]->saldo-$transaction->monto;
+
+                  
+
+                 
+    
+              
+            }
+            if($transaction->tipo=="debit"){
+
+                $transactionResetValues=new Transaccion();
+                $transactionResetValues->tipo="credit";
+                $transactionResetValues->monto=$transaction->monto;
+                $transactionResetValues->valor_anterior=$vendedor[0]->saldo;
+                $transactionResetValues->valor_actual=$vendedor[0]->saldo+$transaction->monto;
+                $transactionResetValues->marca_de_tiempo=new DateTime();
+                $transactionResetValues->id_origen=$transaction->id_origen;
+                $transactionResetValues->codigo=$transaction->codigo;
+                $transactionResetValues->origen="reembolso";
+                $transactionResetValues->id_vendedor=$transaction->id_vendedor;
+                $transactionResetValues->comentario="error de transaccion";
+                $transactionResetValues->save();
+
+
+
+
+                $vendedor[0]->saldo=$vendedor[0]->saldo+$transaction->monto;
+    
+            }
+            $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
           
-        }
-        if($transaction->tipo=="debit"){
-            $vendedor[0]->saldo=$vendedor[0]->saldo+$transaction->monto;
-
-        }
-        $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
-        $transaction->delete();
-       
-        return response()->json(["vendedor"=>$vendedor[0],"transaccion"=>$transaction]);
+           
+         }
+      
+        return response()->json(["vendedor"=>$vendedor,
+        "transacciones"=>$transactions
+      
+    ]);
 
     }
 }
