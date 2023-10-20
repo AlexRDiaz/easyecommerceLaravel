@@ -136,7 +136,7 @@ class TransaccionesAPIController extends Controller
     public function Credit(Request $request)
     {
         $data = $request->json()->all();
-        $startDateFormatted = $data['act_date'];
+        $startDateFormatted = new DateTime();
        // $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
         $vendedorId = $data['id'];
         $tipo = "credit";
@@ -177,7 +177,7 @@ class TransaccionesAPIController extends Controller
     public function Debit(Request $request)
     {
         $data = $request->json()->all();
-        $startDateFormatted = $data['act_date'];
+        $startDateFormatted = new DateTime();
       //  $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
         $vendedorId = $data['id'];
         $vendedorId = $data['id'];
