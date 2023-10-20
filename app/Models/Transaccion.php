@@ -20,7 +20,8 @@ class Transaccion extends Model
         'codigo',
         'origen',
         'id_vendedor',
-        'comentario'
+        'comentario',
+        'state'
         
     ];
     protected $casts = [
