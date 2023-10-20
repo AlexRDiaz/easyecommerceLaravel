@@ -317,13 +317,13 @@ class PedidosShopifyAPIController extends Controller
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
+                                                if (strpos($key, '.') !== false) {
                             $relacion = substr($key, 0, strpos($key, '.'));
                             $propiedad = substr($key, strpos($key, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
                         } else {
                             $pedidos->where($key, '=', $valor);
-                        }
+                                                    }
                     }
                 }
             }))
@@ -1466,7 +1466,7 @@ class PedidosShopifyAPIController extends Controller
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
     {
         $data = $request->json()->all();
-        $startDate = $data['start'];
+                $startDate = $data['start'];
 
         $populate = $data['populate'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
@@ -1712,4 +1712,6 @@ class PedidosShopifyAPIController extends Controller
         ]); // Supongamos que estás filtrando por una columna "id" específica
         return response()->json($pedido);
     }
+
+
 }
