@@ -70,7 +70,8 @@ Route::middleware(['cors'])->group(function () {
     // * --> GUIDES_SENT
 
     Route::post('send-guides/printg', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintGuidesInSendGuidesPrincipalLaravel']);
-
+    Route::post('send-guides', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersSendGuides']);
+    // getOrdersSendGuides
 
 
     //  *************************   SELLER          *****************
