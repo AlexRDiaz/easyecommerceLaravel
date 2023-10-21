@@ -4,6 +4,8 @@ use App\Http\Controllers\API\GenerateReportAPIController;
 use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\RutaAPIController;
+use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
+use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
 use Illuminate\Http\Request;
@@ -66,9 +68,10 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedido-shopifie', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrderByIDLaravel']);
 
     // * --> GUIDES_SENT
-    
-    Route::post('send-guides/printg', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintGuidesInSendGuidesPrincipalLaravel']);
 
+    Route::post('send-guides/printg', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintGuidesInSendGuidesPrincipalLaravel']);
+    Route::post('send-guides', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersSendGuides']);
+    // getOrdersSendGuides
 
 
     //  *************************   SELLER          *****************
@@ -94,8 +97,17 @@ Route::middleware(['cors'])->group(function () {
     // ! ↓ PEDIDOS updateOrderInfoSellerLaravel
     Route::post('updtOrdIS/pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderInfoSellerLaravel']);
 
-    //  ! ↓ LA ORIGINAL
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
+
+    //  ! ↓ LA ORIGINAL
+    Route::middleware(['jwt.auth'])->group(function () {
+        // Rutas protegidas que requieren autenticación JWT
+
+        // Agrega más rutas protegidas aquí según sea necesario
+    });
+
+
+
 
     //  ! MIA OPERATOR
     Route::post('operator/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getDevolucionesOperator']);
@@ -113,6 +125,7 @@ Route::middleware(['cors'])->group(function () {
     // *
     Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
     Route::get('/vendedores/saldo/{id}', [VendedoreAPIController::class, 'getSaldo']);
+    Route::get('/vendedores/refereds/{id}', [VendedoreAPIController::class, 'getRefereds']);
 
 
     // ! TRANSACCIONES
@@ -124,12 +137,22 @@ Route::middleware(['cors'])->group(function () {
     // ! CREDIT TRANSACTION
     Route::post("transacciones/debit", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'Debit']);
     // ! ***********************
+
      // !  TRANSACTIONS BY ID SELLER
      Route::get("transacciones/bySeller/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsById']);
      // ! ***********************
+     // !  Rollback transactions
+     Route::post("transacciones/rollback", [\App\Http\Controllers\API\TransaccionesAPIController::class,'rollbackTransaction']);
+     // ! ***********************
+     // ! GetExistTransactions
+     Route::post("transacciones/exist", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getExistTransaction']);
 
-    
+       // ! GetTransacctions by date
+    Route::post("transacciones/by-date", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsByDate']);
+ // ! GetTransacctions To rollback
+    Route::get("transacciones/to-rollback/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionToRollback']);
 
+     
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
 
 
@@ -140,8 +163,9 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/routes/count', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getProductsDashboardRoutesCount']);
     Route::post('pedidos-shopify/products/values/transport', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesTransport']);
     Route::post('pedidos-shopify/products/values/seller', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesSeller']);
+    Route::post('pedidos-shopify/testChatby', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'testChatby']);
 
-
+    
     // *
     Route::post('shopify/pedidos/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'shopifyPedidos']);
 
@@ -159,19 +183,23 @@ Route::middleware(['cors'])->group(function () {
 
 
     Route::put('pedidos-shopify/update/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateCampo']);
+    Route::put('pedidos-shopify/update/status/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateStatus']);
 
 
     //Route::resource('/users', App\Http\Controllers\API\UpUserAPIController::class);
     Route::post('/users', [UpUserAPIController::class, 'store']);
+    Route::post('/users/general', [UpUserAPIController::class, 'storeGeneral']);
+
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
 
+    Route::get('/users/master/{id}', [UpUserAPIController::class, 'getSellerMaster']);
 
 
     Route::post('/login', [UpUserAPIController::class, 'login']);
 
     Route::get('users/{id}', [UpUserAPIController::class, 'users']);
 
-    
+
     Route::get('/sellers/{id}/{search?}', [UpUserAPIController::class, 'getSellers']);
 
     Route::post('/report', [GenerateReportAPIController::class, 'generateExcel']);
@@ -201,7 +229,6 @@ Route::middleware(['cors'])->group(function () {
     Route::prefix('rutas')->group(function () {
         Route::get('/', [RutaAPIController::class, 'index']);
         Route::get('/{id}', [RutaAPIController::class, 'show']);
-
     });
 
 
@@ -229,6 +256,29 @@ Route::middleware(['cors'])->group(function () {
     Route::put('pedidos-shopify/updateroutetransport/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderRouteAndTransport']);
     //  *
     Route::post('pedidos-shopify/filterall', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeAll']);
+    //  *  delete
+    //  *
+
+    Route::prefix('shippingcost')->group(function () {
+        Route::get('/', [TransportadorasShippingCostAPIController::class, 'index']);
+        Route::post('/getbydate', [TransportadorasShippingCostAPIController::class, 'byDate']);
+        Route::post('/{id}', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'getByTransportadora']);
+        Route::put('/{id}', [TransportadorasShippingCostAPIController::class, 'update']);
+        Route::get('/perday', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'getShippingCostPerDay']);
+        Route::post('bytransportadora/{id}', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'getByTransportadora']);
+
+    });
+
+    // 
+    Route::prefix('transaccionespedidotransportadora')->group(function () {
+        Route::get('/', [TransaccionPedidoTransportadoraAPIController::class, 'index']);
+        Route::post('/getByDate', [TransaccionPedidoTransportadoraAPIController::class, 'getByDate']);
+        Route::post('/', [TransaccionPedidoTransportadoraAPIController::class, 'store']);
+        Route::put('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'update']);
+        Route::post('/bydates', [TransaccionPedidoTransportadoraAPIController::class, 'getByTransportadoraDates']);
+        Route::delete('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'destroy']);
+
+    });
 
     //test
 

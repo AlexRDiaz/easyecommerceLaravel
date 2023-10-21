@@ -12,8 +12,10 @@ use App\Models\PedidosShopify;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
 use App\Models\Ruta;
 use App\Models\TransportStats;
+use App\Models\UpUser;
 use App\Models\UpUsersPedidosShopifiesLink;
 use Carbon\Carbon;
+use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -44,6 +46,25 @@ class PedidosShopifyAPIController extends Controller
         // Respuesta de éxito
         return response()->json(['message' => 'Registro actualizado con éxito', "res" => $pedido], 200);
     }
+
+    public function updateStatus(Request $request, $id)
+    {
+        // Recuperar los datos del formulario
+     
+    // Recuperar el nuevo estado del pedido
+    $data = $request->all();
+    $newStatus = $data['status'];
+
+    // Encuentra el registro en base al ID
+    $pedido = PedidosShopify::findOrFail($id);
+
+    // Actualiza el estado del pedido
+    $pedido->status = $newStatus;
+    $pedido->save();
+
+    // Respuesta de éxito
+    return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status], 200);
+}
 
     public function show($id)
     {
@@ -297,13 +318,13 @@ class PedidosShopifyAPIController extends Controller
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
+                                                if (strpos($key, '.') !== false) {
                             $relacion = substr($key, 0, strpos($key, '.'));
                             $propiedad = substr($key, strpos($key, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
                         } else {
                             $pedidos->where($key, '=', $valor);
-                        }
+                                                    }
                     }
                 }
             }))
@@ -1333,12 +1354,60 @@ class PedidosShopifyAPIController extends Controller
             $createUserPedido->user_id = $id;
             $createUserPedido->pedidos_shopify_id = $createOrder->id;
             $createUserPedido->save();
+            $user = UpUser::with([
+                'vendedores',
+            ])->find($id);
+
+            if ($user->enable_autome) {
+                if ($user->webhook_autome != null) {
+
+                    $client = new Client();
+
+                    $response = $client->post($user->webhook_autome, [
+                        'json' => [
+                            "id" =>  $createOrder->id,
+                            "marca_t_i" => $createOrder->marca_t_i,
+                            "tienda_temporal" => $createOrder->tienda_temporal,
+                            "numero_orden" => $createOrder->numero_orden,
+                            "direccion_shipping" => $createOrder->direccion_shipping,
+                            "nombre_shipping" => $createOrder->nombre_shipping,
+                            "telefono_shipping" => $createOrder->telefono_shipping,
+                            "precio_total" => $createOrder->precio_total,
+                            "observacion" => $createOrder->observacion,
+                            "ciudad_shipping" => $createOrder->ciudad_shipping,
+                            "id_comercial" => $createOrder->id_comercial,
+                            "producto_p" => $createOrder->producto_p,
+                            "producto_extra" => $createOrder->producto_extra,
+                            "cantidad_total" => $createOrder->cantidad_total,
+                            "status" => $createOrder->status
+                        ]
+                    ]);
+                }
+            }
 
 
-            /////
+            // "id" =>  $createOrder->id,
+            // "marca_t_i" => $createOrder->marca_t_i,
+            // "tienda_temporal" => $createOrder->tienda_temporal,
+            // "numero_orden" => $createOrder->numero_orden,
+            // "direccion_shipping" => $createOrder->direccion_shipping,
+            // "nombre_shipping" => $createOrder->nombre_shipping,
+            // "telefono_shipping" => $createOrder->telefono_shipping,
+            // "precio_total" => $createOrder->precio_total,
+            // "observacion" => $createOrder->observacion,
+            // "ciudad_shipping" => $createOrder->ciudad_shipping,
+            // "id_comercial" => $createOrder->id_comercial,
+            // "producto_p" => $createOrder->id_comercial,
+            // "producto_extra" => $createOrder->id_comercial,
+            // "cantidad_total" => $createOrder->id_comercial,
+            // "status" => $createOrder->id_comercial,
+
             return response()->json([
+                'autome_response' => json_decode($response->getBody()->getContents()),
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
+                'search' => 'MANDE',
+                'and' => []
             ], 200);
         } else {
             return response()->json([
@@ -1358,10 +1427,47 @@ class PedidosShopifyAPIController extends Controller
         }
     }
 
+    public function sendToAutome($url, $data)
+    {
+        $client = new Client();
+        $response = $client->post($url, [
+            'data' => [
+                "id" =>  $data->id,
+                "marca_t_i" => $data->marca_t_i,
+                "tienda_temporal" => $data->tienda_temporal,
+                "numero_orden" => $data->numero_orden,
+                "direccion_shipping" => $data->direccion_shipping,
+                "nombre_shipping" => $data->nombre_shipping,
+                "telefono_shipping" => $data->telefono_shipping,
+                "precio_total" => $data->precio_total,
+                "observacion" => $data->observacion,
+                "ciudad_shipping" => $data->ciudad_shipping,
+                "id_comercial" => $data->id_comercial,
+                "producto_p" => $data->id_comercial,
+                "producto_extra" => $data->id_comercial,
+                "cantidad_total" => $data->id_comercial,
+                "status" => $data->id_comercial,
+            ]
+        ]);
+
+        return response()->json_decode($response->getBody()->getContents());
+    }
+
+
+    public function testChatby(Request $request)
+    {
+        $data = $request->json()->all();
+        return $data;
+    }
+
+
+
+
+
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
     {
         $data = $request->json()->all();
-        $startDate = $data['start'];
+                $startDate = $data['start'];
 
         $populate = $data['populate'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
@@ -1614,6 +1720,7 @@ class PedidosShopifyAPIController extends Controller
         return response()->json($pedido);
     }
 
+
     // ! Transport_Stats
 
     // public function generateTransportStatsTR(Request $request)
@@ -1854,3 +1961,4 @@ class PedidosShopifyAPIController extends Controller
     }
 
 }
+

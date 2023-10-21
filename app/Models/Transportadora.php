@@ -26,7 +26,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property AdminUser|null $admin_user
  * @property Collection|Operadore[] $operadores
  * @property Collection|PedidosShopifiesTransportadoraLink[] $pedidos_shopifies_transportadora_links
+ * @property Collection|TransaccionPedidoTransportadora[] $transaccion_pedido_transportadoras
  * @property Collection|Ruta[] $rutas
+ * @property Collection|TransportadorasShippingCost[] $transportadoras_shipping_costs
  * @property Collection|TransportadorasUsersPermissionsUserLink[] $transportadoras_users_permissions_user_links
  *
  * @package App\Models
@@ -41,7 +43,6 @@ class Transportadora extends Model
 	];
 
 	protected $fillable = [
-		'id',
 		'nombre',
 		'costo_transportadora',
 		'telefono_1',
@@ -66,6 +67,11 @@ class Transportadora extends Model
 		return $this->hasMany(PedidosShopifiesTransportadoraLink::class);
 	}
 
+	public function transaccion_pedido_transportadoras()
+	{
+		return $this->hasMany(TransaccionPedidoTransportadora::class, 'id_transportadora');
+	}
+
 	public function rutas()
 	{
 		return $this->belongsToMany(Ruta::class, 'transportadoras_rutas_links')
@@ -75,5 +81,10 @@ class Transportadora extends Model
 	public function transportadoras_users_permissions_user_links()
 	{
 		return $this->hasMany(TransportadorasUsersPermissionsUserLink::class);
+	}
+
+	public function pedidos()
+	{
+		return $this->hasManyThrough(PedidosShopify::class, PedidosShopifiesTransportadoraLink::class, 'transportadora_id', 'id', 'id', 'pedidos_shopify_id');
 	}
 }
