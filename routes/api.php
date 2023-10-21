@@ -43,14 +43,11 @@ Route::middleware(['cors'])->group(function () {
     
     // ! esta es solo para ver lo que tiene registrado en cada usuario en los permisos
     Route::get('permisos', [App\Http\Controllers\API\UpUserAPIController::class, 'getPermisos']);
+
     // * obtiene los datos de cada rol con su id y accesos
     Route::get('access-total', [App\Http\Controllers\API\RolesFrontAPIController::class, 'index']);
 
-    Route::post('upd-access', [App\Http\Controllers\API\UpUserAPIController::class, 'updatePermissions']);
-
-    
-    Route::post('upd-rolesaccess', [App\Http\Controllers\API\UpUserAPIController::class, 'newPermission']);
-    
+    Route::post('new-access', [App\Http\Controllers\API\UpUserAPIController::class, 'updatePermissions']);
 
     // eliminacion de accesos enviando el active con false
     Route::post('dlt-rolesaccess', [App\Http\Controllers\API\UpUserAPIController::class, 'deletePermissions']);
@@ -80,13 +77,6 @@ Route::middleware(['cors'])->group(function () {
     // updateDateandStatus
     Route::post('upd/pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateDateandStatus']);
 
-    Route::get('rutas_transport/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getRutasOfTransport']);
-
-    Route::get('transport_rutas/{id}', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getTransportadorasOfRuta']);
-
-    Route::post('obtener-pedidos-por-ruta', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'obtenerPedidosPorRuta']);
-
-    // Route::post('obtener-pedidos-por-trans', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'obtenerPedidosPorTransportadora']);
 
 
     // ********************************************************
@@ -221,8 +211,16 @@ Route::middleware(['cors'])->group(function () {
     // getUserPedidos
 
     Route::get('up-user-pedidos/{id}', [UpUserAPIController::class, 'getUserPedidos']);
-    Route::get('up-user-pedidos-trans/{id}', [UpUserAPIController::class, 'getUserPedidosByTransportadora']);
-    Route::get('up-user-pedidos-routes/{id}', [UpUserAPIController::class, 'getUserPedidosByRuta']);
+
+
+    // !general stats
+
+    Route::post('data-stats-rt', [App\Http\Controllers\API\TransportStatsAPIController::class, 'fetchDataByDate3']);
+    Route::post('data-stats', [App\Http\Controllers\API\TransportStatsAPIController::class, 'fetchDataByDate2']);
+
+    // TEST ↓↓
+    // Route::post('up-user-pedidos-gnral', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'generateTransportStatsTR']);
+
 
 
 

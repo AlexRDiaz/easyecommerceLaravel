@@ -255,6 +255,7 @@ class UpUserAPIController extends Controller
         return response()->json(['message' => 'Estado de Términos y condiciones actualizados con éxito'], 200);
     }
 
+    
     // ! FUNCION DE VENDEDORES QUE NECESITA NERFEO :) 
     public function getUserPedidos($id, Request $request)
     {
@@ -349,35 +350,52 @@ class UpUserAPIController extends Controller
 
     // ! FUNCION PARECIDA A NERFEO TRANS:) 
     public function getUserPedidosByTransportadora($idTransportadora, Request $request)
-{
-    $transportadora = Transportadora::find($idTransportadora);
-
-    if (!$transportadora) {
-        return response()->json(['error' => 'Transportadora no encontrada'], 404);
+    {
+        $transportadora = Transportadora::find($idTransportadora);
+    
+        if (!$transportadora) {
+            return response()->json(['error' => 'Transportadora no encontrada'], 404);
+        }
+    
+        $pedidos = PedidosShopify::whereHas('pedidos_shopifies_transportadora_links', function ($query) use ($idTransportadora) {
+            $query->where('transportadora_id', $idTransportadora)
+            ->where('estado_interno', 'CONFIRMADO')
+            ->where('estado_logistico', 'ENVIADO');
+        })->get();
+        
+    
+          // Filtrar los pedidos entregados
+            $entregados = $pedidos->filter(function ($pedido) {
+                return $pedido->status === 'ENTREGADO';
+            });
+        
+            // Filtrar los pedidos no entregados
+            $noEntregados = $pedidos->filter(function ($pedido) {
+                return $pedido->status === 'NO ENTREGADO';
+            });
+        
+            // Filtrar los pedidos con novedad
+            $novedad = $pedidos->filter(function ($pedido) {
+                return $pedido->status === 'NOVEDAD';
+            });
+        
+            // Contar la cantidad de pedidos entregados, no entregados y con novedad
+            $cantidadEntregados = $entregados->count();
+            $cantidadNoEntregados = $noEntregados->count();
+            $cantidadNovedad = $novedad->count();
+    
+        // Calcular la suma total de ambos
+            $sumaTotal = $cantidadEntregados + $cantidadNoEntregados + $cantidadNovedad;
+        
+        return response()->json([
+            'identification' => $transportadora->nombre . '-' . $transportadora->id,
+            'entregados_count' => $cantidadEntregados,
+            'no_entregados_count' => $cantidadNoEntregados ,
+            'novedad_count' => $cantidadNovedad,
+            'total_pedidos' => $sumaTotal,
+        ]);
     }
-
-    $pedidos = PedidosShopify::whereHas('pedidos_shopifies_transportadora_links', function ($query) use ($idTransportadora) {
-        $query->where('transportadora_id', $idTransportadora);
-    })
-    ->where('estado_logistico', 'ENVIADO')
-    ->where('estado_interno', 'CONFIRMADO')
-    ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'])
-    ->get();
-
-    $entregadosCount = $pedidos->where('status', 'ENTREGADO')->count();
-    $noEntregadosCount = $pedidos->where('status', 'NO ENTREGADO')->count();
-    $novedadCount = $pedidos->where('status', 'NOVEDAD')->count();
-    $totalPedidos = $entregadosCount + $noEntregadosCount + $novedadCount;
-
-    return response()->json([
-        'identification' => $transportadora->nombre . '-' . $transportadora->id,
-        'entregados_count' => $entregadosCount,
-        'no_entregados_count' => $noEntregadosCount,
-        'novedad_count' => $novedadCount,
-        'total_pedidos' => $totalPedidos,
-    ]);
-}
-
+    
     // ! FUNCION PARECIDA A NERFEO ROUTES:) 
 
     public function getUserPedidosByRuta($idRuta, Request $request)
@@ -418,7 +436,6 @@ class UpUserAPIController extends Controller
             'total_pedidos' => $entregadosCount + $noEntregadosCount + $novedad,
         ]);
     }
-
 
     public function getPermisos()
     {

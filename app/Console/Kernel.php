@@ -17,7 +17,14 @@ class Kernel extends ConsoleKernel
         $schedule->command('app:your-custom-command')->everyMinute(); // Cambia 'your:custom-command' al nombre de tu comando personalizado
 
 
-      //  error_log("usuario logueado");
+        // monthly cutoff
+        $schedule->command('app:generate-stats')->cron('59 23 28-31 * *');
+
+        // (daily cutoff) -> TEST
+        // $schedule->command('app:generate-stats')->everyMinute();
+
+
+        //  error_log("usuario logueado");
     }
 
 
@@ -26,7 +33,7 @@ class Kernel extends ConsoleKernel
      */
     protected function commands(): void
     {
-        $this->load(__DIR__.'/Commands');
+        $this->load(__DIR__ . '/Commands');
 
         require base_path('routes/console.php');
     }
