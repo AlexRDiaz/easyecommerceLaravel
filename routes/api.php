@@ -149,13 +149,15 @@ Route::middleware(['cors'])->group(function () {
      Route::get("transacciones/bySeller/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsById']);
      // ! ***********************
      // !  Rollback transactions
-     Route::post("transacciones/rollback/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'rollbackTransaction']);
+     Route::post("transacciones/rollback", [\App\Http\Controllers\API\TransaccionesAPIController::class,'rollbackTransaction']);
      // ! ***********************
      // ! GetExistTransactions
      Route::post("transacciones/exist", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getExistTransaction']);
 
        // ! GetTransacctions by date
-       Route::post("transacciones/by-date", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsByDate']);
+    Route::post("transacciones/by-date", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsByDate']);
+ // ! GetTransacctions To rollback
+    Route::get("transacciones/to-rollback/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionToRollback']);
 
      
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);

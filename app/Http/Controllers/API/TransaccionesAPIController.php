@@ -168,6 +168,7 @@ class TransaccionesAPIController extends Controller
         $newTrans->origen = $origen;
         $newTrans->comentario=$comentario;
         $newTrans->id_vendedor = $vendedorId;
+        $newTrans->state=1;
         $insertedData = $this->transaccionesRepository->create($newTrans);
         $updatedData = $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
@@ -210,6 +211,7 @@ class TransaccionesAPIController extends Controller
         $newTrans->comentario=$comentario;
 
         $newTrans->id_vendedor = $vendedorId;
+        $newTrans->state=1;
         $insertedData = $this->transaccionesRepository->create($newTrans);
         $updatedData = $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
@@ -226,18 +228,34 @@ class TransaccionesAPIController extends Controller
 
 
     }
+    public function getTransactionToRollback($id)
+    {
+        $transaccion = Transaccion::where("id_origen",$id)->where('state', '1')->whereNot("origen","reembolso")->get();
+        
 
-    public function rollbackTransaction($id){
-        $transactions = Transaccion::where("id_origen",$id)->get();
-        $pedido = PedidosShopify::where("id",$id)->first();
+        
+        return response()->json($transaccion);
+    }
 
+    public function rollbackTransaction(Request $request){
+        $data = $request->json()->all();
 
-         foreach ($transactions as $transaction) {
+        $ids = $data['ids'];
+         $reqTrans=[];
+         $reqPedidos=[];
+ 
+         foreach ($ids   as $id) {
+
+            $transaction = Transaccion::find($id);
+            array_push($reqTrans, $transaction);
+
+            if($transaction->state==1){
+
+            $pedido = PedidosShopify::where("id",$transaction->id_origen)->first();
+            array_push($reqPedidos, $pedido);
+
             $vendedor= UpUser::find($transaction->id_vendedor)->vendedores;
-
-            if($transaction->tipo=="credit"){
-
-
+           if($transaction->tipo=="credit"){
                 $transactionResetValues=new Transaccion();
                 $transactionResetValues->tipo="debit";
                 $transactionResetValues->monto=$transaction->monto;
@@ -249,15 +267,10 @@ class TransaccionesAPIController extends Controller
                 $transactionResetValues->origen="reembolso";
                 $transactionResetValues->id_vendedor=$transaction->id_vendedor;
                 $transactionResetValues->comentario="error de transaccion";
+                $transactionResetValues->state=0;
+
                 $transactionResetValues->save();
-
-                $vendedor[0]->saldo=$vendedor[0]->saldo-$transaction->monto;
-
-                  
-
-                 
-    
-              
+                $vendedor[0]->saldo=$vendedor[0]->saldo-$transaction->monto;              
             }
             if($transaction->tipo=="debit"){
 
@@ -272,6 +285,8 @@ class TransaccionesAPIController extends Controller
                 $transactionResetValues->origen="reembolso";
                 $transactionResetValues->id_vendedor=$transaction->id_vendedor;
                 $transactionResetValues->comentario="error de transaccion";
+                $transactionResetValues->state=0;
+
                 $transactionResetValues->save();
 
 
@@ -280,19 +295,18 @@ class TransaccionesAPIController extends Controller
                 $vendedor[0]->saldo=$vendedor[0]->saldo+$transaction->monto;
     
             }
+            $transaction->state=0;
+            $transaction->save();
             $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
           
-           
          }
+           
+          }
       
-        return response()->json(["vendedor"=>$vendedor,
-        "transacciones"=>$transactions
+        return response()->json([
+        "transacciones"=>$reqTrans, "pedidps"=>$reqPedidos
       
     ]);
 
     }
 }
-
-
-
-?>
