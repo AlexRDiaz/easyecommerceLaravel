@@ -11,6 +11,7 @@ use App\Models\PedidosShopifiesTransportadoraLink;
 use App\Models\PedidosShopify;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
 use App\Models\Ruta;
+use App\Models\TransportStats;
 use App\Models\UpUser;
 use App\Models\UpUsersPedidosShopifiesLink;
 use Carbon\Carbon;
@@ -131,18 +132,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
+            foreach ($not as $condition) {
+                foreach ($condition as $key => $valor) {
+                    if (strpos($key, '.') !== false) {
+                        $relacion = substr($key, 0, strpos($key, '.'));
+                        $propiedad = substr($key, strpos($key, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                    } else {
+                        $pedidos->where($key, '!=', $valor);
                     }
                 }
-            }));
+            }
+        }));
         // ! **************************************************
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
 
@@ -224,18 +225,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
+            foreach ($not as $condition) {
+                foreach ($condition as $key => $valor) {
+                    if (strpos($key, '.') !== false) {
+                        $relacion = substr($key, 0, strpos($key, '.'));
+                        $propiedad = substr($key, strpos($key, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                    } else {
+                        $pedidos->where($key, '!=', $valor);
                     }
                 }
-            }));
+            }
+        }));
         // ! Ordena
         if ($orderBy !== null) {
             $pedidos->orderBy(key($orderBy), reset($orderBy));
@@ -541,18 +542,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
+            foreach ($not as $condition) {
+                foreach ($condition as $key => $valor) {
+                    if (strpos($key, '.') !== false) {
+                        $relacion = substr($key, 0, strpos($key, '.'));
+                        $propiedad = substr($key, strpos($key, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                    } else {
+                        $pedidos->where($key, '!=', $valor);
                     }
                 }
-            }));
+            }
+        }));
         // ! Ordenamiento ********************************** 
         $orderByText = null;
         $orderByDate = null;
@@ -843,18 +844,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
+            foreach ($not as $condition) {
+                foreach ($condition as $key => $valor) {
+                    if (strpos($key, '.') !== false) {
+                        $relacion = substr($key, 0, strpos($key, '.'));
+                        $propiedad = substr($key, strpos($key, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                    } else {
+                        $pedidos->where($key, '!=', $valor);
                     }
                 }
-            }));
+            }
+        }));
         // ! Ordena
         $orderByText = null;
         $orderByDate = null;
@@ -1045,19 +1046,19 @@ class PedidosShopifyAPIController extends Controller
                 }
             }))->where((function ($pedidos) use ($not) {
 
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
+            foreach ($not as $condition) {
+                foreach ($condition as $key => $valor) {
+                    if (strpos($key, '.') !== false) {
+                        $relacion = substr($key, 0, strpos($key, '.'));
+                        $propiedad = substr($key, strpos($key, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                    } else {
+                        $pedidos->where($key, '!=', $valor);
                     }
                 }
             }
-            ))->get();
+        }
+                ))->get();
 
 
 
@@ -1519,18 +1520,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
+            foreach ($not as $condition) {
+                foreach ($condition as $key => $valor) {
+                    if (strpos($key, '.') !== false) {
+                        $relacion = substr($key, 0, strpos($key, '.'));
+                        $propiedad = substr($key, strpos($key, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                    } else {
+                        $pedidos->where($key, '!=', $valor);
                     }
                 }
-            }));
+            }
+        }));
         // ! Ordenamiento ********************************** 
         $orderByText = null;
         $orderByDate = null;
@@ -1584,16 +1585,23 @@ class PedidosShopifyAPIController extends Controller
                 $query->where('transportadora_id', $transportadoraId);
             })
             ->get();
+
         // Filtrar los pedidos entregados
-        $entregados = $pedidos->where('status', 'ENTREGADO');
+        $entregados = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'ENTREGADO';
+        });
 
         // Filtrar los pedidos no entregados
-        $noEntregados = $pedidos->where('status', 'NO ENTREGADO');
+        $noEntregados = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'NO ENTREGADO';
+        });
 
-        // Filtrar los pedidos no entregados
-        $novedad = $pedidos->where('status', 'NOVEDAD');
+        // Filtrar los pedidos con novedad
+        $novedad = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'NOVEDAD';
+        });
 
-        // Contar la cantidad de pedidos entregados y no entregados
+        // Contar la cantidad de pedidos entregados, no entregados y con novedad
         $cantidadEntregados = $entregados->count();
         $cantidadNoEntregados = $noEntregados->count();
         $cantidadNovedad = $novedad->count();
@@ -1608,7 +1616,6 @@ class PedidosShopifyAPIController extends Controller
             'suma_total' => $sumaTotal
         ]);
     }
-
 
 
     // *
@@ -1635,7 +1642,7 @@ class PedidosShopifyAPIController extends Controller
 
 
         if ($resRutaNum === 0) {
-            $createPedidoRuta = new  PedidosShopifiesRutaLink();
+            $createPedidoRuta = new PedidosShopifiesRutaLink();
             $createPedidoRuta->pedidos_shopify_id = $order->id;
             $createPedidoRuta->ruta_id = $newrouteId;
             $createPedidoRuta->save();
@@ -1714,4 +1721,244 @@ class PedidosShopifyAPIController extends Controller
     }
 
 
+    // ! Transport_Stats
+
+    // public function generateTransportStatsTR(Request $request)
+    public function generateTransportStatsTR()
+    {
+        // $data = $request->json()->all();
+
+        // Obtener el mes y año actual
+        $fechaMes = Carbon::now()->format('n/Y');
+        // $fechaMes = "10/2023";
+        // dd($fechaMes);
+        // $fechaMes = $data['fecha_mes']; // Por ejemplo, '2/2023'
+        $startDate = Carbon::createFromFormat('j/n/Y', '1/' . $fechaMes)->firstOfMonth();
+        $endDate = $startDate->copy()->endOfMonth();
+
+        $pedidos = PedidosShopify::select('id', 'fecha_entrega', 'status', 'estado_logistico', 'estado_interno')
+            ->with(['ruta', 'transportadora'])
+            ->whereBetween(DB::raw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y')"), [$startDate, $endDate])
+            ->where('estado_interno', 'CONFIRMADO')
+            ->where('estado_logistico', 'ENVIADO')
+            ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'])
+            ->get();
+
+        // ! DESDE AQUI EMPIEZA LO PEGADO    
+
+        $allTransportadorasRutas = collect();
+        $pedidosInfo = [];
+        $entregadosCount = 0;
+        $noEntregadosCount = 0;
+        $novedad = 0;
+
+        foreach ($pedidos as $pedido) {
+            if ($pedido->pedidos_shopifies_transportadora_links->contains('transportadora.nombre', "")) {
+                continue; // Saltar a la siguiente iteración del bucle
+            }
+            if ($pedido->pedidos_shopifies_ruta_links->contains('ruta.id', 1)) {
+                continue; // Saltar a la siguiente iteración del bucle
+            }
+
+            $transportadorasInfo = $pedido->pedidos_shopifies_transportadora_links->map(function ($link) {
+                return $link->transportadora->nombre . '-' . $link->transportadora->id;
+            })->implode(', ');
+            $rutasInfo = $pedido->pedidos_shopifies_ruta_links->map(function ($link) {
+                return $link->ruta->titulo . '-' . $link->ruta->id;
+            })->implode(', ');
+
+            $allTransportadorasRutas->push($transportadorasInfo . '|' . $rutasInfo);
+
+
+            $status = $pedido->status;
+
+            if ($status === 'ENTREGADO') {
+                $entregadosCount++;
+            } else if ($status === 'NO ENTREGADO') {
+                $noEntregadosCount++;
+            } else if ($status === 'NOVEDAD') {
+                $novedad++;
+            }
+
+            $pedidosInfo[] = [
+                'pedido_id' => $pedido->id,
+                'fecha_entrega' => $pedido->fecha_entrega,
+                'rutas' => $rutasInfo,
+                'transportadoras' => $transportadorasInfo,
+                'status' => $status,
+            ];
+        }
+
+        // Obtener listas únicas sin repeticiones
+        $uniqueTransportadorasRutas = $allTransportadorasRutas->unique()->values();
+
+        $transportadoraRutaCount = collect();
+
+        foreach ($uniqueTransportadorasRutas as $uniqueInfo) {
+            list($transportadora, $rutas) = explode('|', $uniqueInfo);
+
+            $counts = collect($pedidosInfo)->where('rutas', $rutas)->where('transportadoras', $transportadora)->countBy('status')->toArray();
+
+            $transportadoraRutaCount->push([
+                'pedidos_info' => $pedidosInfo,
+                'transportadoras' => $transportadora,
+                'rutas' => $rutas,
+                'entregados_count' => $counts['ENTREGADO'] ?? 0,
+                'no_entregados_count' => $counts['NO ENTREGADO'] ?? 0,
+                'novedad_count' => $counts['NOVEDAD'] ?? 0,
+                'total_pedidos' => ($counts['ENTREGADO'] ?? 0) + ($counts['NO ENTREGADO'] ?? 0) + ($counts['NOVEDAD'] ?? 0),
+            ]);
+        }
+
+        // Agrupar internamente por la propiedad "rutas"
+        $groupedRutasTransportadoras = $transportadoraRutaCount->groupBy('transportadoras')->map(function ($group) {
+            return $group->map(function ($item) {
+                return [
+                    'rutas' => $item['rutas'],
+                    'entregados_count' => $item['entregados_count'],
+                    'no_entregados_count' => $item['no_entregados_count'],
+                    'novedad_count' => $item['novedad_count'],
+                    'total_pedidos' => $item['total_pedidos'],
+                ];
+            });
+        });
+
+        $groupedRutasTransportadoras = $groupedRutasTransportadoras->map(function ($group) {
+            $totalGeneralEntregados = $group->sum('entregados_count');
+            $totalGeneralNoEntregados = $group->sum('no_entregados_count');
+            $totalGeneralNovedades = $group->sum('novedad_count');
+
+            return [
+                'items' => $group,
+                'totalgeneralentregados' => $totalGeneralEntregados,
+                'totalgeneralnoentregados' => $totalGeneralNoEntregados,
+                'totalgeneralnovedades' => $totalGeneralNovedades,
+            ];
+        });
+
+        $final = [
+            'pedidos' => $pedidosInfo,
+            'listarutas_transportadoras' => $groupedRutasTransportadoras,
+            'entregados_count' => $entregadosCount,
+            'no_entregados_count' => $noEntregadosCount,
+            'novedad_count' => $novedad,
+            'total_pedidos' => $entregadosCount + $noEntregadosCount + $novedad,
+            'efectividad' => number_format(($entregadosCount / ($entregadosCount + $noEntregadosCount + $novedad)) * 100, 2),
+        ];
+
+        $this->updateTransportStats($final, $endDate);
+
+        // return response()->json($final);
+    }
+
+    public function updateTransportStats($apiData, $endDate)
+    {
+        $initialcountervalue = 1;
+        // 1. Verificar si la tabla está vacía
+        if (!TransportStats::count()) {
+            foreach ($apiData['listarutas_transportadoras'] as $transportadoraName => $transportadoraData) {
+                $transportId = explode("-", $transportadoraName)[1];
+                $entregadosDay = 0;
+                $totalPedidosDay = 0;
+
+                foreach ($transportadoraData['items'] as $item) {
+                    $entregadosDay = $item['entregados_count'];
+                    $totalPedidosDay = $item['total_pedidos'];
+
+                    TransportStats::create([
+                        'transport_id' => $transportId,
+                        'transport_name' => explode("-", $transportadoraName)[0],
+                        // Nombre de la transportadora
+                        'route_name' => $item['rutas'],
+                        // Nombre de la ruta
+
+                        'monthly_counter' => $initialcountervalue,
+                        'daily_counter' => $initialcountervalue,
+
+                        'efficiency_month_date' => $endDate,
+                        'efficiency_day_date' => $endDate,
+
+                        'transport_stats_day' => $entregadosDay / $totalPedidosDay,
+                        'transport_stats_month' => ($transportadoraData['totalgeneralentregados'] / ($transportadoraData['totalgeneralentregados'] + $transportadoraData['totalgeneralnoentregados'] + $transportadoraData['totalgeneralnovedades']))
+                        // array_sum(
+                        //     [$transportadoraData['totalgeneralentregados'], $transportadoraData['totalgeneralnoentregados'], $transportadoraData['totalgeneralnovedades']]
+                        //     )
+                    ]);
+                }
+            }
+        } 
+        else {
+            foreach ($apiData['listarutas_transportadoras'] as $transportadoraName => $transportadoraData) {
+                $transportadoraMonthStat = ($transportadoraData['totalgeneralentregados'] / ($transportadoraData['totalgeneralentregados'] + $transportadoraData['totalgeneralnoentregados'] + $transportadoraData['totalgeneralnovedades']));
+                $transportId = explode("-", $transportadoraName)[1];
+                $isNewTransportadora = true;
+        
+                foreach ($transportadoraData['items'] as $item) {
+                    $entregadosDay = $item['entregados_count'];
+                    $totalPedidosDay = $item['total_pedidos'];
+                    $transportadoraNamePart = explode("-", $transportadoraName)[0];
+                    $routeName = $item['rutas'];
+        
+                    $existingStat = TransportStats::where('transport_name', $transportadoraNamePart)->first();
+        
+                    // Usar el valor de monthly_counter del registro existente si existe, de lo contrario usar 1.
+                    $monthlyValue = $existingStat ? $existingStat->monthly_counter : 1;
+        
+                    $stat = TransportStats::firstOrCreate(
+                        [
+                            'transport_name' => $transportadoraNamePart,
+                            'route_name' => $routeName,
+                        ],
+                        [
+                            'transport_id' => $transportId,
+                            'monthly_counter' => $monthlyValue,
+                            'daily_counter' => 1,  // Corregido a 1
+                            'efficiency_month_date' => $endDate,
+                            'efficiency_day_date' => $endDate,
+                            'transport_stats_day' => $entregadosDay / $totalPedidosDay,
+                        ]
+                    );
+        
+                    if (!$stat->wasRecentlyCreated) {
+                        $stat->daily_counter++;
+                        $isNewTransportadora = false;
+        
+                        // Consultar el valor actual de transport_stats_day
+                        $currentDayStat = $stat->transport_stats_day;
+        
+                        // Sumar el nuevo valor calculado
+                        $newDayStat = $currentDayStat + ($entregadosDay / $totalPedidosDay);
+                        $stat->transport_stats_day = $newDayStat;
+                    }
+        
+                    $stat->efficiency_day_date = $endDate;
+                    $stat->save();
+                }
+        
+                if (!$isNewTransportadora) {
+                    TransportStats::where('transport_name', $transportadoraNamePart)
+                        ->increment('monthly_counter');
+                }
+        
+                // Consultar el valor actual de transport_stats_month
+                $currentMonthStat = TransportStats::where('transport_name', $transportadoraNamePart)->value('transport_stats_month');
+        
+                // Sumar el nuevo valor calculado
+                $newTransportadoraMonthStat = $currentMonthStat + $transportadoraMonthStat;
+        
+                // Actualizar el registro con el nuevo total
+                TransportStats::where('transport_name', $transportadoraNamePart)
+                    ->update([
+                        'efficiency_month_date' => $endDate,
+                        'transport_stats_month' => $newTransportadoraMonthStat,
+                    ]);
+            }
+        }
+        
+
+
+
+    }
+
 }
+
