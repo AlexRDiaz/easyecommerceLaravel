@@ -1254,7 +1254,7 @@ class PedidosShopifyAPIController extends Controller
         $camposDisponibles = array_keys($request->all());
 
         // Registra los nombres de los campos disponibles
-        error_log("Campos disponibles en la solicitud: " . implode(', ', $camposDisponibles));
+        error_log("Campos disponibles en la solicitud: " . $request->input('line_items'));
     
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
