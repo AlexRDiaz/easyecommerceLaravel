@@ -1249,8 +1249,13 @@ class PedidosShopifyAPIController extends Controller
     public function shopifyPedidos(Request $request, $id)
     {
         //GENERATE DATE
-        $jsonRequest = json_encode($request->all(), JSON_PRETTY_PRINT);
-        error_log("Request Data: " . $jsonRequest);
+        $requestData = $request->all();
+
+    // Convierte los datos a formato JSON para que sean más legibles
+    $requestDataJson = json_encode($requestData, JSON_PRETTY_PRINT);
+
+    // Registra los datos en el archivo de registro
+    error_log("Solicitud recibida:\n" . $requestDataJson);
 
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
