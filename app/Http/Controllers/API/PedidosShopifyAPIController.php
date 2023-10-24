@@ -1265,8 +1265,8 @@ class PedidosShopifyAPIController extends Controller
         //VARIABLES FOR ENTITY
         $listOfProducts = [];
         $order_number = $request->input('order_number');
-        $image= $request->input('image');
-        error_log("Imagen: " . $image['src']);
+        $id= $request->input('id');
+        error_log("Imagen: " . $id);
 
         $name = $request->input('shipping_address.name');
         $address1 = $request->input('shipping_address.address1');
