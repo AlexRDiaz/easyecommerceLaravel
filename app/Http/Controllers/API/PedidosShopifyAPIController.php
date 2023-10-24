@@ -1251,12 +1251,11 @@ class PedidosShopifyAPIController extends Controller
         //GENERATE DATE
         $requestData = $request->all();
 
-    // Convierte los datos a formato JSON para que sean más legibles
-    $requestDataJson = json_encode($requestData, JSON_PRETTY_PRINT);
+        $camposDisponibles = array_keys($request->all());
 
-    // Registra los datos en el archivo de registro
-    error_log("Solicitud recibida:\n" . $requestDataJson);
-
+        // Registra los nombres de los campos disponibles
+        error_log("Campos disponibles en la solicitud: " . implode(', ', $camposDisponibles));
+    
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
         $fechaActual = $currentDate->format('d/m/Y');
