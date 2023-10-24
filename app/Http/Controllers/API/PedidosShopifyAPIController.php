@@ -1269,7 +1269,7 @@ class PedidosShopifyAPIController extends Controller
         $customer_note = $request->input('customer_note');
         $city = $request->input('shipping_address.city');
         $productos = $request->input('line_items');
-        error_log("productos: " . var_dump($productos));
+       // error_log("productos: " . var_dump($productos));
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
             $listOfProducts[] = [
