@@ -1265,9 +1265,7 @@ class PedidosShopifyAPIController extends Controller
         //VARIABLES FOR ENTITY
         $listOfProducts = [];
         $order_number = $request->input('order_number');
-        $id= $request->input('id');
-        error_log("Imagen: " . $id);
-
+       
         $name = $request->input('shipping_address.name');
         $address1 = $request->input('shipping_address.address1');
         $phone = $request->input('shipping_address.phone');
@@ -1278,6 +1276,9 @@ class PedidosShopifyAPIController extends Controller
        // error_log("productos: " . var_dump($productos));
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
+            $id= $element['image']['src'];
+            error_log("identificador: " . $id);
+    
             $listOfProducts[] = [
                 'id' => $element['id'],
                 'quantity' => $element['quantity'],
