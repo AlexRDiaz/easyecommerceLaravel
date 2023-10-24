@@ -1262,6 +1262,7 @@ class PedidosShopifyAPIController extends Controller
         //VARIABLES FOR ENTITY
         $listOfProducts = [];
         $order_number = $request->input('order_number');
+        error_log("Numero de orden: " . $order_number);
         $name = $request->input('shipping_address.name');
         $address1 = $request->input('shipping_address.address1');
         $phone = $request->input('shipping_address.phone');
