@@ -1254,7 +1254,6 @@ class PedidosShopifyAPIController extends Controller
         $camposDisponibles = array_keys($request->all());
 
         // Registra los nombres de los campos disponibles
-        error_log("Respuesta rand: " . var_dump($request->input()));
     
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
@@ -1266,7 +1265,8 @@ class PedidosShopifyAPIController extends Controller
         //VARIABLES FOR ENTITY
         $listOfProducts = [];
         $order_number = $request->input('order_number');
-       // error_log("Numero de orden: " . $order_number);
+        error_log("Imagen: " . $request->input('image'));
+
         $name = $request->input('shipping_address.name');
         $address1 = $request->input('shipping_address.address1');
         $phone = $request->input('shipping_address.phone');
