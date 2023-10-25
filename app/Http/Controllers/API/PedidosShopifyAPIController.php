@@ -1248,7 +1248,7 @@ class PedidosShopifyAPIController extends Controller
 
     public function shopifyPedidos(Request $request, $id)
     {
-        //GENERATE DATEz
+        //GENERATE DATE
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
         $fechaActual = $currentDate->format('d/m/Y');
@@ -1269,6 +1269,8 @@ class PedidosShopifyAPIController extends Controller
 
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
+            error_log("Respuesta rand: " . "hola mundo");
+
             $listOfProducts[] = [
                 'id' => $element['id'],
                 'quantity' => $element['quantity'],
