@@ -1381,6 +1381,8 @@ class PedidosShopifyAPIController extends Controller
                     $response = $client->post($user->webhook_autome, [
                         'json' => [
                             "id" =>  $createOrder->id,
+                            "line_item_shopify_id"=> $listOfProducts[0]['id'],
+                            "line_item_shopify_product_id"=> $listOfProducts[0]['product_id'],
                             "marca_t_i" => $createOrder->marca_t_i,
                             "tienda_temporal" => $createOrder->tienda_temporal,
                             "numero_orden" => $createOrder->numero_orden,
