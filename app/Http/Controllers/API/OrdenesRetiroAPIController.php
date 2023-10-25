@@ -153,4 +153,22 @@ class OrdenesRetiroAPIController extends Controller
             }
         }
     }
+    public function getOrdenesRetiroCount($id)
+    {
+        if($id==0){
+                $pedidos['total_retiros'] = "0.00";
+        }
+    
+        $ordenes = DB::table('ordenes_retiros as o')
+            ->join('ordenes_retiros_users_permissions_user_links as oul', 'o.id', '=', 'oul.ordenes_retiro_id')
+            ->where('oul.user_id', $id)
+            ->where('o.estado', 'REALIZADO')
+            ->select('o.*');
+    
+        $total_retiros = $ordenes->sum('o.monto');
+    
+        $pedidos['total_retiros'] = number_format($total_retiros, 2, '.', '');
+    
+        return response()->json($pedidos);
+    }
 }

@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\Mail;
 
 class VendedoreAPIController extends Controller
 {
-    
+
     public function index()
     {
         $pedidos = Vendedore::all();
@@ -35,7 +35,8 @@ class VendedoreAPIController extends Controller
         return response()->json($pedido);
     }
 
-    public function getSaldo($id){
+    public function getSaldo($id)
+    {
         $saldo = Vendedore::whereHas('up_users', function ($query) use ($id) {
             $query->where('up_users.id', $id);
         })->first();
@@ -53,24 +54,38 @@ class VendedoreAPIController extends Controller
             ->distinct()
             ->get()
             ->pluck('id_nombre');
-    
+
         return response()->json(['vendedores' => $vendedores]);
     }
+
+    public function getSaldoPorId(Request $request)
+{
+    $id_master = $request->input('id_master');
+    $vendedor = Vendedore::where('id_master', $id_master)->first();
+
+    if (!$vendedor) {
+        return response()->json(['message' => 'Vendedor con id_master no encontrado'], 404);
+    }
+
+    $saldo = $vendedor->saldo;
+
+    return response()->json(['saldo' => $saldo]);
+}
 
     public function getRefereds($id)
     {
         // Valida los datos de entrada (puedes agregar reglas de validación aquí)
-        $referedSellers =  Vendedore::where('referer',$id)->with('up_users')->get();
-        
+        $referedSellers = Vendedore::where('referer', $id)->with('up_users')->get();
+
         return response()->json($referedSellers, 200);
 
     }
-    
 
 
-    
-    
-    
+
+
+
+
     public function update(Request $request, $id)
     {
         $seller = Vendedore::find($id);
@@ -84,25 +99,26 @@ class VendedoreAPIController extends Controller
 
         return response()->json(['message' => 'Usuario actualizado con éxito', 'Vendedor' => $seller], Response::HTTP_OK);
     }
-    
-    public function mybalanceVF() {
+
+    public function mybalanceVF()
+    {
         $values = [];
-    
+
         // Obtén todos los vendedores
         $searchGeneralSellers = Vendedore::take(10)->get();
-    
+
         foreach ($searchGeneralSellers as $seller) {
             $sumaEntregados = PedidosShopify::where('id_comercial', $seller->id)
                 ->where('status', 'ENTREGADO')
                 ->sum('precio_total');
-    
+
             $sumaCostoInicial = floatval($seller->costo_envio);
-    
+
             $sumaCosto = DB::table('pedidos_shopifies')
                 ->where('id_comercial', $seller->id)
                 ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])
                 ->count() * $sumaCostoInicial;
-    
+
             $sumaDevolucionInicial = floatval($seller->costo_devolucion);
 
             $pedidos = DB::table('pedidos_shopifies')
@@ -114,38 +130,38 @@ class VendedoreAPIController extends Controller
                 })
                 ->where('status', 'NOVEDAD')->get();
 
-             $sumaDevolucion =$pedidos->count() * $sumaDevolucionInicial;
-                 
- 
-    
+            $sumaDevolucion = $pedidos->count() * $sumaDevolucionInicial;
 
-             $sumaRetiros= OrdenesRetiro::with('users_permissions_user')
-             ->whereHas('users_permissions_user', function ($query) use ($seller) {
-                 $query->where('user_id', $seller->id);
-             }) 
-             ->where('estado', 'REALIZADO')
-             ->sum('monto');
+
+
+
+            $sumaRetiros = OrdenesRetiro::with('users_permissions_user')
+                ->whereHas('users_permissions_user', function ($query) use ($seller) {
+                    $query->where('user_id', $seller->id);
+                })
+                ->where('estado', 'REALIZADO')
+                ->sum('monto');
             $values[] = [
                 'seller' => $seller,
                 'sumaEntregados' => $sumaEntregados,
                 'sumaCosto' => $sumaCosto,
                 'sumaDevolucion' => $sumaDevolucion,
 
-             //  "tedt"=> $searchWithDrawal
+                //  "tedt"=> $searchWithDrawal
 
-               'sumaRetiros' => $sumaRetiros,
+                'sumaRetiros' => $sumaRetiros,
             ];
         }
-    
+
         return [
             'code' => 200,
             'value' => $values
         ];
     }
-    
 
 
-   
+
+
     // public function credit(Request $req){
     //     $vendedorId=$req['vendedor_id'];
     //     $tipo=$req['tipo']; //credito por defecto
@@ -164,7 +180,7 @@ class VendedoreAPIController extends Controller
     //     $trans->idOrigen;
     //     $trans->origen;
     //     $trans->vendedorId;
-                
+
     //     $insetedData =$this->TransactionRepository->create($trans);
     //     $updatedData= $this->VendedorRepository->update($vendedor, $id);
 
