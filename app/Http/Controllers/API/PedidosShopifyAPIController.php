@@ -1272,11 +1272,13 @@ class PedidosShopifyAPIController extends Controller
 
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
-            error_log("identificador: " .$element['id']);
+            error_log("identificador2: " .$element['id']);
            
-            $cadenaJson = json_decode($$element['image']);
-            error_log("imagen: " . $cadenaJson);
 
+            $atributos = array_keys($element);
+            
+            // Registra los atributos presentes en $element
+            error_log("Atributos en \$element: " . implode(', ', $atributos));
 
 
             $listOfProducts[] = [
