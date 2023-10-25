@@ -209,7 +209,7 @@ Route::middleware(['cors'])->group(function () {
 
     Route::prefix('seller/ordenesretiro')->group(function () {
         Route::get('/retiro/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroNew']);
-
+        Route::get('/ret-count/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroCount']);
         Route::post('/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
         Route::post('/withdrawal/{id}', [OrdenesRetiroAPIController::class, 'withdrawal']);
     });
