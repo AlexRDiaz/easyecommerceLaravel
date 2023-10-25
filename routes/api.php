@@ -123,6 +123,10 @@ Route::middleware(['cors'])->group(function () {
     // ! MIA VENDEDORES
 
     Route::get('vendedores', [App\Http\Controllers\API\VendedoreAPIController::class, 'getVendedores']);
+    
+    Route::post('vendedores-sld', [App\Http\Controllers\API\VendedoreAPIController::class, 'getSaldoPorId']);
+
+    
     // *
     Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
     Route::get('/vendedores/saldo/{id}', [VendedoreAPIController::class, 'getSaldo']);
