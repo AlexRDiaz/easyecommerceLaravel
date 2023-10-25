@@ -1248,13 +1248,7 @@ class PedidosShopifyAPIController extends Controller
 
     public function shopifyPedidos(Request $request, $id)
     {
-        //GENERATE DATE
-        $requestData = $request->all();
-
-        $camposDisponibles = array_keys($request->all());
-
-        // Registra los nombres de los campos disponibles
-    
+        //GENERATE DATEz
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
         $fechaActual = $currentDate->format('d/m/Y');
@@ -1265,7 +1259,6 @@ class PedidosShopifyAPIController extends Controller
         //VARIABLES FOR ENTITY
         $listOfProducts = [];
         $order_number = $request->input('order_number');
-       
         $name = $request->input('shipping_address.name');
         $address1 = $request->input('shipping_address.address1');
         $phone = $request->input('shipping_address.phone');
@@ -1273,13 +1266,9 @@ class PedidosShopifyAPIController extends Controller
         $customer_note = $request->input('customer_note');
         $city = $request->input('shipping_address.city');
         $productos = $request->input('line_items');
-       // error_log("productos: " . var_dump($productos));
+
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
-           // $camposDisponibles = array_keys($element->all());
-           // $id= $element['id'];
-            error_log("campos de productorrf: " . $$element['id']);
-    
             $listOfProducts[] = [
                 'id' => $element['id'],
                 'quantity' => $element['quantity'],
