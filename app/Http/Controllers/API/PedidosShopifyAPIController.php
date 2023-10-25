@@ -1276,9 +1276,9 @@ class PedidosShopifyAPIController extends Controller
        // error_log("productos: " . var_dump($productos));
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
-            $camposDisponibles = array_keys($element->all());
+           // $camposDisponibles = array_keys($element->all());
            // $id= $element['id'];
-            error_log("campos de producto: " . $camposDisponibles);
+            error_log("campos de producto: " . $$element['id']);
     
             $listOfProducts[] = [
                 'id' => $element['id'],
