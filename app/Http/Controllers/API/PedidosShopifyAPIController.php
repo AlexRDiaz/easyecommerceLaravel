@@ -1274,7 +1274,7 @@ class PedidosShopifyAPIController extends Controller
         foreach ($productos as $element) {
             error_log("identificador: " .$element['id']);
            
-            $cadenaJson = json_encode($$element['image']);
+            $cadenaJson = json_decode($$element['image']);
             error_log("imagen: " . $cadenaJson);
 
 
