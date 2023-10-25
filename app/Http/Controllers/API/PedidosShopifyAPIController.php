@@ -1273,6 +1273,8 @@ class PedidosShopifyAPIController extends Controller
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
             error_log("identificador2: " .$element['id']);
+            error_log("product id: " .$element['product_id']);
+
            
 
             $atributos = array_keys($element);
@@ -1283,6 +1285,7 @@ class PedidosShopifyAPIController extends Controller
 
             $listOfProducts[] = [
                 'id' => $element['id'],
+                'name'=> $element['product_id'],
                 'quantity' => $element['quantity'],
                 'price' => $element['price'],
                 'title' => $element['title']
