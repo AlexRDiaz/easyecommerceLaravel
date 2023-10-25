@@ -1278,7 +1278,7 @@ class PedidosShopifyAPIController extends Controller
         foreach ($productos as $element) {
            // $camposDisponibles = array_keys($element->all());
            // $id= $element['id'];
-            error_log("campos de producto: " . $$element['id']);
+            error_log("campos de productorrf: " . $$element['id']);
     
             $listOfProducts[] = [
                 'id' => $element['id'],
