@@ -57,7 +57,9 @@ Route::middleware(['cors'])->group(function () {
     
     Route::post('upd-rolesaccess', [App\Http\Controllers\API\UpUserAPIController::class, 'newPermission']);
 
-    
+    // ! generate roles
+    Route::get('getespc-access/{rol}', [App\Http\Controllers\API\RolesFrontAPIController::class, 'getAccesofEspecificRol']);
+
     // * --> PRINTEDGUIDES
 
     Route::post('pedidos-shopifies-prtgd', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintedGuidesLaravel']);

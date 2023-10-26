@@ -55,6 +55,29 @@ class RolesFrontAPIController extends Controller
         // Puedes devolver un mensaje de éxito o cualquier otra cosa que necesites
         return response()->json(['message' => 'Registros actualizados con éxito']);
     }
+    public function getAccesofEspecificRol(Request $request, $rol) {
+        
+        $rol = RolesFront::where("titulo", "=", $rol)->first();
+        
+        $activeViewsNames = [];
+    
+        // Verifica si el rol existe
+        if ($rol) {
+            $accesos = json_decode($rol->accesos, true);
+    
+            // Filtrar los que tienen active = true
+            $activeAccesos = array_filter($accesos, function ($item) {
+                return isset($item['active']) && $item['active'] === true;
+            });
+    
+            // Mapear para obtener solo los view_name
+            $activeViewsNames = array_map(function ($item) {
+                return $item['view_name'];
+            }, $activeAccesos);
+        }
+    
+        return response()->json($activeViewsNames);
+    }
 }
 
 ?>
