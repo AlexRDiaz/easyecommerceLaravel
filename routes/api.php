@@ -266,6 +266,7 @@ Route::middleware(['cors'])->group(function () {
 
     Route::prefix('shippingcost')->group(function () {
         Route::get('/', [TransportadorasShippingCostAPIController::class, 'index']);
+        Route::post('/', [TransportadorasShippingCostAPIController::class, 'store']);
         Route::post('/getbydate', [TransportadorasShippingCostAPIController::class, 'byDate']);
         Route::post('/{id}', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'getByTransportadora']);
         Route::put('/{id}', [TransportadorasShippingCostAPIController::class, 'update']);
@@ -285,6 +286,10 @@ Route::middleware(['cors'])->group(function () {
 
     });
 
+    // api/upload
+    //Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
+
+    Route::post('upload', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'uploadFile']);
     //test
 
 
