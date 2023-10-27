@@ -116,22 +116,27 @@ class TransaccionPedidoTransportadoraAPIController extends Controller
             $datesFormatted[] = $dateFormatted;
         }
 
-        $transacciones = TransaccionPedidoTransportadora::with('pedidos_shopify', 'transportadora', 'operadore')
+        $transacciones = TransaccionPedidoTransportadora::with('pedidos_shopify', 'transportadora', 'operadore.up_users')
             ->where('id_transportadora', $idTransportadora)
             ->whereIn('fecha_entrega', $datesFormatted)
             ->orderByRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y')")
             ->get();
 
         if ($transacciones->isEmpty()) {
-            return response()->json(["message" => "No existen datos en este mes-año"], 200);
+            // return response()->json(["message" => "No existen datos en este mes-año"], 200);
+            return response()->json([], 204);
         }
-        
-        $totalCost = TransportadorasShippingCost::where('id_transportadora', $idTransportadora)
-            // ->selectRaw('daily_total')
-            ->selectRaw('daily_shipping_cost')
-            ->whereIn(DB::raw('DATE(time_stamp)'), $fechasEntrega)
-            ->get();
-        $totalShippingCost = $totalCost->sum('daily_shipping_cost');
+
+        $costo_transportadora = $transacciones->first()->costo_transportadora;
+        $count_orders =  $transacciones->flatten()->count();
+        $totalShippingCost = $costo_transportadora * $count_orders;
+
+        // $totalCost = TransportadorasShippingCost::where('id_transportadora', $idTransportadora)
+        //     // ->selectRaw('daily_total')
+        //     ->selectRaw('daily_shipping_cost')
+        //     ->whereIn(DB::raw('DATE(time_stamp)'), $fechasEntrega)
+        //     ->get();
+        // $totalShippingCost = $totalCost->sum('daily_shipping_cost');
 
         return response()->json(['data' => $transacciones, "total" => $totalShippingCost], 200);
     }
