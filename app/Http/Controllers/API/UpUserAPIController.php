@@ -137,17 +137,17 @@ class UpUserAPIController extends Controller
         $user->fecha_alta = $request->input('FechaAlta'); // Fecha actual
         $user->confirmed = $request->input('confirmed');
         $user->estado = "NO VALIDADO";
-        $user->provider="local";
-        $user->confirmed=1;
-        $user->fecha_alta=$request->input('fecha_alta');
-        $permisosCadena = json_encode(["DashBoard","Reporte de Ventas","Agregar Usuarios Vendedores","Ingreso de Pedidos","Estado Entregas Pedidos","Pedidos No Deseados","Billetera","Devoluciones","Retiros en Efectivo","Mi Billetera","Conoce a tu Transporte"]);
+        $user->provider = "local";
+        $user->confirmed = 1;
+        $user->fecha_alta = $request->input('fecha_alta');
+        $permisosCadena = json_encode(["DashBoard", "Reporte de Ventas", "Agregar Usuarios Vendedores", "Ingreso de Pedidos", "Estado Entregas Pedidos", "Pedidos No Deseados", "Billetera", "Devoluciones", "Retiros en Efectivo", "Mi Billetera", "Conoce a tu Transporte"]);
         $user->permisos = $permisosCadena;
         $user->blocked = false;
         $user->save();
         $user->vendedores()->attach($request->input('vendedores'), [
         ]);
 
-        
+
 
         $newUpUsersRoleLink = new UpUsersRoleLink();
         $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
@@ -159,18 +159,18 @@ class UpUserAPIController extends Controller
         $userRoleFront->user_id = $user->id;
         $userRoleFront->roles_front_id = 2;
         $userRoleFront->save();
-         
+
         $seller = new Vendedore();
-        $seller->nombre_comercial=$request->input('nombre_comercial');
-        $seller->telefono_1=$request->input('telefono1');
-        $seller->telefono_2=$request->input('telefono2');
-        $seller->nombre_comercial=$request->input('nombre_comercial');
-        $seller->fecha_alta=$request->input('fecha_alta');
-        $seller->id_master=$user->id;
-        $seller->url_tienda=$request->input('url_tienda');
-        $seller->costo_envio=$request->input('costo_envio');
-        $seller->costo_devolucion=$request->input('costo_devolucion');
-        $seller->referer=$request->input('referer');
+        $seller->nombre_comercial = $request->input('nombre_comercial');
+        $seller->telefono_1 = $request->input('telefono1');
+        $seller->telefono_2 = $request->input('telefono2');
+        $seller->nombre_comercial = $request->input('nombre_comercial');
+        $seller->fecha_alta = $request->input('fecha_alta');
+        $seller->id_master = $user->id;
+        $seller->url_tienda = $request->input('url_tienda');
+        $seller->costo_envio = $request->input('costo_envio');
+        $seller->costo_devolucion = $request->input('costo_devolucion');
+        $seller->referer = $request->input('referer');
         $seller->save();
 
         $user->vendedores()->attach($seller->id, [
@@ -183,15 +183,16 @@ class UpUserAPIController extends Controller
         return response()->json(['message' => 'Vendedor creado con éxito'], 200);
 
     }
-    
-    public function getSellerMaster($id){
+
+    public function getSellerMaster($id)
+    {
         $vendedores = UpUser::find($id)->vendedores;
 
-    if (!$vendedores) {
-        return response()->json(['message' => 'Vendedores not found'], Response::HTTP_NOT_FOUND);
-    }
-   
-    return response()->json($vendedores[0], Response::HTTP_OK);
+        if (!$vendedores) {
+            return response()->json(['message' => 'Vendedores not found'], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json($vendedores[0], Response::HTTP_OK);
 
     }
     /**
@@ -288,6 +289,70 @@ class UpUserAPIController extends Controller
     }
 
 
+
+    public function managePermission(Request $request)
+    {
+        $viewName = $request->input('view_name');
+        $userId = $request->input('user_id');
+
+        $upUser = UpUser::find($userId);
+
+        // Si el usuario no existe, devuelve un error
+        if (!$upUser) {
+            return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Decodificar el JSON de la columna permisos a un array
+        $permissions = json_decode($upUser->permisos, true);
+
+        if (in_array($viewName, $permissions)) {
+            // Si el nombre de la vista ya existe, lo eliminamos
+            $permissions = array_filter($permissions, function ($value) use ($viewName) {
+                return $value !== $viewName;
+            });
+            $permissions = array_values($permissions); // Reindexa las claves
+        } else {
+            // Si el nombre de la vista no existe, lo agregamos
+            $permissions[] = $viewName;
+        }
+
+        // Actualizamos el usuario con los permisos modificados
+        $upUser->permisos = json_encode($permissions);
+        $upUser->save();
+
+        return response()->json(['message' => 'Permisos actualizados correctamente'], Response::HTTP_OK);
+    }
+
+    public function getPermissionsSellerPrincipalforNewSeller(Request $request,$userId)
+    {
+        $upUser = UpUser::find($userId);
+    
+        // Si el usuario no existe, devuelve un error
+        if (!$upUser) {
+            return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+    
+        // Decodificar el JSON de la columna permisos a un array
+        $permissions = json_decode($upUser->permisos, true);
+        $formattedPermissions = [];
+    
+        foreach ($permissions as $permission) {
+            $formattedPermissions[] = [
+                'view_name' => $permission,
+                'active' => true
+            ];
+        }
+    
+        // Codifica el array resultante a JSON y luego agrégalo a un array con la clave "accesos"
+        $result = [
+            'accesos' => json_encode($formattedPermissions)
+        ];
+    
+        // Retorna la lista de permisos en el formato deseado
+        return response()->json($result, Response::HTTP_OK);
+    }
+    
+
     public function getSellers($id, $search = null)
     {
         $upUser = UpUser::with([
@@ -340,7 +405,7 @@ class UpUserAPIController extends Controller
         return response()->json(['message' => 'Estado de Términos y condiciones actualizados con éxito'], 200);
     }
 
-    
+
     // ! FUNCION DE VENDEDORES QUE NECESITA NERFEO :) 
     public function getUserPedidos($id, Request $request)
     {
@@ -437,50 +502,50 @@ class UpUserAPIController extends Controller
     public function getUserPedidosByTransportadora($idTransportadora, Request $request)
     {
         $transportadora = Transportadora::find($idTransportadora);
-    
+
         if (!$transportadora) {
             return response()->json(['error' => 'Transportadora no encontrada'], 404);
         }
-    
+
         $pedidos = PedidosShopify::whereHas('pedidos_shopifies_transportadora_links', function ($query) use ($idTransportadora) {
             $query->where('transportadora_id', $idTransportadora)
-            ->where('estado_interno', 'CONFIRMADO')
-            ->where('estado_logistico', 'ENVIADO');
+                ->where('estado_interno', 'CONFIRMADO')
+                ->where('estado_logistico', 'ENVIADO');
         })->get();
-        
-    
-          // Filtrar los pedidos entregados
-            $entregados = $pedidos->filter(function ($pedido) {
-                return $pedido->status === 'ENTREGADO';
-            });
-        
-            // Filtrar los pedidos no entregados
-            $noEntregados = $pedidos->filter(function ($pedido) {
-                return $pedido->status === 'NO ENTREGADO';
-            });
-        
-            // Filtrar los pedidos con novedad
-            $novedad = $pedidos->filter(function ($pedido) {
-                return $pedido->status === 'NOVEDAD';
-            });
-        
-            // Contar la cantidad de pedidos entregados, no entregados y con novedad
-            $cantidadEntregados = $entregados->count();
-            $cantidadNoEntregados = $noEntregados->count();
-            $cantidadNovedad = $novedad->count();
-    
+
+
+        // Filtrar los pedidos entregados
+        $entregados = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'ENTREGADO';
+        });
+
+        // Filtrar los pedidos no entregados
+        $noEntregados = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'NO ENTREGADO';
+        });
+
+        // Filtrar los pedidos con novedad
+        $novedad = $pedidos->filter(function ($pedido) {
+            return $pedido->status === 'NOVEDAD';
+        });
+
+        // Contar la cantidad de pedidos entregados, no entregados y con novedad
+        $cantidadEntregados = $entregados->count();
+        $cantidadNoEntregados = $noEntregados->count();
+        $cantidadNovedad = $novedad->count();
+
         // Calcular la suma total de ambos
-            $sumaTotal = $cantidadEntregados + $cantidadNoEntregados + $cantidadNovedad;
-        
+        $sumaTotal = $cantidadEntregados + $cantidadNoEntregados + $cantidadNovedad;
+
         return response()->json([
             'identification' => $transportadora->nombre . '-' . $transportadora->id,
             'entregados_count' => $cantidadEntregados,
-            'no_entregados_count' => $cantidadNoEntregados ,
+            'no_entregados_count' => $cantidadNoEntregados,
             'novedad_count' => $cantidadNovedad,
             'total_pedidos' => $sumaTotal,
         ]);
     }
-    
+
     // ! FUNCION PARECIDA A NERFEO ROUTES:) 
 
     public function getUserPedidosByRuta($idRuta, Request $request)

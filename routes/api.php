@@ -48,6 +48,14 @@ Route::middleware(['cors'])->group(function () {
 
     // * obtiene los datos de cada rol con su id y accesos
     Route::get('access-total', [App\Http\Controllers\API\RolesFrontAPIController::class, 'index']);
+    // ! accesos en base al id proporcionado
+    Route::get('access-ofid/{id}', [App\Http\Controllers\API\RolesFrontAPIController::class, 'getRoleById']);
+    
+    // ! getPermissionsSellerPrincipalforNewSeller
+    Route::get('sellerprincipal-for-newseller/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'getPermissionsSellerPrincipalforNewSeller']);
+
+    Route::post('edit-personal-access', [App\Http\Controllers\API\UpUserAPIController::class, 'managePermission']);
+
 
     Route::post('new-access', [App\Http\Controllers\API\UpUserAPIController::class, 'updatePermissions']);
 
