@@ -300,6 +300,8 @@ Route::middleware(['cors'])->group(function () {
     //Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
 
     Route::post('upload', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'uploadFile']);
+    //      *
+    Route::put('pedidos-shopify/updatefieldtime/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateFieldTime']);
     //test
 
 
