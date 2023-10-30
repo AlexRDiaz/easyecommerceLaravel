@@ -50,21 +50,21 @@ class PedidosShopifyAPIController extends Controller
     public function updateStatus(Request $request, $id)
     {
         // Recuperar los datos del formulario
-     
-    // Recuperar el nuevo estado del pedido
-    $data = $request->all();
-    $newStatus = $data['status'];
 
-    // Encuentra el registro en base al ID
-    $pedido = PedidosShopify::findOrFail($id);
+        // Recuperar el nuevo estado del pedido
+        $data = $request->all();
+        $newStatus = $data['status'];
 
-    // Actualiza el estado del pedido
-    $pedido->status = $newStatus;
-    $pedido->save();
+        // Encuentra el registro en base al ID
+        $pedido = PedidosShopify::findOrFail($id);
 
-    // Respuesta de éxito
-    return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status], 200);
-}
+        // Actualiza el estado del pedido
+        $pedido->status = $newStatus;
+        $pedido->save();
+
+        // Respuesta de éxito
+        return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status], 200);
+    }
 
     public function show($id)
     {
@@ -132,18 +132,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! **************************************************
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
 
@@ -303,7 +303,7 @@ class PedidosShopifyAPIController extends Controller
         $not = $data['not'];
         // ! *************************************
 
-        $pedidos = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta'])
+        $pedidos = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta', 'printedBy', 'sentBy'])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -318,13 +318,13 @@ class PedidosShopifyAPIController extends Controller
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
-                                                if (strpos($key, '.') !== false) {
+                        if (strpos($key, '.') !== false) {
                             $relacion = substr($key, 0, strpos($key, '.'));
                             $propiedad = substr($key, strpos($key, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
                         } else {
                             $pedidos->where($key, '=', $valor);
-                                                    }
+                        }
                     }
                 }
             }))
@@ -542,18 +542,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordenamiento ********************************** 
         $orderByText = null;
         $orderByDate = null;
@@ -810,6 +810,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('pedidoFecha')
             ->with('ruta')
             ->with('subRuta')
+            ->with('receivedBy')
             ->orWhere(function ($query) use ($orConditions) {
                 foreach ($orConditions as $condition) {
                     $query->orWhere(function ($subquery) use ($condition) {
@@ -844,18 +845,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordena
         $orderByText = null;
         $orderByDate = null;
@@ -1046,19 +1047,19 @@ class PedidosShopifyAPIController extends Controller
                 }
             }))->where((function ($pedidos) use ($not) {
 
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
             }
-        }
-                ))->get();
+            ))->get();
 
 
 
@@ -1268,24 +1269,24 @@ class PedidosShopifyAPIController extends Controller
         $customer_note = $request->input('customer_note');
         $city = $request->input('shipping_address.city');
         $productos = $request->input('line_items');
-            error_log("Respuesta rand: " . "hola mundo");
+        error_log("Respuesta rand: " . "hola mundo");
 
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
-            error_log("identificador2: " .$element['id']);
-            error_log("product id: " .$element['product_id']);
+            error_log("identificador2: " . $element['id']);
+            error_log("product id: " . $element['product_id']);
 
-           
+
 
             $atributos = array_keys($element);
-            
+
             // Registra los atributos presentes en $element
             error_log("Atributos en \$element: " . implode(', ', $atributos));
 
 
             $listOfProducts[] = [
                 'id' => $element['id'],
-                'name'=> $element['product_id'],
+                'name' => $element['product_id'],
                 'quantity' => $element['quantity'],
                 'price' => $element['price'],
                 'title' => $element['title']
@@ -1381,8 +1382,8 @@ class PedidosShopifyAPIController extends Controller
                     $response = $client->post($user->webhook_autome, [
                         'json' => [
                             "id" =>  $createOrder->id,
-                            "line_item_shopify_id"=> $listOfProducts[0]['id'],
-                            "line_item_shopify_product_id"=> $listOfProducts[0]['product_id'],
+                            "line_item_shopify_id" => $listOfProducts[0]['id'],
+                            "line_item_shopify_product_id" => $listOfProducts[0]['product_id'],
                             "marca_t_i" => $createOrder->marca_t_i,
                             "tienda_temporal" => $createOrder->tienda_temporal,
                             "numero_orden" => $createOrder->numero_orden,
@@ -1484,7 +1485,7 @@ class PedidosShopifyAPIController extends Controller
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
     {
         $data = $request->json()->all();
-                $startDate = $data['start'];
+        $startDate = $data['start'];
 
         $populate = $data['populate'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
@@ -1537,18 +1538,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordenamiento ********************************** 
         $orderByText = null;
         $orderByDate = null;
@@ -1903,24 +1904,23 @@ class PedidosShopifyAPIController extends Controller
                     ]);
                 }
             }
-        } 
-        else {
+        } else {
             foreach ($apiData['listarutas_transportadoras'] as $transportadoraName => $transportadoraData) {
                 $transportadoraMonthStat = ($transportadoraData['totalgeneralentregados'] / ($transportadoraData['totalgeneralentregados'] + $transportadoraData['totalgeneralnoentregados'] + $transportadoraData['totalgeneralnovedades']));
                 $transportId = explode("-", $transportadoraName)[1];
                 $isNewTransportadora = true;
-        
+
                 foreach ($transportadoraData['items'] as $item) {
                     $entregadosDay = $item['entregados_count'];
                     $totalPedidosDay = $item['total_pedidos'];
                     $transportadoraNamePart = explode("-", $transportadoraName)[0];
                     $routeName = $item['rutas'];
-        
+
                     $existingStat = TransportStats::where('transport_name', $transportadoraNamePart)->first();
-        
+
                     // Usar el valor de monthly_counter del registro existente si existe, de lo contrario usar 1.
                     $monthlyValue = $existingStat ? $existingStat->monthly_counter : 1;
-        
+
                     $stat = TransportStats::firstOrCreate(
                         [
                             'transport_name' => $transportadoraNamePart,
@@ -1935,34 +1935,34 @@ class PedidosShopifyAPIController extends Controller
                             'transport_stats_day' => $entregadosDay / $totalPedidosDay,
                         ]
                     );
-        
+
                     if (!$stat->wasRecentlyCreated) {
                         $stat->daily_counter++;
                         $isNewTransportadora = false;
-        
+
                         // Consultar el valor actual de transport_stats_day
                         $currentDayStat = $stat->transport_stats_day;
-        
+
                         // Sumar el nuevo valor calculado
                         $newDayStat = $currentDayStat + ($entregadosDay / $totalPedidosDay);
                         $stat->transport_stats_day = $newDayStat;
                     }
-        
+
                     $stat->efficiency_day_date = $endDate;
                     $stat->save();
                 }
-        
+
                 if (!$isNewTransportadora) {
                     TransportStats::where('transport_name', $transportadoraNamePart)
                         ->increment('monthly_counter');
                 }
-        
+
                 // Consultar el valor actual de transport_stats_month
                 $currentMonthStat = TransportStats::where('transport_name', $transportadoraNamePart)->value('transport_stats_month');
-        
+
                 // Sumar el nuevo valor calculado
                 $newTransportadoraMonthStat = $currentMonthStat + $transportadoraMonthStat;
-        
+
                 // Actualizar el registro con el nuevo total
                 TransportStats::where('transport_name', $transportadoraNamePart)
                     ->update([
@@ -1971,11 +1971,67 @@ class PedidosShopifyAPIController extends Controller
                     ]);
             }
         }
-        
-
-
-
     }
 
-}
 
+    public function updateFieldTime(Request $request, $id)
+    {
+        $data = $request->all();
+
+        $keyvalue = $data['keyvalue'];
+
+        // $key = $data['key'];
+        // $value = $data['value'];
+        $idUser = $data['iduser'];
+
+        $parts = explode(":", $keyvalue);
+        if (count($parts) === 2) {
+            $key = $parts[0];
+            $value = $parts[1];
+        }
+
+        $currentDateTime = date('Y-m-d H:i:s');
+        $date = now()->format('j/n/Y');
+        $currentDateTimeText = date("d/m/Y H:i");
+
+        $pedido = PedidosShopify::findOrFail($id);
+        if ($key == "estado_logistico") {
+            if ($value == "IMPRESO") {
+                $pedido->estado_logistico = $value;
+                $pedido->printed_at = $currentDateTime;
+                $pedido->printed_by = $idUser;
+            }
+            if ($value == "ENVIADO") {
+                $pedido->estado_logistico = $value;
+                $pedido->sent_at = $currentDateTime;
+                $pedido->sent_by = $idUser;
+                // "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}"
+                $pedido->marca_tiempo_envio = $date;
+                $pedido->estado_interno = "CONFIRMADO";
+                // "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}"
+                $pedido->fecha_entrega = $date;
+            }
+        }
+        if ($key == "estado_devolucion") {
+            if ($value == "EN BODEGA") {
+                $pedido->estado_devolucion = $value;
+                $pedido->dl = $value;
+                //"${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute} ";
+                $pedido->marca_t_d_l = $currentDateTimeText;
+                $pedido->received_by = $idUser;
+            }
+        }
+
+        if ($key == "status") {
+            if ($value == "ENTREGADO") {
+            }
+            $pedido->status_last_modified_at = $idUser;
+            $pedido->status_last_modified_by = $idUser;
+
+        }
+
+        $pedido->save();
+        return response()->json([$pedido], 200);
+        // return response()->json(['message' => 'Registro actualizado con éxito', 'res' => $pedido], 200);
+    }
+}

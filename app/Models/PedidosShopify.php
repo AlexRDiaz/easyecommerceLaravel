@@ -58,8 +58,13 @@ use Illuminate\Database\Eloquent\Model;
  * @property float|null $costo_envio
  * @property float|null $costo_devolucion
  * @property float|null $costo_transportadora
- * @property string|null $fecha_impreso
+ * @property Carbon|null $printed_at
  * @property int|null $printed_by
+ * @property Carbon|null $sent_at
+ * @property int|null $sent_by
+ * @property int|null $received_by
+ * @property int|null $last_modified_by
+ * @property int|null $test_by
  * 
  * @property AdminUser|null $admin_user
  * @property Collection|Novedade[] $novedades
@@ -82,7 +87,12 @@ class PedidosShopify extends Model
 		'created_by_id' => 'int',
 		'updated_by_id' => 'int',
 		'revisado' => 'bool',
-		'printed_by' => 'int'
+		'printed_at' => 'datetime',
+		'printed_by' => 'int',
+		'sent_at' => 'datetime',
+		'sent_by' => 'int',
+		'received_by' => 'int',
+		'last_modified_by' => 'int',
 	];
 
 	protected $fillable = [
@@ -128,8 +138,12 @@ class PedidosShopify extends Model
 		'costo_envio',
 		'costo_transportadora',
 		'costo_devolucion',
-		'fecha_impreso',
-		'printed_by'
+		'printed_at',
+		'printed_by',
+		'sent_at',
+		'sent_by',
+		'received_by',
+		'last_modified_by',
 	];
 
 	public function admin_user()
@@ -220,4 +234,19 @@ class PedidosShopify extends Model
     // {
     //     return $this->hasManyThrough(Novedade::class, NovedadesPedidosShopifyLink::class, 'pedidos_shopify_id', 'id', 'id', 'novedad_id');
     // }
+
+	public function printedBy()
+    {
+        return $this->belongsTo(UpUser::class, 'printed_by', 'id');
+    }
+
+	public function sentBy()
+    {
+        return $this->belongsTo(UpUser::class, 'sent_by', 'id');
+    }
+
+	public function receivedBy()
+    {
+        return $this->belongsTo(UpUser::class, 'received_by', 'id');
+    }
 }
