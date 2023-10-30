@@ -145,6 +145,8 @@ class TransaccionesAPIController extends Controller
         $codigo= $data['codigo'];
         $origen = $data['origen'];
         $comentario = $data['comentario'];
+        $comentario = $data['comentario'];
+        $generated_by= $data['generated_by'];
 
 
         $user=UpUser::where("id",$vendedorId)->with('vendedores')->first();
@@ -169,6 +171,7 @@ class TransaccionesAPIController extends Controller
         $newTrans->comentario=$comentario;
         $newTrans->id_vendedor = $vendedorId;
         $newTrans->state=1;
+        $newTrans->generate_by = $generated_by;
         $insertedData = $this->transaccionesRepository->create($newTrans);
         $updatedData = $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
@@ -189,6 +192,8 @@ class TransaccionesAPIController extends Controller
 
         $origen = $data['origen'];
         $comentario = $data['comentario'];
+        $generated_by= $data['generated_by'];
+
 
         $user=UpUser::where("id",$vendedorId)->with('vendedores')->first();
         $vendedor =$user['vendedores'][0];
@@ -212,6 +217,8 @@ class TransaccionesAPIController extends Controller
 
         $newTrans->id_vendedor = $vendedorId;
         $newTrans->state=1;
+        $newTrans->generate_by = $generated_by;
+
         $insertedData = $this->transaccionesRepository->create($newTrans);
         $updatedData = $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
@@ -239,6 +246,7 @@ class TransaccionesAPIController extends Controller
 
     public function rollbackTransaction(Request $request){
         $data = $request->json()->all();
+        $generated_by= $data['generated_by'];
 
         $ids = $data['ids'];
          $reqTrans=[];
@@ -268,6 +276,8 @@ class TransaccionesAPIController extends Controller
                 $transactionResetValues->id_vendedor=$transaction->id_vendedor;
                 $transactionResetValues->comentario="error de transaccion";
                 $transactionResetValues->state=0;
+                $transactionResetValues->generate_by = $generated_by;
+
 
                 $transactionResetValues->save();
                 $vendedor[0]->saldo=$vendedor[0]->saldo-$transaction->monto;              
@@ -286,6 +296,7 @@ class TransaccionesAPIController extends Controller
                 $transactionResetValues->id_vendedor=$transaction->id_vendedor;
                 $transactionResetValues->comentario="error de transaccion";
                 $transactionResetValues->state=0;
+                $transactionResetValues->generate_by = $generated_by;
 
                 $transactionResetValues->save();
 

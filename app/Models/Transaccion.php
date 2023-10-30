@@ -21,7 +21,9 @@ class Transaccion extends Model
         'origen',
         'id_vendedor',
         'comentario',
-        'state'
+        'state',
+        'generated_by'
+
         
     ];
     protected $casts = [
