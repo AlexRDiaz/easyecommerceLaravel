@@ -171,7 +171,7 @@ class TransaccionesAPIController extends Controller
         $newTrans->comentario=$comentario;
         $newTrans->id_vendedor = $vendedorId;
         $newTrans->state=1;
-        $newTrans->generate_by = $generated_by;
+        $newTrans->generated_by = $generated_by;
         $insertedData = $this->transaccionesRepository->create($newTrans);
         $updatedData = $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
@@ -217,7 +217,7 @@ class TransaccionesAPIController extends Controller
 
         $newTrans->id_vendedor = $vendedorId;
         $newTrans->state=1;
-        $newTrans->generate_by = $generated_by;
+        $newTrans->generated_by = $generated_by;
 
         $insertedData = $this->transaccionesRepository->create($newTrans);
         $updatedData = $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
@@ -276,7 +276,7 @@ class TransaccionesAPIController extends Controller
                 $transactionResetValues->id_vendedor=$transaction->id_vendedor;
                 $transactionResetValues->comentario="error de transaccion";
                 $transactionResetValues->state=0;
-                $transactionResetValues->generate_by = $generated_by;
+                $transactionResetValues->generated_by = $generated_by;
 
 
                 $transactionResetValues->save();
@@ -296,7 +296,7 @@ class TransaccionesAPIController extends Controller
                 $transactionResetValues->id_vendedor=$transaction->id_vendedor;
                 $transactionResetValues->comentario="error de transaccion";
                 $transactionResetValues->state=0;
-                $transactionResetValues->generate_by = $generated_by;
+                $transactionResetValues->generated_by = $generated_by;
 
                 $transactionResetValues->save();
 
