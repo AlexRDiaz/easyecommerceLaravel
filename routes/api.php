@@ -38,11 +38,16 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
 
+    Route::post('logistic/filter/novelties', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogisticNovelties']);
+
+    // ! update status and comment
+    Route::post('logistic/update-status-comment', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderStatusAndComment']);
+
 
     Route::resource('orden_retiro', App\Http\Controllers\API\OrdenesRetiroAPIController::class)
         ->except(['create', 'edit']);
     //  ************************* LOGISTIC **************************
-    
+
     // ! esta es solo para ver lo que tiene registrado en cada usuario en los permisos
     Route::get('permisos', [App\Http\Controllers\API\UpUserAPIController::class, 'getPermisos']);
 
@@ -50,7 +55,7 @@ Route::middleware(['cors'])->group(function () {
     Route::get('access-total', [App\Http\Controllers\API\RolesFrontAPIController::class, 'index']);
     // ! accesos en base al id proporcionado
     Route::get('access-ofid/{id}', [App\Http\Controllers\API\RolesFrontAPIController::class, 'getRoleById']);
-    
+
     // ! getPermissionsSellerPrincipalforNewSeller
     Route::get('sellerprincipal-for-newseller/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'getPermissionsSellerPrincipalforNewSeller']);
 
@@ -62,7 +67,7 @@ Route::middleware(['cors'])->group(function () {
     // eliminacion de accesos enviando el active con false
     Route::post('dlt-rolesaccess', [App\Http\Controllers\API\UpUserAPIController::class, 'deletePermissions']);
 
-    
+
     Route::post('upd-rolesaccess', [App\Http\Controllers\API\UpUserAPIController::class, 'newPermission']);
 
     // ! generate roles
@@ -133,10 +138,10 @@ Route::middleware(['cors'])->group(function () {
     // ! MIA VENDEDORES
 
     Route::get('vendedores', [App\Http\Controllers\API\VendedoreAPIController::class, 'getVendedores']);
-    
+
     Route::post('vendedores-sld', [App\Http\Controllers\API\VendedoreAPIController::class, 'getSaldoPorId']);
 
-    
+
     // *
     Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
     Route::get('/vendedores/saldo/{id}', [VendedoreAPIController::class, 'getSaldo']);
@@ -153,21 +158,21 @@ Route::middleware(['cors'])->group(function () {
     Route::post("transacciones/debit", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'Debit']);
     // ! ***********************
 
-     // !  TRANSACTIONS BY ID SELLER
-     Route::get("transacciones/bySeller/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsById']);
-     // ! ***********************
-     // !  Rollback transactions
-     Route::post("transacciones/rollback", [\App\Http\Controllers\API\TransaccionesAPIController::class,'rollbackTransaction']);
-     // ! ***********************
-     // ! GetExistTransactions
-     Route::post("transacciones/exist", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getExistTransaction']);
+    // !  TRANSACTIONS BY ID SELLER
+    Route::get("transacciones/bySeller/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'getTransactionsById']);
+    // ! ***********************
+    // !  Rollback transactions
+    Route::post("transacciones/rollback", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'rollbackTransaction']);
+    // ! ***********************
+    // ! GetExistTransactions
+    Route::post("transacciones/exist", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'getExistTransaction']);
 
-       // ! GetTransacctions by date
-    Route::post("transacciones/by-date", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionsByDate']);
- // ! GetTransacctions To rollback
-    Route::get("transacciones/to-rollback/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class,'getTransactionToRollback']);
+    // ! GetTransacctions by date
+    Route::post("transacciones/by-date", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'getTransactionsByDate']);
+    // ! GetTransacctions To rollback
+    Route::get("transacciones/to-rollback/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'getTransactionToRollback']);
 
-     
+
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
 
 
@@ -180,7 +185,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/products/values/seller', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'CalculateValuesSeller']);
     Route::post('pedidos-shopify/testChatby', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'testChatby']);
 
-    
+
     // *
     Route::post('shopify/pedidos/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'shopifyPedidos']);
 
