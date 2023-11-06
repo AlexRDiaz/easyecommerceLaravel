@@ -116,7 +116,7 @@ class TransaccionesAPIController extends Controller
     public function last30rows()
     {
         $ultimosRegistros = Transaccion::orderBy('id', 'desc')
-            ->limit(30)
+            ->limit(300)
             ->get();
     
         return response()->json($ultimosRegistros);
