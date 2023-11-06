@@ -63,8 +63,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property Carbon|null $sent_at
  * @property int|null $sent_by
  * @property int|null $received_by
- * @property int|null $last_modified_by
- * @property int|null $test_by
+ * @property Carbon|null $status_last_modified_at
+ * @property int|null $status_last_modified_by
  * 
  * @property AdminUser|null $admin_user
  * @property Collection|Novedade[] $novedades
@@ -92,7 +92,8 @@ class PedidosShopify extends Model
 		'sent_at' => 'datetime',
 		'sent_by' => 'int',
 		'received_by' => 'int',
-		'last_modified_by' => 'int',
+		'status_last_modified_at' => 'datetime',
+		'status_last_modified_by' => 'int'
 	];
 
 	protected $fillable = [
@@ -143,7 +144,8 @@ class PedidosShopify extends Model
 		'sent_at',
 		'sent_by',
 		'received_by',
-		'last_modified_by',
+		'status_last_modified_at',
+		'status_last_modified_by'
 	];
 
 	public function admin_user()
@@ -154,7 +156,7 @@ class PedidosShopify extends Model
 	public function novedades()
 	{
 		return $this->belongsToMany(Novedade::class, 'novedades_pedidos_shopify_links', 'pedidos_shopify_id', 'novedad_id')
-					->withPivot('id', 'novedad_order');
+			->withPivot('id', 'novedad_order');
 	}
 
 	public function pedidos_shopifies_operadore_links()
@@ -193,60 +195,65 @@ class PedidosShopify extends Model
 	}
 
 	public function operadore()
-    {
-        return $this->hasManyThrough(Operadore::class, PedidosShopifiesOperadoreLink::class, 'pedidos_shopify_id', 'id', 'id', 'operadore_id');
-    }
+	{
+		return $this->hasManyThrough(Operadore::class, PedidosShopifiesOperadoreLink::class, 'pedidos_shopify_id', 'id', 'id', 'operadore_id');
+	}
 	public function transportadora()
-    {
-        return $this->hasManyThrough(Transportadora::class, PedidosShopifiesTransportadoraLink::class, 'pedidos_shopify_id', 'id', 'id', 'transportadora_id');
-    }
+	{
+		return $this->hasManyThrough(Transportadora::class, PedidosShopifiesTransportadoraLink::class, 'pedidos_shopify_id', 'id', 'id', 'transportadora_id');
+	}
 	public function pedidoFecha()
-    {
-        return $this->hasManyThrough(PedidoFecha::class, PedidosShopifiesPedidoFechaLink::class, 'pedidos_shopify_id', 'id', 'id', 'pedido_fecha_id');
-    }
+	{
+		return $this->hasManyThrough(PedidoFecha::class, PedidosShopifiesPedidoFechaLink::class, 'pedidos_shopify_id', 'id', 'id', 'pedido_fecha_id');
+	}
 	public function users()
-    {
-        return $this->hasManyThrough(UpUser::class, UpUsersPedidosShopifiesLink::class, 'pedidos_shopify_id', 'id', 'id', 'user_id');
-    }
+	{
+		return $this->hasManyThrough(UpUser::class, UpUsersPedidosShopifiesLink::class, 'pedidos_shopify_id', 'id', 'id', 'user_id');
+	}
 
 	public function ruta()
-    {
-        return $this->hasManyThrough(Ruta::class, PedidosShopifiesRutaLink::class, 'pedidos_shopify_id', 'id', 'id', 'ruta_id');
-    }
+	{
+		return $this->hasManyThrough(Ruta::class, PedidosShopifiesRutaLink::class, 'pedidos_shopify_id', 'id', 'id', 'ruta_id');
+	}
 
 	public function subRuta()
-    {
-        return $this->hasManyThrough(SubRuta::class, PedidosShopifiesSubRutaLink::class, 'pedidos_shopify_id', 'id', 'id', 'sub_ruta_id');
-    }
+	{
+		return $this->hasManyThrough(SubRuta::class, PedidosShopifiesSubRutaLink::class, 'pedidos_shopify_id', 'id', 'id', 'sub_ruta_id');
+	}
 
 	public function upuser_pedidos_link()
 	{
 		return $this->belongsToMany(UpUser::class, UpUsersPedidosShopifiesLink::class, 'user_id')
-		->withPivot('id');
+			->withPivot('id');
 	}
 
 	public function pedido_fecha_link()
 	{
 		return $this->belongsToMany(PedidoFecha::class, PedidosShopifiesPedidoFechaLink::class, 'pedido_fecha_id')
-		->withPivot('id');
+			->withPivot('id');
 	}
 	// public function novedades()
-    // {
-    //     return $this->hasManyThrough(Novedade::class, NovedadesPedidosShopifyLink::class, 'pedidos_shopify_id', 'id', 'id', 'novedad_id');
-    // }
+	// {
+	//     return $this->hasManyThrough(Novedade::class, NovedadesPedidosShopifyLink::class, 'pedidos_shopify_id', 'id', 'id', 'novedad_id');
+	// }
 
 	public function printedBy()
-    {
-        return $this->belongsTo(UpUser::class, 'printed_by', 'id');
-    }
+	{
+		return $this->belongsTo(UpUser::class, 'printed_by', 'id');
+	}
 
 	public function sentBy()
-    {
-        return $this->belongsTo(UpUser::class, 'sent_by', 'id');
-    }
+	{
+		return $this->belongsTo(UpUser::class, 'sent_by', 'id');
+	}
 
 	public function receivedBy()
-    {
-        return $this->belongsTo(UpUser::class, 'received_by', 'id');
-    }
+	{
+		return $this->belongsTo(UpUser::class, 'received_by', 'id');
+	}
+
+	public function statusLastModifiedBy()
+	{
+		return $this->belongsTo(UpUser::class, 'status_last_modified_by', 'id');
+	}
 }
