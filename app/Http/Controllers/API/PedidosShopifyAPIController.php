@@ -68,7 +68,7 @@ class PedidosShopifyAPIController extends Controller
 
     public function show($id)
     {
-        $pedido = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
+        $pedido = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta', "statusLastModifiedBy"])
             ->findOrFail($id);
 
         return response()->json($pedido);
@@ -193,6 +193,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('pedidoFecha')
             ->with('ruta')
             ->with('subRuta')
+            ->with('statusLastModifiedBy')
             ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
@@ -225,18 +226,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordena
         if ($orderBy !== null) {
             $pedidos->orderBy(key($orderBy), reset($orderBy));
@@ -1983,6 +1984,8 @@ class PedidosShopifyAPIController extends Controller
         // $key = $data['key'];
         // $value = $data['value'];
         $idUser = $data['iduser'];
+        $from = $data['from'];
+        $datarequest = $data['datarequest'];
 
         $parts = explode(":", $keyvalue);
         if (count($parts) === 2) {
@@ -1991,47 +1994,83 @@ class PedidosShopifyAPIController extends Controller
         }
 
         $currentDateTime = date('Y-m-d H:i:s');
+        // "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}"
         $date = now()->format('j/n/Y');
+        //"${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute} ";
         $currentDateTimeText = date("d/m/Y H:i");
 
         $pedido = PedidosShopify::findOrFail($id);
         if ($key == "estado_logistico") {
-            if ($value == "IMPRESO") {
+            if ($value == "IMPRESO") {  //from log,sell
                 $pedido->estado_logistico = $value;
                 $pedido->printed_at = $currentDateTime;
                 $pedido->printed_by = $idUser;
             }
-            if ($value == "ENVIADO") {
+            if ($value == "ENVIADO") {  //from log,sell
                 $pedido->estado_logistico = $value;
                 $pedido->sent_at = $currentDateTime;
                 $pedido->sent_by = $idUser;
-                // "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}"
                 $pedido->marca_tiempo_envio = $date;
                 $pedido->estado_interno = "CONFIRMADO";
-                // "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}"
                 $pedido->fecha_entrega = $date;
             }
         }
         if ($key == "estado_devolucion") {
-            if ($value == "EN BODEGA") {
+            if ($value == "EN BODEGA") { //from logistic
                 $pedido->estado_devolucion = $value;
                 $pedido->dl = $value;
-                //"${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute} ";
                 $pedido->marca_t_d_l = $currentDateTimeText;
                 $pedido->received_by = $idUser;
             }
+            if ($from == "carrier") {
+                if ($value == "ENTREGADO EN OFICINA") {
+                    $pedido->estado_devolucion = $value;
+                    $pedido->dt = $value;
+                    $pedido->marca_t_d = $currentDateTimeText;
+                    $pedido->received_by = $idUser;
+                }
+                if ($value == "DEVOLUCION EN RUTA") {
+                    $pedido->estado_devolucion = $value;
+                    $pedido->dt = $value;
+                    $pedido->marca_t_d_t = $currentDateTimeText;
+                    $pedido->received_by = $idUser;
+                }
+                if ($value == "PENDIENTE") { //restart
+                    $pedido->estado_devolucion = $value;
+                    $pedido->do = $value;
+                    $pedido->dt = $value;
+                    $pedido->marca_t_d = null;
+                    $pedido->marca_t_d_t = null;
+                    $pedido->received_by = $idUser;
+                }
+            } elseif ($from == "operator") {
+                if ($value == "ENTREGADO EN OFICINA") { //from operator, logistica
+                    $pedido->estado_devolucion = $value;
+                    $pedido->do = $value;
+                    $pedido->marca_t_d = $currentDateTimeText;
+                    $pedido->received_by = $idUser;
+                }
+            }
         }
 
-        if ($key == "status") {
-            if ($value == "ENTREGADO") {
-            }
-            $pedido->status_last_modified_at = $idUser;
-            $pedido->status_last_modified_by = $idUser;
 
+        if ($key == "status") {
+            if ($value != "NOVEDAD_date") {
+                $pedido->status = $value;
+            }
+            $pedido->fill($datarequest);
+            if ($value == "ENTREGADO" || $value == "NO ENTREGADO") {
+                $pedido->fecha_entrega = $date;
+            }
+            if ($value == "NOVEDAD_date") {
+                $pedido->status = "NOVEDAD";
+                $pedido->fecha_entrega = $date;
+            }
+            $pedido->status_last_modified_at = $currentDateTime;
+            $pedido->status_last_modified_by = $idUser;
         }
 
         $pedido->save();
         return response()->json([$pedido], 200);
-        // return response()->json(['message' => 'Registro actualizado con éxito', 'res' => $pedido], 200);
     }
 }
