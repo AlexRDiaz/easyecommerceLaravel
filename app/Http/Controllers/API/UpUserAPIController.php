@@ -140,7 +140,7 @@ class UpUserAPIController extends Controller
         $user->provider = "local";
         $user->confirmed = 1;
         $user->fecha_alta = $request->input('fecha_alta');
-        $permisosCadena = json_encode(["DashBoard", "Reporte de Ventas", "Agregar Usuarios Vendedores", "Ingreso de Pedidos", "Estado Entregas Pedidos", "Pedidos No Deseados", "Billetera", "Devoluciones", "Retiros en Efectivo", "Mi Billetera", "Conoce a tu Transporte"]);
+        $permisosCadena = json_encode(["DashBoard", "Reporte de Ventas", "Agregar Usuarios Vendedores", "Ingreso de Pedidos", "Estado Entregas Pedidos", "Pedidos No Deseados", "Billetera", "Devoluciones", "Retiros en Efectivo", "Conoce a tu Transporte"]);
         $user->permisos = $permisosCadena;
         $user->blocked = false;
         $user->save();
