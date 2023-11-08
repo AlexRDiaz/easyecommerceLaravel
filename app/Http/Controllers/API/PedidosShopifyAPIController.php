@@ -1186,6 +1186,7 @@ class PedidosShopifyAPIController extends Controller
             'ENTREGADO' => 0,
             'NO ENTREGADO' => 0,
             'NOVEDAD' => 0,
+            'NOVEDAD RESUELTA' => 0,
             'REAGENDADO' => 0,
             'EN RUTA' => 0,
             'EN OFICINA' => 0,
