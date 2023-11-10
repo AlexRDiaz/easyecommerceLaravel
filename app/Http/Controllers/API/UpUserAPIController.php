@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Mail\UserValidation;
 use App\Models\PedidosShopify;
+use App\Models\Provider;
 use App\Models\RolesFront;
 use App\Models\Ruta;
 use App\Models\Transportadora;
@@ -13,6 +14,7 @@ use App\Models\UpUser;
 use App\Models\UpUsersRoleLink;
 use App\Models\UpUsersRolesFrontLink;
 use App\Models\Vendedore;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
@@ -109,6 +111,82 @@ class UpUserAPIController extends Controller
         return response()->json(['message' => 'Usuario interno creado con éxito', 'user_id' => $user->id, 'user_id'], 201);
 
     }
+
+    public function storeProvider(Request $request)
+    {
+    // // Valida los datos de entrada (puedes agregar reglas de validación aquí)
+    $request->validate([
+        'username' => 'required|string|max:255',
+        'email' => 'required|email|unique:up_users',
+    ]);
+
+    $numerosUtilizados = [];
+    while (count($numerosUtilizados) < 10000000) {
+        $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+        if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+            $numerosUtilizados[] = $numeroAleatorio;
+            break;
+        }
+    }
+    $resultCode = $numeroAleatorio;
+
+
+    $user = new UpUser();
+    $user->username = $request->input('username');
+    $user->email = $request->input('email');
+    $user->codigo_generado = $resultCode;
+    $user->password = bcrypt($request->input('password')); // Puedes utilizar bcrypt para encriptar la contraseña
+    $user->fecha_alta = $request->input('FechaAlta'); // Fecha actual
+    $user->confirmed = $request->input('confirmed');
+    $user->estado = "NO VALIDADO";
+    $user->provider = "local";
+    $user->confirmed = 1;
+    $user->fecha_alta = $request->input('fecha_alta');
+    $permisosCadena = json_encode([]);
+    $user->permisos = $permisosCadena;
+    $user->blocked = false;
+    $user->save();
+    // $user->providers()->attach($user->id, [
+    // ]);
+
+
+    // $provider= new Provider();
+    // $provider->user_id = $user->id;
+    // $provider->name = $request->input('porvider_name');
+    // $provider->description= $request->input('description');
+    // $provider->phone = $request->input('provider_phone');
+    // $provider->createdAt= new DateTime();
+
+
+    $newUpUsersRoleLink = new UpUsersRoleLink();
+    $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
+    $newUpUsersRoleLink->role_id = $request->input('role'); // Asigna el ID del rol existente
+    $newUpUsersRoleLink->save();
+
+
+    $userRoleFront = new UpUsersRolesFrontLink();
+    $userRoleFront->user_id = $user->id;
+    $userRoleFront->roles_front_id = 5;
+    $userRoleFront->save();
+
+    $provider = new Provider();
+    $provider->name = $request->input('provider_name');
+    $provider->phone = $request->input('provider_phone');
+    $provider->description= $request->input('description');
+    $provider->created_at= new DateTime();
+    $provider->user_id = $user->id;
+   
+    $provider->save();
+    $user->providers()->attach($provider->id, [
+    ]);
+  
+   // Mail::to($user->email)->send(new UserValidation($resultCode));
+
+
+    return response()->json(['message' => 'Vendedor creado con éxito'], 200);
+
+    }
+
 
     public function storeGeneral(Request $request)
     {
@@ -279,6 +357,7 @@ class UpUserAPIController extends Controller
             'vendedores',
             'transportadora',
             'operadores',
+            'providers',
         ])->find($id);
 
         if (!$upUser) {
