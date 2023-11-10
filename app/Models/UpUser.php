@@ -183,6 +183,11 @@ class UpUser extends Model implements Authenticatable, JWTSubject
 		return $this->belongsToMany(Vendedore::class, 'up_users_vendedores_links', 'user_id', 'vendedor_id')
 			->withPivot('id', 'vendedor_order', 'user_order');
 	}
+	public function providers()
+	{
+		return $this->belongsToMany(Provider::class, 'up_users_providers_links', 'up_user_id', 'provider_id')
+		->withPivot('id', 'provider_order', 'up_user_order');
+		}
 	public function transportadora()
 	{
 		return $this->hasManyThrough(Transportadora::class, TransportadorasUsersPermissionsUserLink::class, 'user_id', 'id', 'id', 'transportadora_id');

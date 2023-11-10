@@ -3,6 +3,7 @@
 use App\Http\Controllers\API\GenerateReportAPIController;
 use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
+use App\Http\Controllers\API\ProviderAPIController;
 use App\Http\Controllers\API\RutaAPIController;
 use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
 use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
@@ -209,6 +210,7 @@ Route::middleware(['cors'])->group(function () {
     //Route::resource('/users', App\Http\Controllers\API\UpUserAPIController::class);
     Route::post('/users', [UpUserAPIController::class, 'store']);
     Route::post('/users/general', [UpUserAPIController::class, 'storeGeneral']);
+    Route::post('/users/providers', [App\Http\Controllers\API\UpUserAPIController::class, 'storeProvider']);
 
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
 
@@ -301,6 +303,15 @@ Route::middleware(['cors'])->group(function () {
 
     });
 
+    Route::prefix('providers')->group(function () {
+        Route::get('/all', [ProviderAPIController::class, 'getProviders']);
+        
+    });
+
+
+
+    
+
     // api/upload
     //Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
 
@@ -311,3 +322,17 @@ Route::middleware(['cors'])->group(function () {
 
 
 });
+
+
+
+
+Route::resource('products', App\Http\Controllers\API\ProductAPIController::class)
+    ->except(['create', 'edit']);
+
+Route::resource('providers', App\Http\Controllers\API\ProviderAPIController::class)
+    ->except(['create', 'edit']);
+
+Route::resource('up-users-providers-links', App\Http\Controllers\API\UpUsersProvidersLinkAPIController::class)
+    ->except(['create', 'edit']);
+
+    
