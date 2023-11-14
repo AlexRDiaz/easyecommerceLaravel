@@ -211,6 +211,12 @@ Route::middleware(['cors'])->group(function () {
     Route::post('/users', [UpUserAPIController::class, 'store']);
     Route::post('/users/general', [UpUserAPIController::class, 'storeGeneral']);
     Route::post('/users/providers', [App\Http\Controllers\API\UpUserAPIController::class, 'storeProvider']);
+    Route::put('/users/providers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateProvider']);
+    
+    Route::get('/users/subproviders/{id}/{search?}', [App\Http\Controllers\API\UpUserAPIController::class, 'getSubProviders']);
+    Route::post('/users/subproviders/add', [App\Http\Controllers\API\UpUserAPIController::class, 'storeSubProvider']);
+    Route::put('/users/subproviders/update/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSubProvider']);
+
 
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
 

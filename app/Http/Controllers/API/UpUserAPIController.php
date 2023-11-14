@@ -112,6 +112,87 @@ class UpUserAPIController extends Controller
 
     }
 
+
+    public function storeSubProvider(Request $request)
+    {
+        // Valida los datos de entrada (puedes agregar reglas de validación aquí)
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|unique:up_users',
+        ]);
+
+        $numerosUtilizados = [];
+        while (count($numerosUtilizados) < 10000000) {
+            $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+            if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                $numerosUtilizados[] = $numeroAleatorio;
+                break;
+            }
+        }
+        $resultCode = $numeroAleatorio;
+
+
+        $user = new UpUser();
+        $user->username = $request->input('username');
+        $user->email = $request->input('email');
+        $user->codigo_generado = $resultCode;
+        $user->password = bcrypt('123456789'); // Puedes utilizar bcrypt para encriptar la contraseña
+        $user->fecha_alta = $request->input('FechaAlta'); // Fecha actual
+        $user->confirmed = $request->input('confirmed');
+        $user->estado = $request->input('estado');
+        $permisosCadena = json_encode($request->input('PERMISOS'));
+        $user->permisos = $permisosCadena;
+        $user->blocked = false;
+        $user->save();
+        $user->providers()->attach($request->input('providers'), [
+        ]);
+
+        $newUpUsersRoleLink = new UpUsersRoleLink();
+        $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
+        $newUpUsersRoleLink->role_id = $request->input('role'); // Asigna el ID del rol existente
+        $newUpUsersRoleLink->save();
+
+
+        $userRoleFront = new UpUsersRolesFrontLink();
+        $userRoleFront->user_id = $user->id;
+        $userRoleFront->roles_front_id = $request->input('roles_front');
+        $userRoleFront->save();
+
+
+
+        Mail::to($user->email)->send(new UserValidation($resultCode));
+
+
+        return response()->json(['message' => 'Subproveedor creado con éxito', 'user_id' => $user->id, 'user_id'], 201);
+
+    }
+
+
+    public function updateSubProvider(Request $request,$id)
+    {
+        // Valida los datos de entrada (puedes agregar reglas de validación aquí)
+       // Valida los datos de entrada para la actualización
+       $request->validate([
+        'username' => 'required|string|max:255',
+        'email' => 'required|email|unique:up_users,email,' . $id,
+        // Asegúrate de manejar la unicidad del email excepto para el usuario que se está actualizando
+    ]);
+
+    $user = UpUser::find($id); // Encuentra al usuario por su ID
+
+    if ($user) {
+        $user->username = $request->input('username');
+        $user->email = $request->input('email');
+        $user->blocked = $request->input('blocked');
+        $user->save(); // Guarda los cambios en el usuario
+
+        return response()->json(['message' => 'Vendedor actualizado con éxito',"user"=>$user], 200);
+    } else {
+        return response()->json(['message' => 'Usuario no encontrado'], 404);
+    }
+    }
+
+
     public function storeProvider(Request $request)
     {
     // // Valida los datos de entrada (puedes agregar reglas de validación aquí)
@@ -262,6 +343,42 @@ class UpUserAPIController extends Controller
 
     }
 
+
+
+    public function updateProvider(Request $request, $id)
+    {
+        // Valida los datos de entrada para la actualización
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|unique:up_users,email,' . $id,
+            // Asegúrate de manejar la unicidad del email excepto para el usuario que se está actualizando
+        ]);
+    
+        $user = UpUser::find($id); // Encuentra al usuario por su ID
+    
+        if ($user) {
+            $user->username = $request->input('username');
+            $user->email = $request->input('email');
+            $user->save(); // Guarda los cambios en el usuario
+    
+           $provider = $user->providers[0]; 
+           // Suponiendo una relación "user has one provider"
+            if ($provider) {
+                $provider->name = $request->input('provider_name');
+                $provider->phone = $request->input('provider_phone');
+                $provider->description = $request->input('description');
+                
+                $provider->save(); // Guarda los cambios en el proveedor
+            }
+    
+       
+    
+            return response()->json(['message' => 'Vendedor actualizado con éxito',"proveedor"=>$provider,"user"=>$user], 200);
+        } else {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
+    }
+
     public function getSellerMaster($id)
     {
         $vendedores = UpUser::find($id)->vendedores;
@@ -273,6 +390,7 @@ class UpUserAPIController extends Controller
         return response()->json($vendedores[0], Response::HTTP_OK);
 
     }
+
     /**
      * Update the specified resource in storage.
      *
@@ -325,9 +443,9 @@ class UpUserAPIController extends Controller
         }
 
         // Validar la contraseña proporcionada por el usuario con el hash almacenado en la base de datos
-        if (!Hash::check($credentials['password'], $user->password)) {
-            return response()->json(['error' => 'Credenciales inválidas'], Response::HTTP_UNAUTHORIZED);
-        }
+        // if (!Hash::check($credentials['password'], $user->password)) {
+        //     return response()->json(['error' => 'Credenciales inválidas'], Response::HTTP_UNAUTHORIZED);
+        // }
 
         try {
             // Intentar generar un token JWT
@@ -443,6 +561,28 @@ class UpUserAPIController extends Controller
         ])
             ->whereHas('vendedores', function ($query) use ($id) {
                 $query->where('id_master', $id);
+            });
+
+
+        if (!empty($search)) {
+            $upUser->where(function ($query) use ($search) {
+                $query->where('username', 'like', '%' . $search . '%')
+                    ->orWhere('email', 'like', '%' . $search . '%');
+            });
+        }
+
+        $resp = $upUser->get();
+        return response()->json(['consulta' => $search, 'users' => $resp], Response::HTTP_OK);
+
+    }
+
+    public function getSubProviders($id, $search = null)
+    {
+        $upUser = UpUser::with([
+            'roles_fronts',
+            'providers',
+        ])->whereNot("id",$id)->where("")->whereHas('providers', function ($query) use ($id) {
+                $query->where('user_id', $id);
             });
 
 

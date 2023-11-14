@@ -27,4 +27,6 @@ class ProviderAPIController extends Controller
         $providers = Provider::with('user')->get();
         return response()->json(['providers' => $providers]);
     }
+
+  
 }
