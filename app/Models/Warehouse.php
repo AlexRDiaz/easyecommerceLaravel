@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Warehouse extends Model
 {
     public $table = 'warehouses';
+    protected $primaryKey = 'warehouse_id';
 
     public $fillable = [
         'branch_name',

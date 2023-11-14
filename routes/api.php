@@ -281,6 +281,7 @@ Route::middleware(['cors'])->group(function () {
     //  *  delete
     //  *
 
+
     Route::prefix('shippingcost')->group(function () {
         Route::get('/', [TransportadorasShippingCostAPIController::class, 'index']);
         Route::post('/', [TransportadorasShippingCostAPIController::class, 'store']);
@@ -307,10 +308,7 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/all', [ProviderAPIController::class, 'getProviders']);
         
     });
-
-
-
-    
+        
 
     // api/upload
     //Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
@@ -320,6 +318,14 @@ Route::middleware(['cors'])->group(function () {
     Route::put('pedidos-shopify/updatefieldtime/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateFieldTime']);
     //test
 
+
+    Route::prefix('warehouses')->group(function () {
+        Route::get('/', [App\Http\Controllers\API\WarehouseAPIController::class, 'index']);
+        Route::get('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'show']);
+        Route::post('/', [App\Http\Controllers\API\WarehouseAPIController::class, 'store']);
+        Route::put('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'update']);
+        Route::delete('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'destroy']);
+    });
 
 });
 
