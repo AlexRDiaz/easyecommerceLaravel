@@ -333,6 +333,8 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/{id}', [ProductAPIController::class, 'show']);
         Route::post('/', [ProductAPIController::class, 'store']);
         Route::put('/{id}', [ProductAPIController::class, 'update']);
+        Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
+
 
     });
 });

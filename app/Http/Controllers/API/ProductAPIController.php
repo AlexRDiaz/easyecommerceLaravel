@@ -37,40 +37,34 @@ class ProductAPIController extends Controller
             $filteFields = [];
         }
 
-        $and = $data['and'];
-        
+        $andMap = $data['and'];
+
         $products = Product::with($populate)
-        ->where(function ($products) use ($searchTerm, $filteFields) {
-            foreach ($filteFields as $field) {
-                if (strpos($field, '.') !== false) {
-                    $relacion = substr($field, 0, strpos($field, '.'));
-                    $propiedad = substr($field, strpos($field, '.') + 1);
-                    $this->recursiveWhereHas($products, $relacion, $propiedad, $searchTerm);
-                } else {
-                    $products->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
-                }
-            }
-        })
-        ->where((function ($pedidos) use ($and) {
-            foreach ($and as $condition) {
-                foreach ($condition as $key => $valor) {
-                    $parts = explode("/", $key);
-                    $type = $parts[0];
-                    $filter = $parts[1];
-                    if (strpos($filter, '.') !== false) {
-                        $relacion = substr($filter, 0, strpos($filter, '.'));
-                        $propiedad = substr($filter, strpos($filter, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+            ->where(function ($products) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($products, $relacion, $propiedad, $searchTerm);
                     } else {
-                        if ($type == "equals") {
-                            $pedidos->where($filter, '=', $valor);
+                        $products->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where((function ($products) use ($andMap) {
+                foreach ($andMap as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($products, $relacion, $propiedad, $valor);
                         } else {
-                            $pedidos->where($filter, 'LIKE', '%' . $valor . '%');
+                            $products->where($key, '=', $valor);
                         }
                     }
                 }
-            }
-        }));
+            }))
+            ->where('active', 1);
 
         // ! sort
         $orderByText = null;
@@ -111,6 +105,27 @@ class ProductAPIController extends Controller
         $products = $products->paginate($pageSize, ['*'], 'page', $pageNumber);
         return response()->json($products);
     }
+
+    private function recursiveWhereHas($query, $relation, $property, $searchTerm)
+    {
+        if ($searchTerm == "null") {
+            $searchTerm = null;
+        }
+        if (strpos($property, '.') !== false) {
+
+            $nestedRelation = substr($property, 0, strpos($property, '.'));
+            $nestedProperty = substr($property, strpos($property, '.') + 1);
+
+            $query->whereHas($relation, function ($q) use ($nestedRelation, $nestedProperty, $searchTerm) {
+                $this->recursiveWhereHas($q, $nestedRelation, $nestedProperty, $searchTerm);
+            });
+        } else {
+            $query->whereHas($relation, function ($q) use ($property, $searchTerm) {
+                $q->where($property, '=', $searchTerm);
+            });
+        }
+    }
+
     /**
      * Show the form for creating a new resource.
      */
@@ -151,7 +166,7 @@ class ProductAPIController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Request $request,string $id)
+    public function show(Request $request, string $id)
     {
         // $product = Product::with('warehouse')->findOrFail($id);
         // return response()->json($product);
@@ -191,5 +206,7 @@ class ProductAPIController extends Controller
     public function destroy(string $id)
     {
         //
+        Product::where('product_id', $id)
+            ->update(['active' => 0]);
     }
 }
