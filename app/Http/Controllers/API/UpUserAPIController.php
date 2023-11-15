@@ -443,9 +443,9 @@ class UpUserAPIController extends Controller
         }
 
         // Validar la contraseña proporcionada por el usuario con el hash almacenado en la base de datos
-        // if (!Hash::check($credentials['password'], $user->password)) {
-        //     return response()->json(['error' => 'Credenciales inválidas'], Response::HTTP_UNAUTHORIZED);
-        // }
+        if (!Hash::check($credentials['password'], $user->password)) {
+            return response()->json(['error' => 'Credenciales inválidas'], Response::HTTP_UNAUTHORIZED);
+        }
 
         try {
             // Intentar generar un token JWT
@@ -581,7 +581,7 @@ class UpUserAPIController extends Controller
         $upUser = UpUser::with([
             'roles_fronts',
             'providers',
-        ])->whereNot("id",$id)->where("")->whereHas('providers', function ($query) use ($id) {
+        ])->whereNot("id",$id)->where("blocked",0)->whereHas('providers', function ($query) use ($id) {
                 $query->where('user_id', $id);
             });
 
