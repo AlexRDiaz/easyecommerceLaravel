@@ -3,12 +3,14 @@
 use App\Http\Controllers\API\GenerateReportAPIController;
 use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
+use App\Http\Controllers\API\ProductAPIController;
 use App\Http\Controllers\API\ProviderAPIController;
 use App\Http\Controllers\API\RutaAPIController;
 use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
 use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
+use App\Http\Controllers\API\WarehouseAPIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -295,7 +297,6 @@ Route::middleware(['cors'])->group(function () {
         Route::put('/{id}', [TransportadorasShippingCostAPIController::class, 'update']);
         Route::get('/perday', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'getShippingCostPerDay']);
         Route::post('bytransportadora/{id}', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'getByTransportadora']);
-
     });
 
     // 
@@ -306,17 +307,15 @@ Route::middleware(['cors'])->group(function () {
         Route::put('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'update']);
         Route::post('/bydates', [TransaccionPedidoTransportadoraAPIController::class, 'getByTransportadoraDates']);
         Route::delete('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'destroy']);
-
     });
 
     Route::prefix('providers')->group(function () {
         Route::get('/all', [ProviderAPIController::class, 'getProviders']);
-        
     });
 
 
 
-    
+
 
     // api/upload
     //Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
@@ -324,9 +323,26 @@ Route::middleware(['cors'])->group(function () {
     Route::post('upload', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'uploadFile']);
     //      *
     Route::put('pedidos-shopify/updatefieldtime/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateFieldTime']);
-    //test
+
+    // *
+    Route::prefix('warehouses')->group(function () {
+        Route::get('/', [WarehouseAPIController::class, 'index']);
+        Route::get('/{id}', [WarehouseAPIController::class, 'show']);
+        Route::post('/', [WarehouseAPIController::class, 'store']);
+        Route::put('/{id}', [WarehouseAPIController::class, 'update']);
+
+    });
+
+    Route::prefix('products')->group(function () {
+        Route::get('/', [ProductAPIController::class, 'index']);
+        Route::post('/all', [ProductAPIController::class, 'getProducts']);
+        Route::get('/{id}', [ProductAPIController::class, 'show']);
+        Route::post('/', [ProductAPIController::class, 'store']);
+        Route::put('/{id}', [ProductAPIController::class, 'update']);
+        Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
 
 
+    });
 });
 
 
@@ -340,5 +356,3 @@ Route::resource('providers', App\Http\Controllers\API\ProviderAPIController::cla
 
 Route::resource('up-users-providers-links', App\Http\Controllers\API\UpUsersProvidersLinkAPIController::class)
     ->except(['create', 'edit']);
-
-    
