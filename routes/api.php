@@ -306,9 +306,9 @@ Route::middleware(['cors'])->group(function () {
 
     Route::prefix('providers')->group(function () {
         Route::get('/all', [ProviderAPIController::class, 'getProviders']);
-        
+
     });
-        
+
 
     // api/upload
     //Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
@@ -325,6 +325,7 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/', [App\Http\Controllers\API\WarehouseAPIController::class, 'store']);
         Route::put('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'update']);
         Route::delete('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'destroy']);
+        Route::get('/provider/{provider_id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'filterByProvider']);
     });
 
 });
@@ -341,4 +342,4 @@ Route::resource('providers', App\Http\Controllers\API\ProviderAPIController::cla
 Route::resource('up-users-providers-links', App\Http\Controllers\API\UpUsersProvidersLinkAPIController::class)
     ->except(['create', 'edit']);
 
-    
+

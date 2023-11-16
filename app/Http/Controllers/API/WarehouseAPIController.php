@@ -68,6 +68,18 @@ class WarehouseAPIController extends Controller
         $warehouse->delete();
         return response()->json(['message' => 'Deleted Successfully'], 200);
     }
+
+    
+    public function filterByProvider($provider_id)
+    {
+        $warehouses = Warehouse::where('provider_id', $provider_id)->get();
+
+        if ($warehouses->isEmpty()) {
+            return response()->json(['message' => 'No warehouses found for the given provider ID'], 404);
+        }
+
+        return response()->json(['warehouses' => $warehouses]);
+    }
     
 
 }
