@@ -175,6 +175,12 @@ Route::middleware(['cors'])->group(function () {
     // ! GetTransacctions To rollback
     Route::get("transacciones/to-rollback/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'getTransactionToRollback']);
 
+    Route::post("transacciones/cleanTransactionsFailed/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'cleanTransactionsFailed']);
+
+    
+
+
+
 
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
 
