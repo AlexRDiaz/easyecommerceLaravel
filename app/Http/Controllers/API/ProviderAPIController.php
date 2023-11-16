@@ -23,10 +23,22 @@ class ProviderAPIController extends Controller
         return response()->json($pedido);
     }
 
-    public function getProviders(){
-        $providers = Provider::with('user')->get();
-        return response()->json(['providers' => $providers]);
+    public function getProviders($search = null) {
+        $providers = Provider::with('user');
+    
+        if (!empty($search)) {
+            $providers->where(function ($query) use ($search) {
+                $query->where('name', 'like', '%' . $search . '%')
+                      ->orWhereHas('user', function ($query) use ($search) {
+                          $query->where('username', 'like', '%' . $search . '%')
+                                ->orWhere('email', 'like', '%' . $search . '%');
+                      });
+            });
+        }
+    
+        return response()->json(['providers' => $providers->get()]);
     }
+    
 
   
 }

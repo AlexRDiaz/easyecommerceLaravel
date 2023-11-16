@@ -310,7 +310,7 @@ Route::middleware(['cors'])->group(function () {
     });
 
     Route::prefix('providers')->group(function () {
-        Route::get('/all', [ProviderAPIController::class, 'getProviders']);
+        Route::get('/all/{search?}', [ProviderAPIController::class, 'getProviders']);
     });
 
 
