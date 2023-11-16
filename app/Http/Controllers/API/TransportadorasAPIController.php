@@ -123,7 +123,7 @@ class TransportadorasAPIController extends Controller
     {
         $transportadoras = Transportadora::whereHas('rutas', function ($query) use ($idRoute) {
             $query->where('rutas.id', '=', $idRoute);
-        })->get();
+        })->where('active', 1)->get();
 
         if ($transportadoras->isEmpty()) {
             return response()->json([], 200);
@@ -131,5 +131,4 @@ class TransportadorasAPIController extends Controller
 
         return response()->json($transportadoras);
     }
-
 }
