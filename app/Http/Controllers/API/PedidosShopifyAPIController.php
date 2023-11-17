@@ -2189,6 +2189,12 @@ class PedidosShopifyAPIController extends Controller
             $pedido->status_last_modified_by = $idUser;
         }
 
+        //v0
+        if ($key == "estado_interno") {
+            $pedido->confirmed_by = $idUser;
+            $pedido->confirmed_at = $currentDateTime;
+        }
+
         $pedido->save();
         return response()->json([$pedido], 200);
     }

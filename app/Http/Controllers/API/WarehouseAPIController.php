@@ -8,10 +8,12 @@ use Illuminate\Http\Request;
 
 class WarehouseAPIController extends Controller
 {
+
     public function index()
     {
         //
         $warehouses = Warehouse::all();
+
         return response()->json(['warehouses' => $warehouses]);
     }
 
@@ -83,3 +85,4 @@ class WarehouseAPIController extends Controller
     
 
 }
+

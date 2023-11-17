@@ -2,108 +2,211 @@
 
 namespace App\Http\Controllers\API;
 
-use App\Http\Requests\API\CreateProductAPIRequest;
-use App\Http\Requests\API\UpdateProductAPIRequest;
-use App\Models\Product;
-use App\Repositories\ProductRepository;
-use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Request;
-use App\Http\Controllers\AppBaseController;
 use App\Http\Controllers\Controller;
+use App\Models\Product;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
-/**
- * Class ProductAPIController
- */
 class ProductAPIController extends Controller
 {
-    private ProductRepository $productRepository;
-
-    public function __construct(ProductRepository $productRepo)
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
     {
-        $this->productRepository = $productRepo;
+        //
+        $products = Product::with('warehouse')->get();
+        return response()->json($products);
     }
 
-    /**
-     * Display a listing of the Products.
-     * GET|HEAD /products
-     */
-    public function index(Request $request): JsonResponse
+
+    public function getProducts(Request $request)
     {
-        $products = $this->productRepository->all(
-            $request->except(['skip', 'limit']),
-            $request->get('skip'),
-            $request->get('limit')
-        );
+        //
+        $data = $request->json()->all();
 
-        return $this->sendResponse($products->toArray(), 'Products retrieved successfully');
-    }
+        $pageSize = $data['page_size'];
+        $pageNumber = $data['page_number'];
+        $searchTerm = $data['search'];
 
-    /**
-     * Store a newly created Product in storage.
-     * POST /products
-     */
-    public function store(CreateProductAPIRequest $request): JsonResponse
-    {
-        $input = $request->all();
-
-        $product = $this->productRepository->create($input);
-
-        return $this->sendResponse($product->toArray(), 'Product saved successfully');
-    }
-
-    /**
-     * Display the specified Product.
-     * GET|HEAD /products/{id}
-     */
-    public function show($id): JsonResponse
-    {
-        /** @var Product $product */
-        $product = $this->productRepository->find($id);
-
-        if (empty($product)) {
-            return $this->sendError('Product not found');
+        $populate = $data['populate'];
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
         }
 
-        return $this->sendResponse($product->toArray(), 'Product retrieved successfully');
+        $andMap = $data['and'];
+
+        $products = Product::with($populate)
+            ->where(function ($products) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($products, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $products->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where((function ($products) use ($andMap) {
+                foreach ($andMap as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($products, $relacion, $propiedad, $valor);
+                        } else {
+                            $products->where($key, '=', $valor);
+                        }
+                    }
+                }
+            }))
+            ->where('active', 1);
+
+        // ! sort
+        $orderByText = null;
+        $orderByDate = null;
+        $sort = $data['sort'];
+        $sortParts = explode(':', $sort);
+
+        $pt1 = $sortParts[0];
+
+        $type = (stripos($pt1, 'fecha') !== false || stripos($pt1, 'marca') !== false) ? 'date' : 'text';
+
+        $dataSort = [
+            [
+                'field' => $sortParts[0],
+                'type' => $type,
+                'direction' => $sortParts[1],
+            ],
+        ];
+
+        foreach ($dataSort as $value) {
+            $field = $value['field'];
+            $direction = $value['direction'];
+            $type = $value['type'];
+
+            if ($type === "text") {
+                $orderByText = [$field => $direction];
+            } else {
+                $orderByDate = [$field => $direction];
+            }
+        }
+
+        if ($orderByText !== null) {
+            $products->orderBy(key($orderByText), reset($orderByText));
+        } else {
+            $products->orderBy(DB::raw("STR_TO_DATE(" . key($orderByDate) . ", '%e/%c/%Y')"), reset($orderByDate));
+        }
+        // ! **************************************************
+        $products = $products->paginate($pageSize, ['*'], 'page', $pageNumber);
+        return response()->json($products);
+    }
+
+    private function recursiveWhereHas($query, $relation, $property, $searchTerm)
+    {
+        if ($searchTerm == "null") {
+            $searchTerm = null;
+        }
+        if (strpos($property, '.') !== false) {
+
+            $nestedRelation = substr($property, 0, strpos($property, '.'));
+            $nestedProperty = substr($property, strpos($property, '.') + 1);
+
+            $query->whereHas($relation, function ($q) use ($nestedRelation, $nestedProperty, $searchTerm) {
+                $this->recursiveWhereHas($q, $nestedRelation, $nestedProperty, $searchTerm);
+            });
+        } else {
+            $query->whereHas($relation, function ($q) use ($property, $searchTerm) {
+                $q->where($property, '=', $searchTerm);
+            });
+        }
     }
 
     /**
-     * Update the specified Product in storage.
-     * PUT/PATCH /products/{id}
+     * Show the form for creating a new resource.
      */
-    public function update($id, UpdateProductAPIRequest $request): JsonResponse
+    public function create()
     {
-        $input = $request->all();
-
-        /** @var Product $product */
-        $product = $this->productRepository->find($id);
-
-        if (empty($product)) {
-            return $this->sendError('Product not found');
-        }
-
-        $product = $this->productRepository->update($input, $id);
-
-        return $this->sendResponse($product->toArray(), 'Product updated successfully');
+        //
     }
 
     /**
-     * Remove the specified Product from storage.
-     * DELETE /products/{id}
-     *
-     * @throws \Exception
+     * Store a newly created resource in storage.
      */
-    public function destroy($id): JsonResponse
+    public function store(Request $request)
     {
-        /** @var Product $product */
-        $product = $this->productRepository->find($id);
+        //
+        $data = $request->json()->all();
+        // return response()->json($data, 200);
 
-        if (empty($product)) {
-            return $this->sendError('Product not found');
+        $product_name = $data['product_name'];
+        $stock = $data['stock'];
+        $features = json_encode($data['features']);
+        $price = $data['price'];
+        $url_img = $data['url_img'];
+        $warehouse_id = $data['warehouse_id'];
+
+        $newProduct = new Product();
+        $newProduct->product_name = $product_name;
+        $newProduct->stock = $stock;
+        $newProduct->features = $features;
+        $newProduct->price = $price;
+        $newProduct->url_img = $url_img;
+        $newProduct->warehouse_id = $warehouse_id;
+
+        $newProduct->save();
+
+        return response()->json($newProduct, 200);
+    }
+
+    /**
+     * Display the specified resource.
+     */
+    public function show(Request $request, string $id)
+    {
+        // $product = Product::with('warehouse')->findOrFail($id);
+        // return response()->json($product);
+        $data = $request->json()->all();
+        $populate = $data['populate'];
+        $product = Product::with($populate)
+            ->where('product_id', $id)
+            ->first();
+        if (!$product) {
+            return response()->json(['message' => 'No se encontraro pedido con el ID especificado'], 404);
         }
+        return response()->json($product);
+    }
 
-        $product->delete();
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
 
-        return $this->sendSuccess('Product deleted successfully');
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+        $transaccion = Product::findOrFail($id);
+        $transaccion->update($request->all());
+        return response()->json($transaccion, Response::HTTP_OK);
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+        Product::where('product_id', $id)
+            ->update(['active' => 0]);
     }
 }

@@ -65,6 +65,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property int|null $received_by
  * @property Carbon|null $status_last_modified_at
  * @property int|null $status_last_modified_by
+ * @property int|null $confirmed_by
+ * @property Carbon|null $confirmed_at
  * 
  * @property AdminUser|null $admin_user
  * @property Collection|Novedade[] $novedades
@@ -87,13 +89,18 @@ class PedidosShopify extends Model
 		'created_by_id' => 'int',
 		'updated_by_id' => 'int',
 		'revisado' => 'bool',
+		'costo_envio' => 'float',
+		'costo_devolucion' => 'float',
+		'costo_transportadora' => 'float',
 		'printed_at' => 'datetime',
 		'printed_by' => 'int',
 		'sent_at' => 'datetime',
 		'sent_by' => 'int',
 		'received_by' => 'int',
 		'status_last_modified_at' => 'datetime',
-		'status_last_modified_by' => 'int'
+		'status_last_modified_by' => 'int',
+		'confirmed_by' => 'int',
+		'confirmed_at' => 'datetime'
 	];
 
 	protected $fillable = [
@@ -137,15 +144,17 @@ class PedidosShopify extends Model
 		'comentario_rechazado',
 		'revisado',
 		'costo_envio',
-		'costo_transportadora',
 		'costo_devolucion',
+		'costo_transportadora',
 		'printed_at',
 		'printed_by',
 		'sent_at',
 		'sent_by',
 		'received_by',
 		'status_last_modified_at',
-		'status_last_modified_by'
+		'status_last_modified_by',
+		'confirmed_by',
+		'confirmed_at'
 	];
 
 	public function admin_user()

@@ -29,71 +29,71 @@ class TransaccionesAPIController extends Controller
 
     }
 
-    
+
 
     public function getExistTransaction(Request $request)
     {
         $data = $request->json()->all();
-        $tipo= $data['tipo'];
-        $idOrigen= $data['id_origen'];
-        $origen= $data['origen'];
-        $idVendedor= $data['id_vendedor'];
+        $tipo = $data['tipo'];
+        $idOrigen = $data['id_origen'];
+        $origen = $data['origen'];
+        $idVendedor = $data['id_vendedor'];
 
 
 
-        $pedido = Transaccion::where('tipo',$tipo)
-        ->where('id_origen',$idOrigen)
-        ->where('origen',$origen)->where('id_vendedor',$idVendedor)
+        $pedido = Transaccion::where('tipo', $tipo)
+            ->where('id_origen', $idOrigen)
+            ->where('origen', $origen)->where('id_vendedor', $idVendedor)
             ->get();
 
         return response()->json($pedido);
     }
 
-      public function getTransactionsByDate(Request $request)
+    public function getTransactionsByDate(Request $request)
     {
         $data = $request->json()->all();
         $search = $data['search'];
-        $and=$data['and'];
-        if($data['start']==null){
-            $data['start']= "2023-01-10 00:00:00";
-       }
-       if($data['end']==null){
-        $data['end']= "2223-01-10 00:00:00";
-      }
+        $and = $data['and'];
+        if ($data['start'] == null) {
+            $data['start'] = "2023-01-10 00:00:00";
+        }
+        if ($data['end'] == null) {
+            $data['end'] = "2223-01-10 00:00:00";
+        }
         $startDate = Carbon::parse($data['start'])->startOfDay();
         $endDate = Carbon::parse($data['end'])->endOfDay();
-        
-      
-       
-        
+
+
+
+
         $filteredData = Transaccion::whereBetween('marca_de_tiempo', [$startDate, $endDate]);
-        if($search!=""){
-        $filteredData->where("codigo",'like', '%'.$search.'%');
+        if ($search != "") {
+            $filteredData->where("codigo", 'like', '%' . $search . '%');
         }
-        if($and!=[]){
-        $filteredData->where((function ($pedidos) use ($and) {
-            foreach ($and as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '=', $valor);
+        if ($and != []) {
+            $filteredData->where((function ($pedidos) use ($and) {
+                foreach ($and as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
                     }
                 }
-            }
-        }));
-    }
-        
-        
-        
+            }));
+        }
+
+
+
         return response()->json($filteredData->get());
 
 
     }
 
- private function recursiveWhereHas($query, $relation, $property, $searchTerm)
+    private function recursiveWhereHas($query, $relation, $property, $searchTerm)
     {
         if ($searchTerm == "null") {
             $searchTerm = null;
@@ -118,7 +118,7 @@ class TransaccionesAPIController extends Controller
         $ultimosRegistros = Transaccion::orderBy('id', 'desc')
             ->limit(300)
             ->get();
-    
+
         return response()->json($ultimosRegistros);
     }
     public function index()
@@ -137,21 +137,21 @@ class TransaccionesAPIController extends Controller
     {
         $data = $request->json()->all();
         $startDateFormatted = new DateTime();
-       // $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
+        // $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
         $vendedorId = $data['id'];
         $tipo = "credit";
         $monto = $data['monto'];
         $idOrigen = $data['id_origen'];
-        $codigo= $data['codigo'];
+        $codigo = $data['codigo'];
         $origen = $data['origen'];
         $comentario = $data['comentario'];
         $comentario = $data['comentario'];
-        $generated_by= $data['generated_by'];
+        $generated_by = $data['generated_by'];
 
 
-        $user=UpUser::where("id",$vendedorId)->with('vendedores')->first();
-        $vendedor =$user['vendedores'][0];
-        $saldo=$vendedor->saldo;
+        $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
+        $vendedor = $user['vendedores'][0];
+        $saldo = $vendedor->saldo;
         $nuevoSaldo = $saldo + $monto;
         $vendedor->saldo = $nuevoSaldo;
 
@@ -168,12 +168,12 @@ class TransaccionesAPIController extends Controller
         $newTrans->codigo = $codigo;
 
         $newTrans->origen = $origen;
-        $newTrans->comentario=$comentario;
+        $newTrans->comentario = $comentario;
         $newTrans->id_vendedor = $vendedorId;
-        $newTrans->state=1;
+        $newTrans->state = 1;
         $newTrans->generated_by = $generated_by;
-        $insertedData = $this->transaccionesRepository->create($newTrans);
-        $updatedData = $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
+        $this->transaccionesRepository->create($newTrans);
+        $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
         return response()->json("Monto acreditado");
 
@@ -182,22 +182,22 @@ class TransaccionesAPIController extends Controller
     {
         $data = $request->json()->all();
         $startDateFormatted = new DateTime();
-      //  $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
+        //  $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
         $vendedorId = $data['id'];
         $vendedorId = $data['id'];
         $tipo = "debit";
         $monto = $data['monto'];
         $idOrigen = $data['id_origen'];
-        $codigo= $data['codigo'];
+        $codigo = $data['codigo'];
 
         $origen = $data['origen'];
         $comentario = $data['comentario'];
-        $generated_by= $data['generated_by'];
+        $generated_by = $data['generated_by'];
 
 
-        $user=UpUser::where("id",$vendedorId)->with('vendedores')->first();
-        $vendedor =$user['vendedores'][0];
-        $saldo=$vendedor->saldo;
+        $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
+        $vendedor = $user['vendedores'][0];
+        $saldo = $vendedor->saldo;
         $nuevoSaldo = $saldo - $monto;
         $vendedor->saldo = $nuevoSaldo;
 
@@ -213,10 +213,10 @@ class TransaccionesAPIController extends Controller
         $newTrans->codigo = $codigo;
 
         $newTrans->origen = $origen;
-        $newTrans->comentario=$comentario;
+        $newTrans->comentario = $comentario;
 
         $newTrans->id_vendedor = $vendedorId;
-        $newTrans->state=1;
+        $newTrans->state = 1;
         $newTrans->generated_by = $generated_by;
 
         $insertedData = $this->transaccionesRepository->create($newTrans);
@@ -226,98 +226,118 @@ class TransaccionesAPIController extends Controller
 
     }
 
-   
+    public function cleanTransactionsFailed($id)
+    {
+        $transaccions = Transaccion::where("id_origen", $id)->where('state', '1')->whereNot("origen", "reembolso")->get();
+        foreach ($transaccions as $transaction) {
+            if ($transaction->state == 1) {  
+                $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
+                if ($transaction->tipo == "credit") {
+                    $vendedor[0]->saldo = $vendedor[0]->saldo - $transaction->monto;
+                }
+                if ($transaction->tipo == "debit") {
+                    $vendedor[0]->saldo = $vendedor[0]->saldo + $transaction->monto;
+                }
+             
+                $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
+                $transaction->delete();
+            }
+        }
+        return response()->json("ok");
+    }
     public function getTransactionsById($id)
     {
-        $transaccions = Transaccion::where("id_vendedor",$id)->orderBy('id', 'desc')->get();
-        
+        $transaccions = Transaccion::where("id_vendedor", $id)->orderBy('id', 'desc')->get();
+
         return response()->json($transaccions);
 
 
     }
     public function getTransactionToRollback($id)
     {
-        $transaccion = Transaccion::where("id_origen",$id)->where('state', '1')->whereNot("origen","reembolso")->get();
-        
+        $transaccion = Transaccion::where("id_origen", $id)->where('state', '1')->whereNot("origen", "reembolso")->get();
 
-        
+
+
         return response()->json($transaccion);
     }
 
-    public function rollbackTransaction(Request $request){
+    public function rollbackTransaction(Request $request)
+    {
         $data = $request->json()->all();
-        $generated_by= $data['generated_by'];
+        $generated_by = $data['generated_by'];
 
         $ids = $data['ids'];
-         $reqTrans=[];
-         $reqPedidos=[];
- 
-         foreach ($ids   as $id) {
+        $reqTrans = [];
+        $reqPedidos = [];
+
+        foreach ($ids as $id) {
 
             $transaction = Transaccion::find($id);
             array_push($reqTrans, $transaction);
 
-            if($transaction->state==1){
+            if ($transaction->state == 1) {
 
-            $pedido = PedidosShopify::where("id",$transaction->id_origen)->first();
-            array_push($reqPedidos, $pedido);
+                $pedido = PedidosShopify::where("id", $transaction->id_origen)->first();
+                array_push($reqPedidos, $pedido);
 
-            $vendedor= UpUser::find($transaction->id_vendedor)->vendedores;
-           if($transaction->tipo=="credit"){
-                $transactionResetValues=new Transaccion();
-                $transactionResetValues->tipo="debit";
-                $transactionResetValues->monto=$transaction->monto;
-                $transactionResetValues->valor_anterior=$vendedor[0]->saldo;
-                $transactionResetValues->valor_actual=$vendedor[0]->saldo-$transaction->monto;
-                $transactionResetValues->marca_de_tiempo=new DateTime();
-                $transactionResetValues->id_origen=$transaction->id_origen;
-                $transactionResetValues->codigo=$transaction->codigo;
-                $transactionResetValues->origen="reembolso";
-                $transactionResetValues->id_vendedor=$transaction->id_vendedor;
-                $transactionResetValues->comentario="error de transaccion";
-                $transactionResetValues->state=0;
-                $transactionResetValues->generated_by = $generated_by;
+                $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
+                if ($transaction->tipo == "credit") {
+                    $transactionResetValues = new Transaccion();
+                    $transactionResetValues->tipo = "debit";
+                    $transactionResetValues->monto = $transaction->monto;
+                    $transactionResetValues->valor_anterior = $vendedor[0]->saldo;
+                    $transactionResetValues->valor_actual = $vendedor[0]->saldo - $transaction->monto;
+                    $transactionResetValues->marca_de_tiempo = new DateTime();
+                    $transactionResetValues->id_origen = $transaction->id_origen;
+                    $transactionResetValues->codigo = $transaction->codigo;
+                    $transactionResetValues->origen = "reembolso";
+                    $transactionResetValues->id_vendedor = $transaction->id_vendedor;
+                    $transactionResetValues->comentario = "error de transaccion";
+                    $transactionResetValues->state = 0;
+                    $transactionResetValues->generated_by = $generated_by;
 
 
-                $transactionResetValues->save();
-                $vendedor[0]->saldo=$vendedor[0]->saldo-$transaction->monto;              
+                    $transactionResetValues->save();
+                    $vendedor[0]->saldo = $vendedor[0]->saldo - $transaction->monto;
+                }
+                if ($transaction->tipo == "debit") {
+
+                    $transactionResetValues = new Transaccion();
+                    $transactionResetValues->tipo = "credit";
+                    $transactionResetValues->monto = $transaction->monto;
+                    $transactionResetValues->valor_anterior = $vendedor[0]->saldo;
+                    $transactionResetValues->valor_actual = $vendedor[0]->saldo + $transaction->monto;
+                    $transactionResetValues->marca_de_tiempo = new DateTime();
+                    $transactionResetValues->id_origen = $transaction->id_origen;
+                    $transactionResetValues->codigo = $transaction->codigo;
+                    $transactionResetValues->origen = "reembolso";
+                    $transactionResetValues->id_vendedor = $transaction->id_vendedor;
+                    $transactionResetValues->comentario = "error de transaccion";
+                    $transactionResetValues->state = 0;
+                    $transactionResetValues->generated_by = $generated_by;
+
+                    $transactionResetValues->save();
+
+
+
+
+                    $vendedor[0]->saldo = $vendedor[0]->saldo + $transaction->monto;
+
+                }
+                $transaction->state = 0;
+                $transaction->save();
+                $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
+
             }
-            if($transaction->tipo=="debit"){
 
-                $transactionResetValues=new Transaccion();
-                $transactionResetValues->tipo="credit";
-                $transactionResetValues->monto=$transaction->monto;
-                $transactionResetValues->valor_anterior=$vendedor[0]->saldo;
-                $transactionResetValues->valor_actual=$vendedor[0]->saldo+$transaction->monto;
-                $transactionResetValues->marca_de_tiempo=new DateTime();
-                $transactionResetValues->id_origen=$transaction->id_origen;
-                $transactionResetValues->codigo=$transaction->codigo;
-                $transactionResetValues->origen="reembolso";
-                $transactionResetValues->id_vendedor=$transaction->id_vendedor;
-                $transactionResetValues->comentario="error de transaccion";
-                $transactionResetValues->state=0;
-                $transactionResetValues->generated_by = $generated_by;
+        }
 
-                $transactionResetValues->save();
-
-
-
-
-                $vendedor[0]->saldo=$vendedor[0]->saldo+$transaction->monto;
-    
-            }
-            $transaction->state=0;
-            $transaction->save();
-            $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
-          
-         }
-           
-          }
-      
         return response()->json([
-        "transacciones"=>$reqTrans, "pedidps"=>$reqPedidos
-      
-    ]);
+            "transacciones" => $reqTrans,
+            "pedidps" => $reqPedidos
+
+        ]);
 
     }
 }
