@@ -431,7 +431,7 @@ class UpUserAPIController extends Controller
     {
         // Agrega tu lógica para eliminar un UpUser aquí.
     }
-    public function login(Request $request)
+   public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
 
@@ -466,7 +466,6 @@ class UpUserAPIController extends Controller
             'user' => $user
         ], Response::HTTP_OK);
     }
-
 
     public function users($id)
     {
