@@ -295,6 +295,7 @@ Route::middleware(['cors'])->group(function () {
     //  *  delete
     //  *
 
+
     Route::prefix('shippingcost')->group(function () {
         Route::get('/', [TransportadorasShippingCostAPIController::class, 'index']);
         Route::post('/', [TransportadorasShippingCostAPIController::class, 'store']);
@@ -316,12 +317,11 @@ Route::middleware(['cors'])->group(function () {
     });
 
     Route::prefix('providers')->group(function () {
+
         Route::get('/all/{search?}', [ProviderAPIController::class, 'getProviders']);
     });
 
-
-
-
+    });
 
     // api/upload
     //Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
@@ -348,7 +348,16 @@ Route::middleware(['cors'])->group(function () {
         Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
 
 
+    Route::prefix('warehouses')->group(function () {
+        Route::get('/', [App\Http\Controllers\API\WarehouseAPIController::class, 'index']);
+        Route::get('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'show']);
+        Route::post('/', [App\Http\Controllers\API\WarehouseAPIController::class, 'store']);
+        Route::put('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'update']);
+        Route::delete('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'destroy']);
+        Route::get('/provider/{provider_id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'filterByProvider']);
     });
+
+
 });
 
 
@@ -362,3 +371,4 @@ Route::resource('providers', App\Http\Controllers\API\ProviderAPIController::cla
 
 Route::resource('up-users-providers-links', App\Http\Controllers\API\UpUsersProvidersLinkAPIController::class)
     ->except(['create', 'edit']);
+

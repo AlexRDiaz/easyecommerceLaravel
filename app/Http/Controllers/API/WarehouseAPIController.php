@@ -8,61 +8,81 @@ use Illuminate\Http\Request;
 
 class WarehouseAPIController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+
     public function index()
     {
         //
         $warehouses = Warehouse::all();
-        return response()->json($warehouses);
+
+        return response()->json(['warehouses' => $warehouses]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-        //
-    }
-
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            'branch_name' => 'nullable|string|max:70',
+            'address' => 'nullable|string|max:70',
+            'reference' => 'nullable|string|max:70',
+            'description' => 'nullable|string|max:65535',
+            'provider_id' => 'nullable|integer'
+        ]);
+
+        $warehouse = Warehouse::create($validatedData);
+        return response()->json($warehouse, 201); // 201: Recurso creado
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
+    public function show(string $warehouse_id)
     {
-        //
+        $warehouse = Warehouse::where('warehouse_id', $warehouse_id)->first();
+        if (!$warehouse) {
+            return response()->json(['message' => 'Not Found!'], 404);
+        }
+        return response()->json($warehouse);
+    }
+    
+
+
+
+    public function update(Request $request, string $warehouse_id)
+    {
+        $validatedData = $request->validate([
+            'branch_name' => 'nullable|string|max:70',
+            'address' => 'nullable|string|max:70',
+            'reference' => 'nullable|string|max:70',
+            'description' => 'nullable|string|max:65535',
+            'provider_id' => 'nullable|integer'
+        ]);
+
+        $warehouse = Warehouse::where('warehouse_id', $warehouse_id)->first();
+    if (!$warehouse) {
+        return response()->json(['message' => 'Not Found!'], 404);
+    }
+    $warehouse->update($validatedData);
+    return response()->json($warehouse);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function destroy(string $warehouse_id)
     {
-        //
+        $warehouse = Warehouse::where('warehouse_id', $warehouse_id)->first();
+        if (!$warehouse) {
+            return response()->json(['message' => 'Not Found!'], 404);
+        }
+        $warehouse->delete();
+        return response()->json(['message' => 'Deleted Successfully'], 200);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    
+    public function filterByProvider($provider_id)
     {
-        //
-    }
+        $warehouses = Warehouse::where('provider_id', $provider_id)->get();
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        if ($warehouses->isEmpty()) {
+            return response()->json(['message' => 'No warehouses found for the given provider ID'], 404);
+        }
+
+        return response()->json(['warehouses' => $warehouses]);
     }
+    
+
 }
+
