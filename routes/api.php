@@ -336,6 +336,7 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/{id}', [WarehouseAPIController::class, 'show']);
         Route::post('/', [WarehouseAPIController::class, 'store']);
         Route::put('/{id}', [WarehouseAPIController::class, 'update']);
+        Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
 
     });
 
@@ -346,17 +347,6 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/', [ProductAPIController::class, 'store']);
         Route::put('/{id}', [ProductAPIController::class, 'update']);
         Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
-
-
-    Route::prefix('warehouses')->group(function () {
-        Route::get('/', [App\Http\Controllers\API\WarehouseAPIController::class, 'index']);
-        Route::get('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'show']);
-        Route::post('/', [App\Http\Controllers\API\WarehouseAPIController::class, 'store']);
-        Route::put('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'update']);
-        Route::delete('/{id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'destroy']);
-        Route::get('/provider/{provider_id}', [App\Http\Controllers\API\WarehouseAPIController::class, 'filterByProvider']);
-    });
-
 
 });
 

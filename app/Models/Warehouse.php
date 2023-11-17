@@ -36,7 +36,7 @@ class Warehouse extends Model
 
     public function provider(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
-        return $this->belongsTo(\App\Models\Supplier::class, 'provider_id');
+        return $this->belongsTo(\App\Models\Provider::class, 'provider_id');
     }
 
     public function products(): \Illuminate\Database\Eloquent\Relations\HasMany
