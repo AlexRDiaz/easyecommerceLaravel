@@ -100,13 +100,16 @@ class WarehouseAPIController extends Controller
 
     public function filterByProvider($provider_id)
     {
-        $warehouses = Warehouse::where('provider_id', $provider_id)
-            // ->where('active', 1) // Agrega esta condición
-            ->get();
+        // Usamos el método where para filtrar por 'provider_id'
+        $warehouses = Warehouse::where('provider_id', $provider_id)->get();
 
+        // Verificamos si la colección está vacía
         if ($warehouses->isEmpty()) {
             return response()->json(['message' => 'No warehouses found for the given provider ID'], 404);
         }
+
+        // Usamos el método with para cargar la relación 'provider'
+        $warehouses = Warehouse::with('provider')->where('provider_id', $provider_id)->get();
 
         return response()->json(['warehouses' => $warehouses]);
     }
