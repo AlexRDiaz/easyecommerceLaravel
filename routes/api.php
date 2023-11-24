@@ -159,6 +159,9 @@ Route::middleware(['cors'])->group(function () {
     Route::post("transacciones/credit", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'Credit']);
     // ! CREDIT TRANSACTION
     Route::post("transacciones/debit", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'Debit']);
+    Route::post("transacciones/payment-order-delivered", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderDelivered']);
+
+    
     // ! ***********************
 
     // !  TRANSACTIONS BY ID SELLER
@@ -224,7 +227,8 @@ Route::middleware(['cors'])->group(function () {
     Route::get('/users/subproviders/{id}/{search?}', [App\Http\Controllers\API\UpUserAPIController::class, 'getSubProviders']);
     Route::post('/users/subproviders/add', [App\Http\Controllers\API\UpUserAPIController::class, 'storeSubProvider']);
     Route::put('/users/subproviders/update/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSubProvider']);
-
+    
+    Route::put('/users/autome/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'editAutome']);
 
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
 

@@ -138,7 +138,8 @@ class UpUser extends Model implements Authenticatable, JWTSubject
 		'updated_by_id',
 		'accepted_terms_conditions',
 		'webhook_autome',
-		'enable_autome'
+		'enable_autome',
+		'config_autome'
 	];
 
 	public function admin_user()

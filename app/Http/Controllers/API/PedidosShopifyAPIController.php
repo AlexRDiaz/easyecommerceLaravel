@@ -15,6 +15,7 @@ use App\Models\TransportStats;
 use App\Models\UpUser;
 use App\Models\UpUsersPedidosShopifiesLink;
 use Carbon\Carbon;
+use DateTime;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -58,12 +59,31 @@ class PedidosShopifyAPIController extends Controller
         // Encuentra el registro en base al ID
         $pedido = PedidosShopify::findOrFail($id);
 
+         
+
         // Actualiza el estado del pedido
         $pedido->status = $newStatus;
+
+        $pedido->confirmed_at=new DateTime();
+        $pedido-> confirmed_by=001;
         $pedido->save();
 
+        $user=UpUser::findOrFail($pedido->id_comercial);
+        $config_autome=$user->config_autome;
+        $configs= json_decode($config_autome, true);
+        $pedidoRuta=new PedidosShopifiesRutaLink();
+        $pedidoRuta->pedidos_shopify_id=$pedido->id;
+        $pedidoRuta->ruta_id=$configs["ruta"];
+        $pedidoRuta->save();
+
+        $pedidoTransportadora=new PedidosShopifiesTransportadoraLink();
+        $pedidoTransportadora->pedidos_shopify_id=$pedido->id;
+        $pedidoTransportadora->transportadora_id=$configs["transportadora"];
+        $pedidoTransportadora->save();
+ 
+
         // Respuesta de éxito
-        return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status], 200);
+        return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status,"config autome"=>$configs], 200);
     }
 
     public function show($id)
