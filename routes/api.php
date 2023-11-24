@@ -264,6 +264,7 @@ Route::middleware(['cors'])->group(function () {
     // *
     Route::prefix('rutas')->group(function () {
         Route::get('/', [RutaAPIController::class, 'index']);
+        Route::get('/active', [RutaAPIController::class, 'activeRoutes']);
         Route::get('/{id}', [RutaAPIController::class, 'show']);
     });
 
@@ -336,13 +337,16 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/{id}', [WarehouseAPIController::class, 'show']);
         Route::post('/', [WarehouseAPIController::class, 'store']);
         Route::put('/{id}', [WarehouseAPIController::class, 'update']);
+        Route::delete('/deactivate/{id}', [WarehouseAPIController::class, 'deactivate']);
+        Route::post('/activate/{id}', [WarehouseAPIController::class, 'activate']);
         Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
-
+    
     });
 
     Route::prefix('products')->group(function () {
         Route::get('/', [ProductAPIController::class, 'index']);
         Route::post('/all', [ProductAPIController::class, 'getProducts']);
+        Route::post('/by/{id}', [ProductAPIController::class, 'getProductsByProvider']);
         Route::get('/{id}', [ProductAPIController::class, 'show']);
         Route::post('/', [ProductAPIController::class, 'store']);
         Route::put('/{id}', [ProductAPIController::class, 'update']);

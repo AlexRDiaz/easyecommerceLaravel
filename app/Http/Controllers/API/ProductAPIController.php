@@ -64,7 +64,98 @@ class ProductAPIController extends Controller
                     }
                 }
             }))
-            ->where('active', 1);
+            ->where('active', 1)//los No delete
+            ->where('approved', 1);
+        // ! sort
+        $orderByText = null;
+        $orderByDate = null;
+        $sort = $data['sort'];
+        $sortParts = explode(':', $sort);
+
+        $pt1 = $sortParts[0];
+
+        $type = (stripos($pt1, 'fecha') !== false || stripos($pt1, 'marca') !== false) ? 'date' : 'text';
+
+        $dataSort = [
+            [
+                'field' => $sortParts[0],
+                'type' => $type,
+                'direction' => $sortParts[1],
+            ],
+        ];
+
+        foreach ($dataSort as $value) {
+            $field = $value['field'];
+            $direction = $value['direction'];
+            $type = $value['type'];
+
+            if ($type === "text") {
+                $orderByText = [$field => $direction];
+            } else {
+                $orderByDate = [$field => $direction];
+            }
+        }
+
+        if ($orderByText !== null) {
+            $products->orderBy(key($orderByText), reset($orderByText));
+        } else {
+            $products->orderBy(DB::raw("STR_TO_DATE(" . key($orderByDate) . ", '%e/%c/%Y')"), reset($orderByDate));
+        }
+        // ! **************************************************
+        $products = $products->paginate($pageSize, ['*'], 'page', $pageNumber);
+        return response()->json($products);
+    }
+
+    public function getProductsByProvider(Request $request, string $id)
+    {
+        //
+        $data = $request->json()->all();
+
+        $pageSize = $data['page_size'];
+        $pageNumber = $data['page_number'];
+        $searchTerm = $data['search'];
+        $id = $id;
+        $populate = $data['populate'];
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
+        }
+
+        $andMap = $data['and'];
+
+        $products = Product::with($populate)
+            ->where(function ($products) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($products, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $products->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where((function ($products) use ($andMap) {
+                foreach ($andMap as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($products, $relacion, $propiedad, $valor);
+                        } else {
+                            $products->where($key, '=', $valor);
+                        }
+                    }
+                }
+            }))
+            ->whereHas('warehouse.provider', function ($provider)use ($id) {
+                $provider->where('id', '=', $id);
+            })
+            ->whereHas('warehouse', function ($warehouse) {
+                $warehouse->where('active', 1);
+            })
+            ->where('active', 1);//los No delete
 
         // ! sort
         $orderByText = null;
@@ -145,18 +236,22 @@ class ProductAPIController extends Controller
 
         $product_name = $data['product_name'];
         $stock = $data['stock'];
-        $features = json_encode($data['features']);
         $price = $data['price'];
         $url_img = $data['url_img'];
+        $isvariable = $data['isvariable'];
+        // $features = json_encode($data['features']);
+        $features = $data['features'];
         $warehouse_id = $data['warehouse_id'];
 
         $newProduct = new Product();
         $newProduct->product_name = $product_name;
-        $newProduct->stock = $stock;
-        $newProduct->features = $features;
-        $newProduct->price = $price;
+        $newProduct->stock = $stock;        $newProduct->price = $price;
         $newProduct->url_img = $url_img;
+        $newProduct->isvariable = $isvariable;
+        $newProduct->features = $features;
         $newProduct->warehouse_id = $warehouse_id;
+        // $newProduct->approved = 2;//Pendiente
+
 
         $newProduct->save();
 
