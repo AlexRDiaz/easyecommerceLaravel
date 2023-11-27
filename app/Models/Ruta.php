@@ -39,7 +39,8 @@ class Ruta extends Model
 	protected $fillable = [
 		'titulo',
 		'created_by_id',
-		'updated_by_id'
+		'updated_by_id',
+		'active'
 	];
 
 	public function admin_user()

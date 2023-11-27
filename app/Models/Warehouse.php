@@ -14,6 +14,10 @@ class Warehouse extends Model
         'address',
         'reference',
         'description',
+        'url_image',
+        'city',
+        'collection',
+        'active',
         'provider_id'
     ];
 
@@ -21,7 +25,11 @@ class Warehouse extends Model
         'branch_name' => 'string',
         'address' => 'string',
         'reference' => 'string',
-        'description' => 'string'
+        'description' => 'string',
+        'url_image' => 'string',
+        'city' => 'string',
+        'collection' => 'json', // Campo 'collection' como tipo JSON
+        'active' => 'int', // Cambiado de 'int' a 'boolean'
     ];
 
     public static array $rules = [
@@ -29,9 +37,13 @@ class Warehouse extends Model
         'address' => 'nullable|string|max:70',
         'reference' => 'nullable|string|max:70',
         'description' => 'nullable|string|max:65535',
+        'url_image' => 'nullable|string|max:150',
+        'city' => 'nullable|string|max:80',
+        'collection' => 'nullable|json',
+        'active' => 'nullable|int', // Cambiado de 'int' a 'boolean'
         'provider_id' => 'nullable',
         'created_at' => 'nullable',
-        'updated_at' => 'nullable'
+        'updated_at' => 'nullable',
     ];
 
     public function provider(): \Illuminate\Database\Eloquent\Relations\BelongsTo
