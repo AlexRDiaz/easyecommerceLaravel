@@ -344,6 +344,103 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($pedidos);
     }
+    // ! for generate pdfs without pagination 
+    public function getByDateRangeOrdersforAudit(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+
+        $searchTerm = $data['search'];
+
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
+        }
+
+        $Map = $data['and'];
+        $not = $data['not'];
+
+        $orderBy = null;
+        if (isset($data['sort'])) {
+            $sort = $data['sort'];
+            $sortParts = explode(':', $sort);
+            if (count($sortParts) === 2) {
+                $field = $sortParts[0];
+                $direction = strtoupper($sortParts[1]) === 'DESC' ? 'DESC' : 'ASC';
+                $orderBy = [$field => $direction];
+            }
+        }
+
+        $pedidos = PedidosShopify::with(['operadore.up_users'])
+            ->with('transportadora')
+            ->with('users.vendedores')
+            ->with('novedades')
+            ->with('pedidoFecha')
+            ->with('ruta')
+            ->with('subRuta')
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->where(function ($pedidos) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where(function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        $this->applyCondition($pedidos, $key, $valor);
+                    }
+                }
+            })
+            ->where(function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        $this->applyCondition($pedidos, $key, $valor, '!=');
+                    }
+                }
+            });
+
+        if ($orderBy !== null) {
+            $pedidos->orderBy(key($orderBy), reset($orderBy));
+        }
+
+        $pedidos = $pedidos->get();
+
+        return response()->json([
+            'data' => $pedidos,
+            'total' => $pedidos->count(),
+        ]);
+    }
+
+    private function applyCondition($pedidos, $key, $valor, $operator = '=')
+    {
+        $parts = explode("/", $key);
+        $type = $parts[0];
+        $filter = $parts[1];
+
+        if (strpos($filter, '.') !== false) {
+            $relacion = substr($filter, 0, strpos($filter, '.'));
+            $propiedad = substr($filter, strpos($filter, '.') + 1);
+            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+        } else {
+            if ($type == "equals") {
+                $pedidos->where($filter, $operator, $valor);
+            } else {
+                $pedidos->where($filter, 'LIKE', '%' . $valor . '%');
+            }
+        }
+    }
+
+    // ! *********************************
     public function updateOrderStatusAndComment(Request $req)
     {
         $data = $req->json()->all();

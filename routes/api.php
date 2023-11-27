@@ -42,6 +42,8 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
 
     Route::post('logistic/filter/novelties', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogisticNovelties']);
+    
+    Route::post('logistic/orders-pdf', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeOrdersforAudit']);
 
     // ! update status and comment
     Route::post('logistic/update-status-comment', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderStatusAndComment']);
