@@ -48,7 +48,8 @@ class Transportadora extends Model
 		'telefono_1',
 		'telefono_2',
 		'created_by_id',
-		'updated_by_id'
+		'updated_by_id',
+		'active'
 	];
 
 	public function admin_user()

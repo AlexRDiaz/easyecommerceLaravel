@@ -19,25 +19,21 @@ class RutaAPIController extends Controller
         return response()->json($rutas);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function activeRoutes()
     {
-        //
+        $rutas = Ruta::where('active', 1)->get();
+        
+        $rutaStrings = [];
+    
+        foreach ($rutas as $ruta) {
+            // Concatena el título y el ID de la ruta
+            $rutaString = $ruta->titulo. '-' .$ruta->id  ;
+            $rutaStrings[] = $rutaString;
+        }
+    
+        return $rutaStrings;
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
-
-    /**
-     * Display the specified resource.
-     */
+    
     public function show(string $id)
     {
         //
@@ -68,4 +64,5 @@ class RutaAPIController extends Controller
     {
         //
     }
+
 }
