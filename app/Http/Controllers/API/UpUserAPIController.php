@@ -492,7 +492,22 @@ class UpUserAPIController extends Controller
         return response()->json(['user' => $upUser], Response::HTTP_OK);
     }
 
+    public function userspdf($id)
+    {
+        $upUser = UpUser::with([
+            'roles_fronts',
+            'vendedores',
+            'transportadora',
+            'operadores',
+            'providers',
+        ])->find($id);
 
+        if (!$upUser) {
+            return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json(['user' => $upUser], Response::HTTP_OK);
+    }
 
     public function managePermission(Request $request)
     {
