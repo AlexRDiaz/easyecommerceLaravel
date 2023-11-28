@@ -64,8 +64,8 @@ class PedidosShopifyAPIController extends Controller
         // Actualiza el estado del pedido
         $pedido->status = $newStatus;
 
-        $pedido->confirmed_at = new DateTime();
-        $pedido->confirmed_by = 001;
+        $pedido->confirmed_at=new DateTime();
+        $pedido-> confirmed_by=999;
         $pedido->save();
 
         $user = UpUser::findOrFail($pedido->id_comercial);
