@@ -260,6 +260,10 @@ class PedidosShopify extends Model
 	{
 		return $this->belongsTo(UpUser::class, 'received_by', 'id');
 	}
+	public function confirmedBy()
+	{
+		return $this->belongsTo(UpUser::class, 'confirmed_by');
+	}
 
 	public function statusLastModifiedBy()
 	{

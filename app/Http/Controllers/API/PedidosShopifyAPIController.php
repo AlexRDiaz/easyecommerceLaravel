@@ -59,7 +59,7 @@ class PedidosShopifyAPIController extends Controller
         // Encuentra el registro en base al ID
         $pedido = PedidosShopify::findOrFail($id);
 
-         
+
 
         // Actualiza el estado del pedido
         $pedido->status = $newStatus;
@@ -68,22 +68,22 @@ class PedidosShopifyAPIController extends Controller
         $pedido-> confirmed_by=999;
         $pedido->save();
 
-        $user=UpUser::findOrFail($pedido->id_comercial);
-        $config_autome=$user->config_autome;
-        $configs= json_decode($config_autome, true);
-        $pedidoRuta=new PedidosShopifiesRutaLink();
-        $pedidoRuta->pedidos_shopify_id=$pedido->id;
-        $pedidoRuta->ruta_id=$configs["ruta"];
+        $user = UpUser::findOrFail($pedido->id_comercial);
+        $config_autome = $user->config_autome;
+        $configs = json_decode($config_autome, true);
+        $pedidoRuta = new PedidosShopifiesRutaLink();
+        $pedidoRuta->pedidos_shopify_id = $pedido->id;
+        $pedidoRuta->ruta_id = $configs["ruta"];
         $pedidoRuta->save();
 
-        $pedidoTransportadora=new PedidosShopifiesTransportadoraLink();
-        $pedidoTransportadora->pedidos_shopify_id=$pedido->id;
-        $pedidoTransportadora->transportadora_id=$configs["transportadora"];
+        $pedidoTransportadora = new PedidosShopifiesTransportadoraLink();
+        $pedidoTransportadora->pedidos_shopify_id = $pedido->id;
+        $pedidoTransportadora->transportadora_id = $configs["transportadora"];
         $pedidoTransportadora->save();
- 
+
 
         // Respuesta de éxito
-        return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status,"config autome"=>$configs], 200);
+        return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status, "config autome" => $configs], 200);
     }
 
     public function show($id)
@@ -246,18 +246,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
+            foreach ($not as $condition) {
+                foreach ($condition as $key => $valor) {
+                    if (strpos($key, '.') !== false) {
+                        $relacion = substr($key, 0, strpos($key, '.'));
+                        $propiedad = substr($key, strpos($key, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                    } else {
+                        $pedidos->where($key, '!=', $valor);
                     }
                 }
-            }));
+            }
+        }));
         // ! Ordena
         if ($orderBy !== null) {
             $pedidos->orderBy(key($orderBy), reset($orderBy));
@@ -311,6 +311,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('pedidoFecha')
             ->with('ruta')
             ->with('subRuta')
+            ->with('confirmedBy')
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
@@ -402,6 +403,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('pedidoFecha')
             ->with('ruta')
             ->with('subRuta')
+            ->with('confirmedBy')
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
@@ -434,6 +436,12 @@ class PedidosShopifyAPIController extends Controller
         }
 
         $pedidos = $pedidos->get();
+        // // Antes de devolver la respuesta, carga los nombres de los usuarios correspondientes a 'order_by'
+        // $pedidos->each(function ($pedido) {
+        //     if ($pedido->confirmedBy) {
+        //         $pedido->confirmed_by_user = $pedido->confirmedBy->username; // Ajusta según tu estructura real
+        //     }
+        // });
 
         return response()->json([
             'data' => $pedidos,
