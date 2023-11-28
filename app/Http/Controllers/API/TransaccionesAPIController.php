@@ -225,65 +225,102 @@ class TransaccionesAPIController extends Controller
 
     }
 
-    public function paymentOrderDelivered(Request $request){
-        $data = $request->json()->all();
-        $startDateFormatted = new DateTime();
-
-        $request->merge(['comentario' => 'recaudo  de valor de producto por pedido entregado']);
-        $request->merge(['origen' => 'recaudo']);
-
-        $this->Credit($request);
-        $request->merge(['comentario' => 'costo de envio por pedido  entregado']);
-        $request->merge(['origen' => 'envio']);
-        $request->merge(['monto' => $data['monto_debit']]);
-
-        $this->Debit($request);
-
-        $data = $request->json()->all();
-        $startDateFormatted = new DateTime();
-        $vendedor =Vendedore::where("id_master",$data['id'])->get();
-       
-        if( $vendedor[0]->referer!=null){
-           $refered=Vendedore::where('id_master',$vendedor[0]->referer)->get();     
-           $vendedorId = $vendedor[0]->referer;      
-           $generated_by = $data['generated_by'];
-           $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
-           $vendedor = $user['vendedores'][0];
-           $saldo = $vendedor->saldo;
-           $nuevoSaldo = $saldo + $refered[0]->referer_cost;;
-           $vendedor->saldo = $nuevoSaldo;
-   
-           $newTrans = new Transaccion();
-   
-           $newTrans->tipo ="credit";
-           $newTrans->monto = $refered[0]->referer_cost; 
-           $newTrans->valor_actual = $nuevoSaldo;
-           $newTrans->valor_anterior = $saldo;
-           $newTrans->marca_de_tiempo = $startDateFormatted;
-           $newTrans->id_origen = $data['id_origen'];
-           $newTrans->codigo =$data['codigo'];
-   
-           $newTrans->origen ="referido";
-           $newTrans->comentario = "comision por referido";
-   
-           $newTrans->id_vendedor = $vendedorId;
-           $newTrans->state = 1;
-           $newTrans->generated_by = $generated_by;
-   
-            $this->transaccionesRepository->create($newTrans);
-            $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
+    public function paymentOrderDelivered(Request $request) {
+        DB::beginTransaction();
+    
+        try {
+            $data = $request->json()->all();
+            $startDateFormatted = new DateTime();
+    
+            $request->merge(['comentario' => 'recaudo  de valor de producto por pedido entregado']);
+            $request->merge(['origen' => 'recaudo']);
+    
+            $this->Credit($request);
+    
+            $request->merge(['comentario' => 'costo de envio por pedido  entregado']);
+            $request->merge(['origen' => 'envio']);
+            $request->merge(['monto' => $data['monto_debit']]);
+            
+            $this->Debit($request);
+    
+            $vendedor = Vendedore::where("id_master", $data['id'])->get();
+           
+            if ($vendedor[0]->referer != null) {
+                $refered = Vendedore::where('id_master', $vendedor[0]->referer)->get();
+                $vendedorId = $vendedor[0]->referer;
+                $generated_by = $data['generated_by'];
+                $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
+                $vendedor = $user['vendedores'][0];
+                $saldo = $vendedor->saldo;
+                $nuevoSaldo = $saldo + $refered[0]->referer_cost;
+                $vendedor->saldo = $nuevoSaldo;
+    
+                $newTrans = new Transaccion();
+    
+                $newTrans->tipo = "credit";
+                $newTrans->monto = $refered[0]->referer_cost;
+                $newTrans->valor_actual = $nuevoSaldo;
+                $newTrans->valor_anterior = $saldo;
+                $newTrans->marca_de_tiempo = $startDateFormatted;
+                $newTrans->id_origen = $data['id_origen'];
+                $newTrans->codigo = $data['codigo'];
+    
+                $newTrans->origen = "referido";
+                $newTrans->comentario = "comision por referido";
+    
+                $newTrans->id_vendedor = $vendedorId;
+                $newTrans->state = 1;
+                $newTrans->generated_by = $generated_by;
+    
+                $this->transaccionesRepository->create($newTrans);
+                $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
+            }
+    
+            $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $pedido->status = "ENTREGADO";
+            $pedido->fecha_entrega = now()->format('j/n/Y');
+            $pedido->status_last_modified_at = date('Y-m-d H:i:s');
+            $pedido->status_last_modified_by = $data['generated_by'];
+            $pedido->save();
+            DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
+    
+            return response()->json([
+                "res" => "transaccion exitosa"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+            // Maneja el error aquí si es necesario
         }
-
-   
-      
+    }
 
 
-        return response()->json([
-           // "transacciones" => $reqTrans,
-            "vendedor" => $refered
-        ]);
-
-
+    public function paymentOrderNotDelivered(Request $request) {
+        DB::beginTransaction();
+    
+        try {
+            $data = $request->json()->all();    
+            $request->merge(['comentario' => 'costo de envio por pedido no entregado']);
+            $request->merge(['origen' => 'envio']);
+            $request->merge(['monto' => $data['monto_debit']]);
+            
+            $this->Debit($request);
+               
+            $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $pedido->status = "NO ENTREGADO";
+            $pedido->fecha_entrega = now()->format('j/n/Y');
+            $pedido->status_last_modified_at = date('Y-m-d H:i:s');
+            $pedido->status_last_modified_by = $data['generated_by'];
+            $pedido->comentario=$data["comentario"];
+              $pedido->archivo=$data["archivo"];
+            $pedido->save();
+            DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+            return response()->json([
+                "res" => "transaccion exitosa"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+            // Maneja el error aquí si es necesario
+        }
     }
 
 
