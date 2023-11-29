@@ -45,6 +45,7 @@ use Illuminate\Database\Eloquent\Model;
  *
  * @package App\Models
  */
+
 use Illuminate\Contracts\Auth\Authenticatable;
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -187,8 +188,8 @@ class UpUser extends Model implements Authenticatable, JWTSubject
 	public function providers()
 	{
 		return $this->belongsToMany(Provider::class, 'up_users_providers_links', 'up_user_id', 'provider_id')
-		->withPivot('id', 'provider_order', 'up_user_order');
-		}
+			->withPivot('id', 'provider_order', 'up_user_order');
+	}
 	public function transportadora()
 	{
 		return $this->hasManyThrough(Transportadora::class, TransportadorasUsersPermissionsUserLink::class, 'user_id', 'id', 'id', 'transportadora_id');
@@ -204,7 +205,7 @@ class UpUser extends Model implements Authenticatable, JWTSubject
 	{
 		return $this->hasManyThrough(
 			PedidosShopify::class,
-				// Modelo final que se quiere alcanzar
+			// Modelo final que se quiere alcanzar
 			PedidosShopifiesRutaLink::class,
 			// Modelo intermedio
 			'id_comercial',
@@ -219,7 +220,7 @@ class UpUser extends Model implements Authenticatable, JWTSubject
 	{
 		return $this->hasManyThrough(
 			PedidosShopify::class,
-				// Modelo final que se quiere alcanzar
+			// Modelo final que se quiere alcanzar
 			PedidosShopifiesTransportadoraLink::class,
 			// Modelo intermedio
 			'id_comercial',
@@ -231,5 +232,9 @@ class UpUser extends Model implements Authenticatable, JWTSubject
 		);
 	}
 
-
+	public function rolesFronts()
+	{
+		return $this->belongsToMany(RolesFront::class, 'up_users_roles_front_links', 'user_id')
+			->withPivot('id', 'user_order');
+	}
 }

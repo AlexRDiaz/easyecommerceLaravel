@@ -250,12 +250,15 @@ class PedidosShopify extends Model
 
 	public function printedBy()
 	{
-		return $this->belongsTo(UpUser::class, 'printed_by', 'id');
+		// return $this->belongsTo(UpUser::class, 'printed_by', 'id');
+		return $this->belongsTo(UpUser::class, 'printed_by', 'id')->with('rolesFronts');
 	}
 
 	public function sentBy()
 	{
-		return $this->belongsTo(UpUser::class, 'sent_by', 'id');
+		// return $this->belongsTo(UpUser::class, 'sent_by', 'id');
+		return $this->belongsTo(UpUser::class, 'sent_by', 'id')->with('rolesFronts');
+
 	}
 
 	public function receivedBy()
