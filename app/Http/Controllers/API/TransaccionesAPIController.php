@@ -281,6 +281,10 @@ class TransaccionesAPIController extends Controller
             $pedido->fecha_entrega = now()->format('j/n/Y');
             $pedido->status_last_modified_at = date('Y-m-d H:i:s');
             $pedido->status_last_modified_by = $data['generated_by'];
+            $pedido->comentario=$data["comentario"];
+            if($data["archivo"]!=""){
+            $pedido->archivo=$data["archivo"];
+            }
             $pedido->save();
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
     
