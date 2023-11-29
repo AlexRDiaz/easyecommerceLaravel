@@ -1729,10 +1729,10 @@ class PedidosShopifyAPIController extends Controller
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
     {
         $data = $request->json()->all();
-        $startDate = $data['start'];
+        // $startDate = $data['start'];
+        // $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
 
         $populate = $data['populate'];
-        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
 
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
@@ -1750,7 +1750,7 @@ class PedidosShopifyAPIController extends Controller
         // ! *************************************
 
         $pedidos = PedidosShopify::with($populate)
-            ->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted])
+            // ->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -1768,7 +1768,11 @@ class PedidosShopifyAPIController extends Controller
                         $parts = explode("/", $key);
                         $type = $parts[0];
                         $filter = $parts[1];
-                        if (strpos($filter, '.') !== false) {
+                        if ($key === '/marca_tiempo_envio') {
+                            $startDateFormatted = Carbon::createFromFormat('j/n/Y', $valor)->format('Y-m-d');
+                            $pedidos->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted]);
+                        }
+                        elseif (strpos($filter, '.') !== false) {
                             $relacion = substr($filter, 0, strpos($filter, '.'));
                             $propiedad = substr($filter, strpos($filter, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
