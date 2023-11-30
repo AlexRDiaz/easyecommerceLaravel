@@ -96,6 +96,7 @@ class PedidosShopify extends Model
 		'printed_by' => 'int',
 		'sent_at' => 'datetime',
 		'sent_by' => 'int',
+		'revisado_seller' => 'int',
 		'received_by' => 'int',
 		'status_last_modified_at' => 'datetime',
 		'status_last_modified_by' => 'int',
@@ -150,6 +151,7 @@ class PedidosShopify extends Model
 		'printed_by',
 		'sent_at',
 		'sent_by',
+		'revisado_seller',
 		'received_by',
 		'status_last_modified_at',
 		'status_last_modified_by',
@@ -248,12 +250,15 @@ class PedidosShopify extends Model
 
 	public function printedBy()
 	{
-		return $this->belongsTo(UpUser::class, 'printed_by', 'id');
+		// return $this->belongsTo(UpUser::class, 'printed_by', 'id');
+		return $this->belongsTo(UpUser::class, 'printed_by', 'id')->with('rolesFronts');
 	}
 
 	public function sentBy()
 	{
-		return $this->belongsTo(UpUser::class, 'sent_by', 'id');
+		// return $this->belongsTo(UpUser::class, 'sent_by', 'id');
+		return $this->belongsTo(UpUser::class, 'sent_by', 'id')->with('rolesFronts');
+
 	}
 
 	public function receivedBy()
