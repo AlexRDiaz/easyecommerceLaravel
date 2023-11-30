@@ -114,4 +114,5 @@ class WarehouseAPIController extends Controller
         return response()->json(['warehouses' => $warehouses]);
     }
 
+
 }

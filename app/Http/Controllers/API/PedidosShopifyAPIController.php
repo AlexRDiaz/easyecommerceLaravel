@@ -15,6 +15,7 @@ use App\Models\TransportStats;
 use App\Models\UpUser;
 use App\Models\UpUsersPedidosShopifiesLink;
 use Carbon\Carbon;
+use DateTime;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -58,12 +59,31 @@ class PedidosShopifyAPIController extends Controller
         // Encuentra el registro en base al ID
         $pedido = PedidosShopify::findOrFail($id);
 
+
+
         // Actualiza el estado del pedido
         $pedido->status = $newStatus;
+
+        $pedido->confirmed_at=new DateTime();
+        $pedido-> confirmed_by=999;
         $pedido->save();
 
+        $user = UpUser::findOrFail($pedido->id_comercial);
+        $config_autome = $user->config_autome;
+        $configs = json_decode($config_autome, true);
+        $pedidoRuta = new PedidosShopifiesRutaLink();
+        $pedidoRuta->pedidos_shopify_id = $pedido->id;
+        $pedidoRuta->ruta_id = $configs["ruta"];
+        $pedidoRuta->save();
+
+        $pedidoTransportadora = new PedidosShopifiesTransportadoraLink();
+        $pedidoTransportadora->pedidos_shopify_id = $pedido->id;
+        $pedidoTransportadora->transportadora_id = $configs["transportadora"];
+        $pedidoTransportadora->save();
+
+
         // Respuesta de éxito
-        return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status], 200);
+        return response()->json(['message' => 'Registro actualizado con éxito', 'id' => $pedido->id, 'status' => $pedido->status, "config autome" => $configs], 200);
     }
 
     public function show($id)
@@ -226,18 +246,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-                foreach ($not as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            $pedidos->where($key, '!=', $valor);
-                        }
+            foreach ($not as $condition) {
+                foreach ($condition as $key => $valor) {
+                    if (strpos($key, '.') !== false) {
+                        $relacion = substr($key, 0, strpos($key, '.'));
+                        $propiedad = substr($key, strpos($key, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                    } else {
+                        $pedidos->where($key, '!=', $valor);
                     }
                 }
-            }));
+            }
+        }));
         // ! Ordena
         if ($orderBy !== null) {
             $pedidos->orderBy(key($orderBy), reset($orderBy));
@@ -291,6 +311,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('pedidoFecha')
             ->with('ruta')
             ->with('subRuta')
+            ->with('confirmedBy')
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
@@ -344,6 +365,110 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($pedidos);
     }
+    // ! for generate pdfs without pagination 
+    public function getByDateRangeOrdersforAudit(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+
+        $searchTerm = $data['search'];
+
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
+        }
+
+        $Map = $data['and'];
+        $not = $data['not'];
+
+        $orderBy = null;
+        if (isset($data['sort'])) {
+            $sort = $data['sort'];
+            $sortParts = explode(':', $sort);
+            if (count($sortParts) === 2) {
+                $field = $sortParts[0];
+                $direction = strtoupper($sortParts[1]) === 'DESC' ? 'DESC' : 'ASC';
+                $orderBy = [$field => $direction];
+            }
+        }
+
+        $pedidos = PedidosShopify::with(['operadore.up_users'])
+            ->with('transportadora')
+            ->with('users.vendedores')
+            ->with('novedades')
+            ->with('pedidoFecha')
+            ->with('ruta')
+            ->with('subRuta')
+            ->with('confirmedBy')
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->where(function ($pedidos) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where(function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        $this->applyCondition($pedidos, $key, $valor);
+                    }
+                }
+            })
+            ->where(function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        $this->applyCondition($pedidos, $key, $valor, '!=');
+                    }
+                }
+            });
+
+        if ($orderBy !== null) {
+            $pedidos->orderBy(key($orderBy), reset($orderBy));
+        }
+
+        $pedidos = $pedidos->get();
+        // // Antes de devolver la respuesta, carga los nombres de los usuarios correspondientes a 'order_by'
+        // $pedidos->each(function ($pedido) {
+        //     if ($pedido->confirmedBy) {
+        //         $pedido->confirmed_by_user = $pedido->confirmedBy->username; // Ajusta según tu estructura real
+        //     }
+        // });
+
+        return response()->json([
+            'data' => $pedidos,
+            'total' => $pedidos->count(),
+        ]);
+    }
+
+    private function applyCondition($pedidos, $key, $valor, $operator = '=')
+    {
+        $parts = explode("/", $key);
+        $type = $parts[0];
+        $filter = $parts[1];
+
+        if (strpos($filter, '.') !== false) {
+            $relacion = substr($filter, 0, strpos($filter, '.'));
+            $propiedad = substr($filter, strpos($filter, '.') + 1);
+            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+        } else {
+            if ($type == "equals") {
+                $pedidos->where($filter, $operator, $valor);
+            } else {
+                $pedidos->where($filter, 'LIKE', '%' . $valor . '%');
+            }
+        }
+    }
+
+    // ! *********************************
     public function updateOrderStatusAndComment(Request $req)
     {
         $data = $req->json()->all();
@@ -1604,10 +1729,10 @@ class PedidosShopifyAPIController extends Controller
     public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravel(Request $request)
     {
         $data = $request->json()->all();
-        $startDate = $data['start'];
+        // $startDate = $data['start'];
+        // $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
 
         $populate = $data['populate'];
-        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
 
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
@@ -1625,7 +1750,7 @@ class PedidosShopifyAPIController extends Controller
         // ! *************************************
 
         $pedidos = PedidosShopify::with($populate)
-            ->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted])
+            // ->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -1643,7 +1768,11 @@ class PedidosShopifyAPIController extends Controller
                         $parts = explode("/", $key);
                         $type = $parts[0];
                         $filter = $parts[1];
-                        if (strpos($filter, '.') !== false) {
+                        if ($key === '/marca_tiempo_envio') {
+                            $startDateFormatted = Carbon::createFromFormat('j/n/Y', $valor)->format('Y-m-d');
+                            $pedidos->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted]);
+                        }
+                        elseif (strpos($filter, '.') !== false) {
                             $relacion = substr($filter, 0, strpos($filter, '.'));
                             $propiedad = substr($filter, strpos($filter, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);

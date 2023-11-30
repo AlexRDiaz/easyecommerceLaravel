@@ -42,6 +42,8 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
 
     Route::post('logistic/filter/novelties', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogisticNovelties']);
+    
+    Route::post('logistic/orders-pdf', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeOrdersforAudit']);
 
     // ! update status and comment
     Route::post('logistic/update-status-comment', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderStatusAndComment']);
@@ -159,6 +161,11 @@ Route::middleware(['cors'])->group(function () {
     Route::post("transacciones/credit", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'Credit']);
     // ! CREDIT TRANSACTION
     Route::post("transacciones/debit", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'Debit']);
+    Route::post("transacciones/payment-order-delivered", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderDelivered']);
+    Route::post("transacciones/payment-order-not-delivered", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderNotDelivered']);
+    Route::post("transacciones/payment-order-with-novelty/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderWithNovelty']);
+
+    
     // ! ***********************
 
     // !  TRANSACTIONS BY ID SELLER
@@ -177,7 +184,7 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post("transacciones/cleanTransactionsFailed/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'cleanTransactionsFailed']);
 
-    
+
 
 
 
@@ -220,11 +227,12 @@ Route::middleware(['cors'])->group(function () {
     Route::post('/users/general', [UpUserAPIController::class, 'storeGeneral']);
     Route::post('/users/providers', [App\Http\Controllers\API\UpUserAPIController::class, 'storeProvider']);
     Route::put('/users/providers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateProvider']);
-    
+
     Route::get('/users/subproviders/{id}/{search?}', [App\Http\Controllers\API\UpUserAPIController::class, 'getSubProviders']);
     Route::post('/users/subproviders/add', [App\Http\Controllers\API\UpUserAPIController::class, 'storeSubProvider']);
     Route::put('/users/subproviders/update/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSubProvider']);
-
+    
+    Route::put('/users/autome/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'editAutome']);
 
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
 
@@ -234,6 +242,8 @@ Route::middleware(['cors'])->group(function () {
     Route::post('/login', [UpUserAPIController::class, 'login']);
 
     Route::get('users/{id}', [UpUserAPIController::class, 'users']);
+
+    Route::get('users/pdf/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'userspdf']);
 
 
     Route::get('/sellers/{id}/{search?}', [UpUserAPIController::class, 'getSellers']);
@@ -322,27 +332,26 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/all/{search?}', [ProviderAPIController::class, 'getProviders']);
     });
 
-    });
+});
 
-    // api/upload
-    //Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
+// api/upload
+//Route::get('/tu-ruta', 'TuController@tuMetodo')->middleware('cors');
 
-    Route::post('upload', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'uploadFile']);
-    //      *
-    Route::put('pedidos-shopify/updatefieldtime/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateFieldTime']);
+Route::post('upload', [App\Http\Controllers\API\TransportadorasShippingCostAPIController::class, 'uploadFile']);
+//      *
+Route::put('pedidos-shopify/updatefieldtime/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateFieldTime']);
+
+Route::prefix('warehouses')->group(function () {
+    Route::get('/', [WarehouseAPIController::class, 'index']);
+    Route::get('/{id}', [WarehouseAPIController::class, 'show']);
+    Route::post('/', [WarehouseAPIController::class, 'store']);
+    Route::put('/{id}', [WarehouseAPIController::class, 'update']);
+    Route::delete('/deactivate/{id}', [WarehouseAPIController::class, 'deactivate']);
+    Route::post('/activate/{id}', [WarehouseAPIController::class, 'activate']);
+    Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
+});
 
     // *
-    Route::prefix('warehouses')->group(function () {
-        Route::get('/', [WarehouseAPIController::class, 'index']);
-        Route::get('/{id}', [WarehouseAPIController::class, 'show']);
-        Route::post('/', [WarehouseAPIController::class, 'store']);
-        Route::put('/{id}', [WarehouseAPIController::class, 'update']);
-        Route::delete('/deactivate/{id}', [WarehouseAPIController::class, 'deactivate']);
-        Route::post('/activate/{id}', [WarehouseAPIController::class, 'activate']);
-        Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
-    
-    });
-
     Route::prefix('products')->group(function () {
         Route::get('/', [ProductAPIController::class, 'index']);
         Route::post('/all', [ProductAPIController::class, 'getProducts']);
@@ -351,8 +360,8 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/', [ProductAPIController::class, 'store']);
         Route::put('/{id}', [ProductAPIController::class, 'update']);
         Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
-
 });
+
 
 
 

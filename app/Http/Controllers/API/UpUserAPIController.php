@@ -166,7 +166,15 @@ class UpUserAPIController extends Controller
         return response()->json(['message' => 'Subproveedor creado con éxito', 'user_id' => $user->id, 'user_id'], 201);
 
     }
-
+    
+    public function editAutome(Request $request,$id){
+        $data = $request->json()->all();
+        
+        $user = UpUser::find($id); 
+        $user->enable_autome=$data["enable_autome"];
+        $user->config_autome=$data["config_autome"];
+        $user->save();
+    }
 
     public function updateSubProvider(Request $request,$id)
     {
@@ -484,7 +492,22 @@ class UpUserAPIController extends Controller
         return response()->json(['user' => $upUser], Response::HTTP_OK);
     }
 
+    public function userspdf($id)
+    {
+        $upUser = UpUser::with([
+            'roles_fronts',
+            'vendedores',
+            'transportadora',
+            'operadores',
+            'providers',
+        ])->find($id);
 
+        if (!$upUser) {
+            return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        return response()->json(['user' => $upUser], Response::HTTP_OK);
+    }
 
     public function managePermission(Request $request)
     {

@@ -1,4 +1,5 @@
 <?php
+
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
@@ -26,7 +27,6 @@ class TransaccionesAPIController extends Controller
     {
         $this->transaccionesRepository = $transaccionesRepository;
         $this->vendedorRepository = $vendedorRepository;
-
     }
 
 
@@ -89,8 +89,6 @@ class TransaccionesAPIController extends Controller
 
 
         return response()->json($filteredData->get());
-
-
     }
 
     private function recursiveWhereHas($query, $relation, $property, $searchTerm)
@@ -176,14 +174,12 @@ class TransaccionesAPIController extends Controller
         $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
         return response()->json("Monto acreditado");
-
     }
     public function Debit(Request $request)
     {
         $data = $request->json()->all();
         $startDateFormatted = new DateTime();
         //  $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
-        $vendedorId = $data['id'];
         $vendedorId = $data['id'];
         $tipo = "debit";
         $monto = $data['monto'];
@@ -223,14 +219,291 @@ class TransaccionesAPIController extends Controller
         $updatedData = $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
         return response()->json("Monto debitado");
-
     }
 
+    public function paymentOrderDelivered(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            $data = $request->json()->all();
+            $startDateFormatted = new DateTime();
+
+            $request->merge(['comentario' => 'recaudo  de valor de producto por pedido entregado']);
+            $request->merge(['origen' => 'recaudo']);
+
+            $this->Credit($request);
+
+            $request->merge(['comentario' => 'costo de envio por pedido  entregado']);
+            $request->merge(['origen' => 'envio']);
+            $request->merge(['monto' => $data['monto_debit']]);
+
+            $this->Debit($request);
+
+            $vendedor = Vendedore::where("id_master", $data['id'])->get();
+
+            if ($vendedor[0]->referer != null) {
+                $refered = Vendedore::where('id_master', $vendedor[0]->referer)->get();
+                $vendedorId = $vendedor[0]->referer;
+                $generated_by = $data['generated_by'];
+                $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
+                $vendedor = $user['vendedores'][0];
+                $saldo = $vendedor->saldo;
+                $nuevoSaldo = $saldo + $refered[0]->referer_cost;
+                $vendedor->saldo = $nuevoSaldo;
+
+                $newTrans = new Transaccion();
+
+                $newTrans->tipo = "credit";
+                $newTrans->monto = $refered[0]->referer_cost;
+                $newTrans->valor_actual = $nuevoSaldo;
+                $newTrans->valor_anterior = $saldo;
+                $newTrans->marca_de_tiempo = $startDateFormatted;
+                $newTrans->id_origen = $data['id_origen'];
+                $newTrans->codigo = $data['codigo'];
+
+                $newTrans->origen = "referido";
+                $newTrans->comentario = "comision por referido";
+
+                $newTrans->id_vendedor = $vendedorId;
+                $newTrans->state = 1;
+                $newTrans->generated_by = $generated_by;
+
+                $this->transaccionesRepository->create($newTrans);
+                $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
+            }
+
+            $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $pedido->status = "ENTREGADO";
+            $pedido->fecha_entrega = now()->format('j/n/Y');
+            $pedido->status_last_modified_at = date('Y-m-d H:i:s');
+            $pedido->status_last_modified_by = $data['generated_by'];
+            $pedido->comentario = $data["comentario"];
+            if ($data["archivo"] != "") {
+                $pedido->archivo = $data["archivo"];
+            }
+            $pedido->save();
+            DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
+
+            return response()->json([
+                "res" => "transaccion exitosa"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+            // Maneja el error aquí si es necesario
+        }
+    }
+
+
+    public function paymentOrderNotDelivered(Request $request)
+    {
+        DB::beginTransaction();
+
+        try {
+            $data = $request->json()->all();
+            $request->merge(['comentario' => 'costo de envio por pedido no entregado']);
+            $request->merge(['origen' => 'envio']);
+            $request->merge(['monto' => $data['monto_debit']]);
+
+            $this->Debit($request);
+
+            $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $pedido->status = "NO ENTREGADO";
+            $pedido->fecha_entrega = now()->format('j/n/Y');
+            $pedido->status_last_modified_at = date('Y-m-d H:i:s');
+            $pedido->status_last_modified_by = $data['generated_by'];
+            $pedido->comentario = $data["comentario"];
+            $pedido->archivo = $data["archivo"];
+            $pedido->save();
+            DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+            return response()->json([
+                "res" => "transaccion exitosa"
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+            // Maneja el error aquí si es necesario
+        }
+    }
+
+    public function paymentOrderWithNovelty(Request $request, $id)
+    {
+        DB::beginTransaction();
+        $message="";
+
+
+        try {
+            $data = $request->json()->all();
+
+
+            $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
+
+
+            if (
+                $order->estado_devolucion ==
+                "ENTREGADO EN OFICINA" ||
+                $order->estado_devolucion ==
+                "DEVOLUCION EN RUTA" ||
+                $order->estado_devolucion == "EN BODEGA"
+            ) {
+
+                $transactionOld = Transaccion::where('tipo', 'debit')
+                    ->where('id_origen', $order->id)
+                    ->where('origen',  "devolucion")->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
+                    ->get();
+                if ($transactionOld == []) {
+
+                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->transportadora[0]->costo_transportadora;
+
+                    $newTrans = new Transaccion();
+                    $newTrans->tipo = "debit";
+                    $newTrans->monto = $order->transportadora[0]->costo_transportadora;
+                    $newTrans->valor_actual = $newSaldo;
+                    $newTrans->valor_anterior = $order->users[0]->vendedores[0]->saldo;
+                    $newTrans->marca_de_tiempo = new DateTime();
+                    $newTrans->id_origen = $order->id;
+                    $newTrans->codigo = $order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden;
+
+                    $newTrans->origen = "referido";
+                    $newTrans->comentario = "costo de devolucion por pedido en NOVEDAD y".$order->estado_devolucion;
+
+                    $newTrans->id_vendedor = "devolucion";
+                    $newTrans->state = 1;
+                    $newTrans->generated_by = $data['generated_by'];
+
+                    $this->transaccionesRepository->create($newTrans);
+                    $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
+                }
+                $message="transacción con debito por devolucion";
+            }else{ $message="transacción sin debito por devolucion";}
+
+            $order->status = "NOVEDAD";
+            $order->status_last_modified_at = date('Y-m-d H:i:s');
+            $order->status_last_modified_by = $data['generated_by'];
+            $order->comentario = $data['comentario'];
+            if ($order->novedades == []) {
+                $order->fecha_entrega = now()->format('j/n/Y');
+            }
+            $order->save();
+            DB::commit();
+
+            return response()->json([
+                "res" => $message,
+               // "pedido" => $order
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+        }
+    }
+
+    public function updateFieldTime(Request $request, $id)
+    {
+        $data = $request->all();
+
+        $keyvalue = $data['keyvalue'];
+
+        // $key = $data['key'];
+        // $value = $data['value'];
+        $idUser = $data['iduser'];
+        $from = $data['from'];
+        $datarequest = $data['datarequest'];
+
+        $parts = explode(":", $keyvalue);
+        if (count($parts) === 2) {
+            $key = $parts[0];
+            $value = $parts[1];
+        }
+
+        $currentDateTime = date('Y-m-d H:i:s');
+        // "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year}"
+        $date = now()->format('j/n/Y');
+        //"${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute} ";
+        $currentDateTimeText = date("d/m/Y H:i");
+
+        $pedido = PedidosShopify::findOrFail($id);
+        if ($key == "estado_logistico") {
+            if ($value == "IMPRESO") {  //from log,sell
+                $pedido->estado_logistico = $value;
+                $pedido->printed_at = $currentDateTime;
+                $pedido->printed_by = $idUser;
+            }
+            if ($value == "ENVIADO") {  //from log,sell
+                $pedido->estado_logistico = $value;
+                $pedido->sent_at = $currentDateTime;
+                $pedido->sent_by = $idUser;
+                $pedido->marca_tiempo_envio = $date;
+                $pedido->estado_interno = "CONFIRMADO";
+                $pedido->fecha_entrega = $date;
+            }
+        }
+        if ($key == "estado_devolucion") {
+            if ($value == "EN BODEGA") { //from logistic
+                $pedido->estado_devolucion = $value;
+                $pedido->dl = $value;
+                $pedido->marca_t_d_l = $currentDateTimeText;
+                $pedido->received_by = $idUser;
+            }
+            if ($from == "carrier") {
+                if ($value == "ENTREGADO EN OFICINA") {
+                    $pedido->estado_devolucion = $value;
+                    $pedido->dt = $value;
+                    $pedido->marca_t_d = $currentDateTimeText;
+                    $pedido->received_by = $idUser;
+                }
+                if ($value == "DEVOLUCION EN RUTA") {
+                    $pedido->estado_devolucion = $value;
+                    $pedido->dt = $value;
+                    $pedido->marca_t_d_t = $currentDateTimeText;
+                    $pedido->received_by = $idUser;
+                }
+                if ($value == "PENDIENTE") { //restart
+                    $pedido->estado_devolucion = $value;
+                    $pedido->do = $value;
+                    $pedido->dt = $value;
+                    $pedido->marca_t_d = null;
+                    $pedido->marca_t_d_t = null;
+                    $pedido->received_by = $idUser;
+                }
+            } elseif ($from == "operator") {
+                if ($value == "ENTREGADO EN OFICINA") { //from operator, logistica
+                    $pedido->estado_devolucion = $value;
+                    $pedido->do = $value;
+                    $pedido->marca_t_d = $currentDateTimeText;
+                    $pedido->received_by = $idUser;
+                }
+            }
+        }
+
+
+        if ($key == "status") {
+            if ($value != "NOVEDAD_date") {
+                $pedido->status = $value;
+            }
+            $pedido->fill($datarequest);
+            if ($value == "ENTREGADO" || $value == "NO ENTREGADO") {
+                $pedido->fecha_entrega = $date;
+            }
+            if ($value == "NOVEDAD_date") {
+                $pedido->status = "NOVEDAD";
+                $pedido->fecha_entrega = $date;
+            }
+            $pedido->status_last_modified_at = $currentDateTime;
+            $pedido->status_last_modified_by = $idUser;
+        }
+
+        //v0
+        if ($key == "estado_interno") {
+            $pedido->confirmed_by = $idUser;
+            $pedido->confirmed_at = $currentDateTime;
+        }
+
+        $pedido->save();
+        return response()->json([$pedido], 200);
+    }
     public function cleanTransactionsFailed($id)
     {
         $transaccions = Transaccion::where("id_origen", $id)->where('state', '1')->whereNot("origen", "reembolso")->get();
         foreach ($transaccions as $transaction) {
-            if ($transaction->state == 1) {  
+            if ($transaction->state == 1) {
                 $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
                 if ($transaction->tipo == "credit") {
                     $vendedor[0]->saldo = $vendedor[0]->saldo - $transaction->monto;
@@ -238,7 +511,7 @@ class TransaccionesAPIController extends Controller
                 if ($transaction->tipo == "debit") {
                     $vendedor[0]->saldo = $vendedor[0]->saldo + $transaction->monto;
                 }
-             
+
                 $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
                 $transaction->delete();
             }
@@ -250,8 +523,6 @@ class TransaccionesAPIController extends Controller
         $transaccions = Transaccion::where("id_vendedor", $id)->orderBy('id', 'desc')->get();
 
         return response()->json($transaccions);
-
-
     }
     public function getTransactionToRollback($id)
     {
@@ -323,14 +594,11 @@ class TransaccionesAPIController extends Controller
 
 
                     $vendedor[0]->saldo = $vendedor[0]->saldo + $transaction->monto;
-
                 }
                 $transaction->state = 0;
                 $transaction->save();
                 $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
-
             }
-
         }
 
         return response()->json([
@@ -338,6 +606,5 @@ class TransaccionesAPIController extends Controller
             "pedidps" => $reqPedidos
 
         ]);
-
     }
 }
