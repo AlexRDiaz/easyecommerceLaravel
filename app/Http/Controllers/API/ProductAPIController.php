@@ -271,7 +271,7 @@ class ProductAPIController extends Controller
             ->where('product_id', $id)
             ->first();
         if (!$product) {
-            return response()->json(['message' => 'No se encontraro pedido con el ID especificado'], 404);
+            return response()->json(['message' => 'No se ha encontrado un producto con el ID especificado'], 404);
         }
         return response()->json($product);
     }

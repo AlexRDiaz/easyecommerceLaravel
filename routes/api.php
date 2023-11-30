@@ -356,7 +356,7 @@ Route::prefix('warehouses')->group(function () {
         Route::get('/', [ProductAPIController::class, 'index']);
         Route::post('/all', [ProductAPIController::class, 'getProducts']);
         Route::post('/by/{id}', [ProductAPIController::class, 'getProductsByProvider']);
-        Route::get('/{id}', [ProductAPIController::class, 'show']);
+        Route::post('/{id}', [ProductAPIController::class, 'show']);
         Route::post('/', [ProductAPIController::class, 'store']);
         Route::put('/{id}', [ProductAPIController::class, 'update']);
         Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
