@@ -341,7 +341,6 @@ Route::post('upload', [App\Http\Controllers\API\TransportadorasShippingCostAPICo
 //      *
 Route::put('pedidos-shopify/updatefieldtime/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateFieldTime']);
 
-// *
 Route::prefix('warehouses')->group(function () {
     Route::get('/', [WarehouseAPIController::class, 'index']);
     Route::get('/{id}', [WarehouseAPIController::class, 'show']);
@@ -350,18 +349,19 @@ Route::prefix('warehouses')->group(function () {
     Route::delete('/deactivate/{id}', [WarehouseAPIController::class, 'deactivate']);
     Route::post('/activate/{id}', [WarehouseAPIController::class, 'activate']);
     Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
-
 });
 
-Route::prefix('products')->group(function () {
-    Route::get('/', [ProductAPIController::class, 'index']);
-    Route::post('/all', [ProductAPIController::class, 'getProducts']);
-    Route::get('/{id}', [ProductAPIController::class, 'show']);
-    Route::post('/', [ProductAPIController::class, 'store']);
-    Route::put('/{id}', [ProductAPIController::class, 'update']);
-    Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
-
+    // *
+    Route::prefix('products')->group(function () {
+        Route::get('/', [ProductAPIController::class, 'index']);
+        Route::post('/all', [ProductAPIController::class, 'getProducts']);
+        Route::post('/by/{id}', [ProductAPIController::class, 'getProductsByProvider']);
+        Route::get('/{id}', [ProductAPIController::class, 'show']);
+        Route::post('/', [ProductAPIController::class, 'store']);
+        Route::put('/{id}', [ProductAPIController::class, 'update']);
+        Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
 });
+
 
 
 
