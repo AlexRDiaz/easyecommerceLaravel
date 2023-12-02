@@ -18,6 +18,7 @@ class Warehouse extends Model
         'city',
         'collection',
         'active',
+        'approved',
         'provider_id'
     ];
 
@@ -41,6 +42,7 @@ class Warehouse extends Model
         'city' => 'nullable|string|max:80',
         'collection' => 'nullable|json',
         'active' => 'nullable|int', // Cambiado de 'int' a 'boolean'
+        'approved',
         'provider_id' => 'nullable',
         'created_at' => 'nullable',
         'updated_at' => 'nullable',

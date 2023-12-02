@@ -23,7 +23,7 @@ class ProductAPIController extends Controller
 
     public function getProducts(Request $request)
     {
-        //
+        //all for catalog
         $data = $request->json()->all();
 
         $pageSize = $data['page_size'];
@@ -64,6 +64,10 @@ class ProductAPIController extends Controller
                     }
                 }
             }))
+            ->whereHas('warehouse', function ($warehouse) {
+                $warehouse->where('active', 1)
+                ->where('approved', 1);
+            })
             ->where('active', 1)//los No delete
             ->where('approved', 1);
         // ! sort
