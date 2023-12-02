@@ -2299,6 +2299,13 @@ class PedidosShopifyAPIController extends Controller
                     $pedido->received_by = $idUser;
                 }
             }
+            elseif ($from == "seller") {
+                if ($value == "EN BODEGA PROVEEDOR") { //from seller return scanner
+                    $pedido->estado_devolucion = $value;
+                    $pedido->marca_t_d = $currentDateTimeText;
+                    $pedido->received_by = $idUser;
+                }
+            }
         }
 
 
