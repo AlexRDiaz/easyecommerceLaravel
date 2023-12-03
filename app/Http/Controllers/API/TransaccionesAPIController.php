@@ -285,13 +285,15 @@ class TransaccionesAPIController extends Controller
             }
             $pedido->save();
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
-
             return response()->json([
                 "res" => "transaccion exitosa"
             ]);
         } catch (\Exception $e) {
             DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
             // Maneja el error aquí si es necesario
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500); 
         }
     }
 
