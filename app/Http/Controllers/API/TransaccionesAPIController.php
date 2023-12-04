@@ -358,11 +358,11 @@ class TransaccionesAPIController extends Controller
                     ->get();
                 if ($transactionOld == []) {
 
-                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->transportadora[0]->costo_transportadora;
+                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
 
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
-                    $newTrans->monto = $order->transportadora[0]->costo_transportadora;
+                    $newTrans->monto =  $order->users[0]->vendedores[0]->costo_devolucion;
                     $newTrans->valor_actual = $newSaldo;
                     $newTrans->valor_anterior = $order->users[0]->vendedores[0]->saldo;
                     $newTrans->marca_de_tiempo = new DateTime();
@@ -370,7 +370,7 @@ class TransaccionesAPIController extends Controller
                     $newTrans->codigo = $order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden;
 
                     $newTrans->origen = "devolucion";
-                    $newTrans->comentario = "costo de devolucion por pedido en NOVEDAD y".$order->estado_devolucion;
+                    $newTrans->comentario = "Costo de devolucion por pedido en NOVEDAD y".$order->estado_devolucion;
 
                     $newTrans->id_vendedor = $order->users[0]->vendedores[0]->id_master;
                     $newTrans->state = 1;
@@ -429,11 +429,11 @@ class TransaccionesAPIController extends Controller
                 $repetida = $transactionOld;
     
                 if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
-                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->transportadora[0]->costo_transportadora;
+                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
     
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
-                    $newTrans->monto = $order->transportadora[0]->costo_transportadora;
+                    $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;
                     $newTrans->valor_actual = $newSaldo;
                     $newTrans->valor_anterior = $order->users[0]->vendedores[0]->saldo;
                     $newTrans->marca_de_tiempo = new DateTime();
@@ -495,11 +495,11 @@ class TransaccionesAPIController extends Controller
                 $repetida = $transactionOld;
     
                 if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
-                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->transportadora[0]->costo_transportadora;
+                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
     
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
-                    $newTrans->monto = $order->transportadora[0]->costo_transportadora;
+                    $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;;
                     $newTrans->valor_actual = $newSaldo;
                     $newTrans->valor_anterior = $order->users[0]->vendedores[0]->saldo;
                     $newTrans->marca_de_tiempo = new DateTime();
@@ -571,11 +571,11 @@ class TransaccionesAPIController extends Controller
                 $repetida = $transactionOld;
               
                 if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
-                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->transportadora[0]->costo_transportadora;
+                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
     
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
-                    $newTrans->monto = $order->transportadora[0]->costo_transportadora;
+                    $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;
                     $newTrans->valor_actual = $newSaldo;
                     $newTrans->valor_anterior = $order->users[0]->vendedores[0]->saldo;
                     $newTrans->marca_de_tiempo = new DateTime();
