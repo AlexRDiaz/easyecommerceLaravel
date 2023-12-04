@@ -230,16 +230,29 @@ class TransaccionesAPIController extends Controller
             $data = $request->json()->all();
             $startDateFormatted = new DateTime();
 
-            $request->merge(['comentario' => 'recaudo  de valor de producto por pedido entregado']);
+            $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $pedido->status = "ENTREGADO";
+            $pedido->fecha_entrega = now()->format('j/n/Y');
+            $pedido->status_last_modified_at = date('Y-m-d H:i:s');
+            $pedido->status_last_modified_by = $data['generated_by'];
+            $pedido->comentario = $data["comentario"];
+            if ($data["archivo"] != "") {
+                $pedido->archivo = $data["archivo"];
+            }
+            $pedido->save();
+
+            $request->merge(['comentario' => 'Recaudo  de valor de producto por pedido '. $pedido->status]);
             $request->merge(['origen' => 'recaudo']);
 
             $this->Credit($request);
 
-            $request->merge(['comentario' => 'costo de envio por pedido  entregado']);
+            $request->merge(['comentario' => 'Costo de envio por pedido '. $pedido->status]);
             $request->merge(['origen' => 'envio']);
             $request->merge(['monto' => $data['monto_debit']]);
 
             $this->Debit($request);
+            
+
 
             $vendedor = Vendedore::where("id_master", $data['id'])->get();
 
@@ -274,16 +287,7 @@ class TransaccionesAPIController extends Controller
                 $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
             }
 
-            $pedido = PedidosShopify::findOrFail($data['id_origen']);
-            $pedido->status = "ENTREGADO";
-            $pedido->fecha_entrega = now()->format('j/n/Y');
-            $pedido->status_last_modified_at = date('Y-m-d H:i:s');
-            $pedido->status_last_modified_by = $data['generated_by'];
-            $pedido->comentario = $data["comentario"];
-            if ($data["archivo"] != "") {
-                $pedido->archivo = $data["archivo"];
-            }
-            $pedido->save();
+            
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
             return response()->json([
                 "res" => "transaccion exitosa"
@@ -303,14 +307,13 @@ class TransaccionesAPIController extends Controller
         DB::beginTransaction();
 
         try {
+
+
+
+            
             $data = $request->json()->all();
-            $request->merge(['comentario' => 'costo de envio por pedido no entregado']);
-            $request->merge(['origen' => 'envio']);
-            $request->merge(['monto' => $data['monto_debit']]);
-
-            $this->Debit($request);
-
             $pedido = PedidosShopify::findOrFail($data['id_origen']);
+
             $pedido->status = "NO ENTREGADO";
             $pedido->fecha_entrega = now()->format('j/n/Y');
             $pedido->status_last_modified_at = date('Y-m-d H:i:s');
@@ -318,6 +321,15 @@ class TransaccionesAPIController extends Controller
             $pedido->comentario = $data["comentario"];
             $pedido->archivo = $data["archivo"];
             $pedido->save();
+
+
+            $request->merge(['comentario' => 'Costo de envio por pedido '.$pedido->status]);
+            $request->merge(['origen' => 'envio']);
+            $request->merge(['monto' => $data['monto_debit']]);
+
+            $this->Debit($request);
+
+         
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
             return response()->json([
                 "res" => "transaccion exitosa"
