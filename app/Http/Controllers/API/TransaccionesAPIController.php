@@ -236,6 +236,7 @@ class TransaccionesAPIController extends Controller
             $pedido->status_last_modified_at = date('Y-m-d H:i:s');
             $pedido->status_last_modified_by = $data['generated_by'];
             $pedido->comentario = $data["comentario"];
+            $pedido->tipo_pago=$data["tipo"];
             if ($data["archivo"] != "") {
                 $pedido->archivo = $data["archivo"];
             }
