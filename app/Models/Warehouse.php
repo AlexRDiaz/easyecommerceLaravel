@@ -12,6 +12,7 @@ class Warehouse extends Model
     public $fillable = [
         'branch_name',
         'address',
+        'customer_service_phone',
         'reference',
         'description',
         'url_image',
@@ -25,6 +26,7 @@ class Warehouse extends Model
     protected $casts = [
         'branch_name' => 'string',
         'address' => 'string',
+        'customer_service_phone' => 'string',
         'reference' => 'string',
         'description' => 'string',
         'url_image' => 'string',
@@ -36,6 +38,7 @@ class Warehouse extends Model
     public static array $rules = [
         'branch_name' => 'nullable|string|max:70',
         'address' => 'nullable|string|max:70',
+        'customer_service_phone' => 'nullable|string|max:70',
         'reference' => 'nullable|string|max:70',
         'description' => 'nullable|string|max:65535',
         'url_image' => 'nullable|string|max:150',
