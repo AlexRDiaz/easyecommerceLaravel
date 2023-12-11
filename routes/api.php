@@ -243,6 +243,9 @@ Route::middleware(['cors'])->group(function () {
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
 
     Route::get('/users/master/{id}', [UpUserAPIController::class, 'getSellerMaster']);
+    Route::get('/users/handle-callback', [UpUserAPIController::class, 'handleCallback']);
+
+    
 
 
     Route::post('/login', [UpUserAPIController::class, 'login']);
