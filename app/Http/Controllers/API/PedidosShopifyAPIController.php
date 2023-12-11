@@ -1537,7 +1537,7 @@ class PedidosShopifyAPIController extends Controller
             ];
 
         }
-        error_log("id de producto gfggfgfgfgfgfgfgfgfgfgfgfgfg\$element: " .  $listOfProducts[0]);
+       // error_log("id de producto gfggfgfgfgfgfgfgfgfgfgfgfgfg\$element: " .  $listOfProducts[0]);
 
         $search = PedidosShopify::where([
             'numero_orden' => $order_number,
