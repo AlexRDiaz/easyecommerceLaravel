@@ -1526,6 +1526,7 @@ class PedidosShopifyAPIController extends Controller
 
             // Registra los atributos presentes en $element
             error_log("Atributos actual enrgfgfgfgfgfgfgfgfgfg \$element: " . implode(', ', $atributos));
+            error_log("Ide actual enrgfgfgfgfgfgfgfgfgfg \$element: " .  $element['id']);
 
 
             $listOfProducts[] = [
