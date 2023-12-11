@@ -1600,7 +1600,8 @@ class PedidosShopifyAPIController extends Controller
                 'estado_devolucion' => 'PENDIENTE',
                 'do' => 'PENDIENTE',
                 'dt' => 'PENDIENTE',
-                'dl' => 'PENDIENTE'
+                'dl' => 'PENDIENTE',
+                'product_id'=>$listOfProducts[0]['product_id'] 
             ]);
 
             $createOrder->save();
