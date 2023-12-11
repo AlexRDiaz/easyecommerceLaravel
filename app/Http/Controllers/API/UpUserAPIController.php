@@ -975,7 +975,7 @@ class UpUserAPIController extends Controller
     public function handleCallback(Request $request)
     {
         $code = $request->input('code'); // Captura el código de autorización
-
+        error_log($code);
         // Procesa el código aquí (intercambio por access token, etc.)
         // ...
 
