@@ -1578,6 +1578,10 @@ class PedidosShopifyAPIController extends Controller
 
             // Crear una nueva orden
             $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
+
+
+            error_log("id de producto \$element: " .  $listOfProducts[0]['product_id']);
+
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
                 'tienda_temporal' => $productos[0]['vendor'],
