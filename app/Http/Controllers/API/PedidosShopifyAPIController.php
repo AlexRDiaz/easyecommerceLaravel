@@ -1601,7 +1601,7 @@ class PedidosShopifyAPIController extends Controller
                 'do' => 'PENDIENTE',
                 'dt' => 'PENDIENTE',
                 'dl' => 'PENDIENTE',
-                'product_id'=>"testId"
+                'product_id'=>$listOfProducts[0]['product_id']
             ]);
 
             $createOrder->save();
