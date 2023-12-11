@@ -628,6 +628,85 @@ class TransaccionesAPIController extends Controller
     }
     
 
+
+    public function paymentLogisticByReturnStatus(Request $request, $id)
+    {
+        DB::beginTransaction();
+        $message = "";
+        $repetida = null;
+
+        try {
+            $data = $request->json()->all();
+            $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
+            if($data["return_status"]=="ENTREGADO EN OFICINA"){
+                $order->estado_devolucion = $data["return_status"];
+                $order->do = $data["return_status"];
+                $order->marca_t_d = date("d/m/Y H:i");
+                $order->received_by =$data['generated_by'];
+            }
+            if($data["return_status"]=="EN BODEGA"){
+                $order->estado_devolucion = $data["return_status"];
+                $order->dl =  $data["return_status"];
+                $order->marca_t_d_l = date("d/m/Y H:i");
+                $order->received_by = $data['generated_by'];
+            }
+        
+            $order->save();
+                 
+            if ($order->status == "NOVEDAD") {
+                $transactionOld = Transaccion::where('tipo', 'debit')
+                    ->where('id_origen', $order->id)
+                    ->where('origen', "devolucion")
+                    ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
+                    ->get();
+    
+                $repetida = $transactionOld;
+              
+                if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
+                    $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
+    
+                    $newTrans = new Transaccion();
+                    $newTrans->tipo = "debit";
+                    $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;
+                    $newTrans->valor_actual = $newSaldo;
+                    $newTrans->valor_anterior = $order->users[0]->vendedores[0]->saldo;
+                    $newTrans->marca_de_tiempo = new DateTime();
+                    $newTrans->id_origen = $order->id;
+                    $newTrans->codigo = $order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden;
+                    $newTrans->origen = "devolucion";
+                    $newTrans->comentario = "Costo de devolución desde logistica por pedido en " . $order->status . " y " . $order->estado_devolucion;
+                    $newTrans->id_vendedor = $order->users[0]->vendedores[0]->id_master;
+                    $newTrans->state = 1;
+                    $newTrans->generated_by = $data['generated_by'];
+    
+                    $this->transaccionesRepository->create($newTrans);
+                    $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
+    
+                    $message = "Transacción con débito por estado ".$order->status . " y " . $order->estado_devolucion;
+                 
+                }else{
+                    $message = "Transacción sin débito, ya ha sido cobrada";
+                }
+            } else{
+                $message = "Transacción sin débito por estado ".$order->status . " y " . $order->estado_devolucion;
+            }
+
+            DB::commit();
+    
+            return response()->json([
+                "res" => $message,
+                "transaccion_repetida" => $repetida,
+                "pedido"=>$order
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+    
+
     public function updateFieldTime(Request $request, $id)
     {
         $data = $request->all();

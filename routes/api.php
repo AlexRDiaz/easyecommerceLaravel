@@ -168,6 +168,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post("transacciones/payment-logistic-in-warehouse/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentLogisticInWarehouse']);
 
     Route::post("transacciones/payment-transport-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentTransportByReturnStatus']);
+    Route::post("transacciones/payment-logistic-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentLogisticByReturnStatus']);
 
     
     
