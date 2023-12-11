@@ -1525,7 +1525,7 @@ class PedidosShopifyAPIController extends Controller
             $atributos = array_keys($element);
 
             // Registra los atributos presentes en $element
-            error_log("Atributos en \$element: " . implode(', ', $atributos));
+            error_log("Atributos actual enrgfgfgfgfgfgfgfgfgfg \$element: " . implode(', ', $atributos));
 
 
             $listOfProducts[] = [
@@ -1535,7 +1535,9 @@ class PedidosShopifyAPIController extends Controller
                 'price' => $element['price'],
                 'title' => $element['title']
             ];
+
         }
+        error_log("id de producto gfggfgfgfgfgfgfgfgfgfgfgfgfg\$element: " .  $listOfProducts[0]['product_id']);
 
         $search = PedidosShopify::where([
             'numero_orden' => $order_number,
@@ -1580,7 +1582,6 @@ class PedidosShopifyAPIController extends Controller
             $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
 
 
-            error_log("id de producto \$element: " .  $listOfProducts[0]['product_id']);
 
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
