@@ -300,6 +300,9 @@ class TransaccionesAPIController extends Controller
                 'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
             ], 500); 
         }
+
+
+        
     }
 
 

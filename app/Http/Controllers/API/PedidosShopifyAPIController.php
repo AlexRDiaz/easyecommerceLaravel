@@ -1525,11 +1525,8 @@ class PedidosShopifyAPIController extends Controller
             $atributos = array_keys($element);
 
             // Registra los atributos presentes en $element
-            error_log("Atributos actual yyyy \$element: " . implode(', ', $atributos));
-            error_log("Ide actual oooooooooooooooooooooooooooooooooooooooooooooooo \$element: " .  $element['id']);
-            error_log("ProductIde actual mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm \$element: " .  $element['product_id']);
+            error_log("Atributos en \$element: " . implode(', ', $atributos));
 
-            
 
             $listOfProducts[] = [
                 'id' => $element['id'],
@@ -1538,9 +1535,7 @@ class PedidosShopifyAPIController extends Controller
                 'price' => $element['price'],
                 'title' => $element['title']
             ];
-
         }
-       // error_log("id de producto gfggfgfgfgfgfgfgfgfgfgfgfgfg\$element: " .  $listOfProducts[0]);
 
         $search = PedidosShopify::where([
             'numero_orden' => $order_number,
@@ -1583,9 +1578,6 @@ class PedidosShopifyAPIController extends Controller
 
             // Crear una nueva orden
             $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
-
-
-
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
                 'tienda_temporal' => $productos[0]['vendor'],
@@ -1608,8 +1600,7 @@ class PedidosShopifyAPIController extends Controller
                 'estado_devolucion' => 'PENDIENTE',
                 'do' => 'PENDIENTE',
                 'dt' => 'PENDIENTE',
-                'dl' => 'PENDIENTE',
-                'product_id'=>"NAN"
+                'dl' => 'PENDIENTE'
             ]);
 
             $createOrder->save();
