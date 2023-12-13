@@ -4,6 +4,7 @@ use App\Http\Controllers\API\GenerateReportAPIController;
 use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\ProductAPIController;
+use App\Http\Controllers\API\ProductsSellerLinkAPIController;
 use App\Http\Controllers\API\ProviderAPIController;
 use App\Http\Controllers\API\RutaAPIController;
 use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
@@ -42,7 +43,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/filter/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogistic']);
 
     Route::post('logistic/filter/novelties', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeLogisticNovelties']);
-    
+
     Route::post('logistic/orders-pdf', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeOrdersforAudit']);
 
     // ! update status and comment
@@ -169,8 +170,8 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post("transacciones/payment-transport-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentTransportByReturnStatus']);
 
-    
-    
+
+
     // ! ***********************
 
     // !  TRANSACTIONS BY ID SELLER
@@ -236,7 +237,7 @@ Route::middleware(['cors'])->group(function () {
     Route::get('/users/subproviders/{id}/{search?}', [App\Http\Controllers\API\UpUserAPIController::class, 'getSubProviders']);
     Route::post('/users/subproviders/add', [App\Http\Controllers\API\UpUserAPIController::class, 'storeSubProvider']);
     Route::put('/users/subproviders/update/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSubProvider']);
-    
+
     Route::put('/users/autome/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'editAutome']);
 
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
@@ -338,6 +339,13 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/all', [ProviderAPIController::class, 'index']);
     });
 
+    // *
+    Route::prefix('productseller')->group(function () {
+        Route::post('/', [ProductsSellerLinkAPIController::class, 'store']);
+        Route::post('/get', [ProductsSellerLinkAPIController::class, 'getProductSeller']);
+        Route::put('/{id}', [ProductsSellerLinkAPIController::class, 'update']);
+        Route::put('/delete/{id}', [ProductsSellerLinkAPIController::class, 'destroy']);
+    });
 });
 
 // api/upload
@@ -357,15 +365,15 @@ Route::prefix('warehouses')->group(function () {
     Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
 });
 
-    // *
-    Route::prefix('products')->group(function () {
-        Route::get('/', [ProductAPIController::class, 'index']);
-        Route::post('/all', [ProductAPIController::class, 'getProducts']);
-        Route::post('/by/{id}', [ProductAPIController::class, 'getProductsByProvider']);
-        Route::post('/{id}', [ProductAPIController::class, 'show']);
-        Route::post('/', [ProductAPIController::class, 'store']);
-        Route::put('/{id}', [ProductAPIController::class, 'update']);
-        Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
+// *
+Route::prefix('products')->group(function () {
+    Route::get('/', [ProductAPIController::class, 'index']);
+    Route::post('/all', [ProductAPIController::class, 'getProducts']);
+    Route::post('/by/{id}', [ProductAPIController::class, 'getProductsByProvider']);
+    Route::post('/{id}', [ProductAPIController::class, 'show']);
+    Route::post('/', [ProductAPIController::class, 'store']);
+    Route::put('/{id}', [ProductAPIController::class, 'update']);
+    Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
 });
 
 
@@ -380,4 +388,3 @@ Route::resource('providers', App\Http\Controllers\API\ProviderAPIController::cla
 
 Route::resource('up-users-providers-links', App\Http\Controllers\API\UpUsersProvidersLinkAPIController::class)
     ->except(['create', 'edit']);
-

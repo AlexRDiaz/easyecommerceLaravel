@@ -61,4 +61,8 @@ class Product extends Model
 
 	}
 	
+	public function productseller(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\ProductsSellerLink::class, 'product_id');
+    }
 }
