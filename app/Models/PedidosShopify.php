@@ -157,7 +157,7 @@ class PedidosShopify extends Model
 		'status_last_modified_by',
 		'confirmed_by',
 		'confirmed_at',
-		'product_id'
+		'sku'
 	];
 
 	public function admin_user()
