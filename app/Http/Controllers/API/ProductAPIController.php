@@ -543,6 +543,10 @@ class ProductAPIController extends Controller
     
         $lastCPosition = strrpos($skuProduct, 'C');
 
+        if($skuProduct==null){
+            $skuProduct="UKNOWNPC0";
+        }
+        
 		$onlySku = substr($skuProduct, 0, $lastCPosition);
 		$productIdFromSKU = substr($skuProduct, $lastCPosition + 1);    
 

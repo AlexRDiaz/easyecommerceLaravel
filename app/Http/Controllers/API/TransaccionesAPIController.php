@@ -229,7 +229,10 @@ class TransaccionesAPIController extends Controller
     {
         DB::beginTransaction();
         try {
-            
+
+            if ($skuProduct == null) {
+                $skuProduct = "UKNOWNPC0";
+            }
             $productId = substr($skuProduct, strrpos($skuProduct, 'C') + 1);
             $firstPart = substr($skuProduct, 0, strrpos($skuProduct, 'C'));
 
@@ -245,7 +248,7 @@ class TransaccionesAPIController extends Controller
             $providerId = $product->warehouse->provider_id;
             $productName = $product->product_name;
 
-            $price = $product->price; 
+            $price = $product->price;
 
             if ($product->isVariant($firstPart)) {
                 $price = $product->getVariantPrice($firstPart);
@@ -261,15 +264,15 @@ class TransaccionesAPIController extends Controller
 
             $providerTransaction = new ProviderTransaction([
                 'transaction_type' => 'Pago Producto',
-                'amount' => $amountToDeduct, 
-                'previous_value' => $provider->saldo - $amountToDeduct, 
-                'current_value' => $provider->saldo, 
-                'timestamp' => now(), 
-                'origin_id' => $id_origin,    
-                'origin_code' => $skuProduct, 
-                'provider_id' => $providerId, 
-                'comment' => $productName,    
-                'generated_by' => $generated_by, 
+                'amount' => $amountToDeduct,
+                'previous_value' => $provider->saldo - $amountToDeduct,
+                'current_value' => $provider->saldo,
+                'timestamp' => now(),
+                'origin_id' => $id_origin,
+                'origin_code' => $skuProduct,
+                'provider_id' => $providerId,
+                'comment' => $productName,
+                'generated_by' => $generated_by,
             ]);
             $providerTransaction->save();
 
@@ -708,7 +711,7 @@ class TransaccionesAPIController extends Controller
             return response()->json([
                 "res" => $message,
                 "transaccion_repetida" => $repetida,
-                "pedido"=>$order
+                "pedido" => $order
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -717,7 +720,7 @@ class TransaccionesAPIController extends Controller
             ], 500);
         }
     }
-    
+
 
 
     public function paymentLogisticByReturnStatus(Request $request, $id)
@@ -729,33 +732,33 @@ class TransaccionesAPIController extends Controller
         try {
             $data = $request->json()->all();
             $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
-            if($data["return_status"]=="ENTREGADO EN OFICINA"){
+            if ($data["return_status"] == "ENTREGADO EN OFICINA") {
                 $order->estado_devolucion = $data["return_status"];
                 $order->do = $data["return_status"];
                 $order->marca_t_d = date("d/m/Y H:i");
-                $order->received_by =$data['generated_by'];
+                $order->received_by = $data['generated_by'];
             }
-            if($data["return_status"]=="EN BODEGA"){
+            if ($data["return_status"] == "EN BODEGA") {
                 $order->estado_devolucion = $data["return_status"];
-                $order->dl =  $data["return_status"];
+                $order->dl = $data["return_status"];
                 $order->marca_t_d_l = date("d/m/Y H:i");
                 $order->received_by = $data['generated_by'];
             }
-        
+
             $order->save();
-                 
+
             if ($order->status == "NOVEDAD") {
                 $transactionOld = Transaccion::where('tipo', 'debit')
                     ->where('id_origen', $order->id)
                     ->where('origen', "devolucion")
                     ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
                     ->get();
-    
+
                 $repetida = $transactionOld;
-              
+
                 if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
-    
+
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
                     $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;
@@ -769,25 +772,25 @@ class TransaccionesAPIController extends Controller
                     $newTrans->id_vendedor = $order->users[0]->vendedores[0]->id_master;
                     $newTrans->state = 1;
                     $newTrans->generated_by = $data['generated_by'];
-    
+
                     $this->transaccionesRepository->create($newTrans);
                     $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
-    
-                    $message = "Transacción con débito por estado ".$order->status . " y " . $order->estado_devolucion;
-                 
-                }else{
+
+                    $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
+
+                } else {
                     $message = "Transacción sin débito, ya ha sido cobrada";
                 }
-            } else{
-                $message = "Transacción sin débito por estado ".$order->status . " y " . $order->estado_devolucion;
+            } else {
+                $message = "Transacción sin débito por estado " . $order->status . " y " . $order->estado_devolucion;
             }
 
             DB::commit();
-    
+
             return response()->json([
                 "res" => $message,
                 "transaccion_repetida" => $repetida,
-                "pedido"=>$order
+                "pedido" => $order
             ]);
         } catch (\Exception $e) {
             DB::rollback();
