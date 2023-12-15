@@ -1588,6 +1588,7 @@ class PedidosShopifyAPIController extends Controller
                 'precio_total' => $formattedPrice,
                 'observacion' => $customer_note ?? "",
                 'ciudad_shipping' => $city,
+                'sku'=>$productos[0]['sku'],
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),

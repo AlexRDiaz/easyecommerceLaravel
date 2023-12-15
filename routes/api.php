@@ -31,11 +31,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware(['cors'])->group(function () {
-    Route::resource('pedidos_shopifies', App\Http\Controllers\API\pedidos_shopifiesAPIController::class)
-        ->except(['create', 'edit']);
-
-    Route::resource('schemas-tests', App\Http\Controllers\API\SchemasTestAPIController::class)
-        ->except(['create', 'edit']);
 
     Route::resource('pedidos-shopify', PedidosShopifyAPIController::class)
         ->except(['create', 'edit']);
@@ -169,6 +164,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post("transacciones/payment-logistic-in-warehouse/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentLogisticInWarehouse']);
 
     Route::post("transacciones/payment-transport-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentTransportByReturnStatus']);
+    Route::post("transacciones/payment-logistic-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentLogisticByReturnStatus']);
 
 
 
@@ -243,6 +239,9 @@ Route::middleware(['cors'])->group(function () {
     Route::put('/users/{id}', [UpUserAPIController::class, 'update']);
 
     Route::get('/users/master/{id}', [UpUserAPIController::class, 'getSellerMaster']);
+    Route::get('/users/handle-callback', [UpUserAPIController::class, 'handleCallback']);
+
+    
 
 
     Route::post('/login', [UpUserAPIController::class, 'login']);
@@ -370,6 +369,7 @@ Route::prefix('products')->group(function () {
     Route::get('/', [ProductAPIController::class, 'index']);
     Route::post('/all', [ProductAPIController::class, 'getProducts']);
     Route::post('/by/{id}', [ProductAPIController::class, 'getProductsByProvider']);
+    Route::post('/updatestock', [ProductAPIController::class, 'updateProductVariantStock']);
     Route::post('/{id}', [ProductAPIController::class, 'show']);
     Route::post('/', [ProductAPIController::class, 'store']);
     Route::put('/{id}', [ProductAPIController::class, 'update']);

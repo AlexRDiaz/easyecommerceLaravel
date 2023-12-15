@@ -973,6 +973,14 @@ class UpUserAPIController extends Controller
         return response()->json(['message' => 'Permisos eliminados en roles y en cada usuario con éxito'], 200);
 
     }
+    public function handleCallback(Request $request)
+    {
+        $code = $request->input('code'); // Captura el código de autorización
+        error_log($code);
+        // Procesa el código aquí (intercambio por access token, etc.)
+        // ...
 
+        return response()->json(['codigo' => $code], 200);
+    }
 
 }
