@@ -13,6 +13,7 @@ class Provider extends Model
         'name',
         'phone',
         'description',
+        'saldo',
         'provider_order',
         'up_user_order'
     ];
@@ -20,7 +21,8 @@ class Provider extends Model
     protected $casts = [
         'name' => 'string',
         'phone' => 'string',
-        'description' => 'string'
+        'description' => 'string',
+        'saldo' => 'string'
     ];
 
     public static array $rules = [
@@ -28,6 +30,7 @@ class Provider extends Model
         'name' => 'nullable|string|max:70',
         'phone' => 'nullable|string|max:15',
         'description' => 'nullable|string|max:65535',
+        'saldo' => 'nullable|string|20',
         'created_at' => 'nullable',
         'updated_at' => 'nullable'
     ];

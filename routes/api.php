@@ -361,15 +361,16 @@ Route::prefix('warehouses')->group(function () {
     Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
 });
 
-    // *
-    Route::prefix('products')->group(function () {
-        Route::get('/', [ProductAPIController::class, 'index']);
-        Route::post('/all', [ProductAPIController::class, 'getProducts']);
-        Route::post('/by/{id}', [ProductAPIController::class, 'getProductsByProvider']);
-        Route::post('/{id}', [ProductAPIController::class, 'show']);
-        Route::post('/', [ProductAPIController::class, 'store']);
-        Route::put('/{id}', [ProductAPIController::class, 'update']);
-        Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
+// *
+Route::prefix('products')->group(function () {
+    Route::get('/', [ProductAPIController::class, 'index']);
+    Route::post('/all', [ProductAPIController::class, 'getProducts']);
+    Route::post('/by/{id}', [ProductAPIController::class, 'getProductsByProvider']);
+    Route::post('/updatestock', [ProductAPIController::class, 'updateProductVariantStock']);
+    Route::post('/{id}', [ProductAPIController::class, 'show']);
+    Route::post('/', [ProductAPIController::class, 'store']);
+    Route::put('/{id}', [ProductAPIController::class, 'update']);
+    Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
 });
 
 

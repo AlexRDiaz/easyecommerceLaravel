@@ -7,6 +7,9 @@ use App\Models\PedidosShopify;
 use App\Models\Transaccion;
 use App\Models\UpUser;
 use App\Models\Vendedore;
+use App\Models\Product;
+use App\Models\ProviderTransaction;
+use App\Models\Provider;
 
 use App\Repositories\transaccionesRepository;
 use App\Repositories\vendedorRepository;
@@ -222,12 +225,71 @@ class TransaccionesAPIController extends Controller
         return response()->json("Monto debitado");
     }
 
+    public function updateProductAndProviderBalance($skuProduct, $totalPrice, $quantity, $generated_by, $id_origin)
+    {
+        DB::beginTransaction();
+        try {
+            
+            $productId = substr($skuProduct, strrpos($skuProduct, 'C') + 1);
+            $firstPart = substr($skuProduct, 0, strrpos($skuProduct, 'C'));
+
+
+            // Buscar el producto por ID    
+            $product = Product::with('warehouse')->find($productId);
+
+            if ($product === null) {
+                DB::commit();
+                return null; // Retorna null si no se encuentra el producto
+            }
+
+            $providerId = $product->warehouse->provider_id;
+            $productName = $product->product_name;
+
+            $price = $product->price; 
+
+            if ($product->isVariant($firstPart)) {
+                $price = $product->getVariantPrice($firstPart);
+            }
+
+            $amountToDeduct = $price * $quantity;
+
+            $diferencia = $totalPrice - $amountToDeduct;
+
+            $provider = Provider::findOrFail($providerId);
+            $provider->saldo += $amountToDeduct;
+            $provider->save();
+
+            $providerTransaction = new ProviderTransaction([
+                'transaction_type' => 'Pago Producto',
+                'amount' => $amountToDeduct, 
+                'previous_value' => $provider->saldo - $amountToDeduct, 
+                'current_value' => $provider->saldo, 
+                'timestamp' => now(), 
+                'origin_id' => $id_origin,    
+                'origin_code' => $skuProduct, 
+                'provider_id' => $providerId, 
+                'comment' => $productName,    
+                'generated_by' => $generated_by, 
+            ]);
+            $providerTransaction->save();
+
+
+            DB::commit();
+            return $diferencia;
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+
+
     public function paymentOrderDelivered(Request $request)
     {
         DB::beginTransaction();
 
         try {
             $data = $request->json()->all();
+
             $startDateFormatted = new DateTime();
 
             $pedido = PedidosShopify::findOrFail($data['id_origen']);
@@ -236,23 +298,50 @@ class TransaccionesAPIController extends Controller
             $pedido->status_last_modified_at = date('Y-m-d H:i:s');
             $pedido->status_last_modified_by = $data['generated_by'];
             $pedido->comentario = $data["comentario"];
-            $pedido->tipo_pago=$data["tipo"];
+            $pedido->tipo_pago = $data["tipo"];
             if ($data["archivo"] != "") {
                 $pedido->archivo = $data["archivo"];
             }
             $pedido->save();
 
-            $request->merge(['comentario' => 'Recaudo  de valor de producto por pedido '. $pedido->status]);
+            // $request->merge(['comentario' => 'Recaudo  de valor de producto por pedido ' . $pedido->status]);
+            // $request->merge(['origen' => 'recaudo']);
+
+            // $this->Credit($request);
+
+            // $request->merge(['comentario' => 'Costo de envio por pedido '. $pedido->status]);
+            // $request->merge(['origen' => 'valor Producto Bodega']);
+            // $request->merge(['monto' => $data['monto_debit']]);
+
+            $SellerCreditFinalValue = $this->updateProductAndProviderBalance(
+                // "TEST2C1003",
+                $pedido->sku,
+                $pedido->precio_total,
+                $pedido->cantidad_total,
+                $data['generated_by'],
+                $data['id_origen'],
+                // 22.90,
+            );
+
+
+            $request->merge(['comentario' => 'Recaudo  de valor de producto por pedido' . $pedido->status]);
             $request->merge(['origen' => 'recaudo']);
+            if ($SellerCreditFinalValue != null) {
+                $request->merge(['monto' => $SellerCreditFinalValue]);
+
+            }
 
             $this->Credit($request);
 
-            $request->merge(['comentario' => 'Costo de envio por pedido '. $pedido->status]);
+
+            $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
             $request->merge(['origen' => 'envio']);
             $request->merge(['monto' => $data['monto_debit']]);
 
             $this->Debit($request);
-            
+
+
+
 
 
             $vendedor = Vendedore::where("id_master", $data['id'])->get();
@@ -288,7 +377,7 @@ class TransaccionesAPIController extends Controller
                 $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
             }
 
-            
+
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
             return response()->json([
                 "res" => "transaccion exitosa"
@@ -298,11 +387,8 @@ class TransaccionesAPIController extends Controller
             // Maneja el error aquí si es necesario
             return response()->json([
                 'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
-            ], 500); 
+            ], 500);
         }
-
-
-        
     }
 
 
@@ -314,7 +400,7 @@ class TransaccionesAPIController extends Controller
 
 
 
-            
+
             $data = $request->json()->all();
             $pedido = PedidosShopify::findOrFail($data['id_origen']);
 
@@ -327,13 +413,13 @@ class TransaccionesAPIController extends Controller
             $pedido->save();
 
 
-            $request->merge(['comentario' => 'Costo de envio por pedido '.$pedido->status]);
+            $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
             $request->merge(['origen' => 'envio']);
             $request->merge(['monto' => $data['monto_debit']]);
 
             $this->Debit($request);
 
-         
+
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
             return response()->json([
                 "res" => "transaccion exitosa"
@@ -343,14 +429,14 @@ class TransaccionesAPIController extends Controller
             // Maneja el error aquí si es necesario
             return response()->json([
                 'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
-            ], 500); 
+            ], 500);
         }
     }
 
     public function paymentOrderWithNovelty(Request $request, $id)
     {
         DB::beginTransaction();
-        $message="";
+        $message = "";
 
 
         try {
@@ -358,7 +444,7 @@ class TransaccionesAPIController extends Controller
 
 
             $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
-           
+
 
             if (
                 $order->estado_devolucion ==
@@ -370,7 +456,7 @@ class TransaccionesAPIController extends Controller
 
                 $transactionOld = Transaccion::where('tipo', 'debit')
                     ->where('id_origen', $order->id)
-                    ->where('origen',  "devolucion")->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
+                    ->where('origen', "devolucion")->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
                     ->get();
                 if ($transactionOld == []) {
 
@@ -378,7 +464,7 @@ class TransaccionesAPIController extends Controller
 
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
-                    $newTrans->monto =  $order->users[0]->vendedores[0]->costo_devolucion;
+                    $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;
                     $newTrans->valor_actual = $newSaldo;
                     $newTrans->valor_anterior = $order->users[0]->vendedores[0]->saldo;
                     $newTrans->marca_de_tiempo = new DateTime();
@@ -386,7 +472,7 @@ class TransaccionesAPIController extends Controller
                     $newTrans->codigo = $order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden;
 
                     $newTrans->origen = "devolucion";
-                    $newTrans->comentario = "Costo de devolucion por pedido en NOVEDAD y".$order->estado_devolucion;
+                    $newTrans->comentario = "Costo de devolucion por pedido en NOVEDAD y" . $order->estado_devolucion;
 
                     $newTrans->id_vendedor = $order->users[0]->vendedores[0]->id_master;
                     $newTrans->state = 1;
@@ -395,8 +481,10 @@ class TransaccionesAPIController extends Controller
                     $this->transaccionesRepository->create($newTrans);
                     $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
                 }
-                $message="transacción con debito por devolucion";
-            }else{ $message="transacción sin debito por devolucion";}
+                $message = "transacción con debito por devolucion";
+            } else {
+                $message = "transacción sin debito por devolucion";
+            }
 
             $order->status = "NOVEDAD";
             $order->status_last_modified_at = date('Y-m-d H:i:s');
@@ -410,13 +498,13 @@ class TransaccionesAPIController extends Controller
 
             return response()->json([
                 "res" => $message,
-               // "pedido" => $order
+                // "pedido" => $order
             ]);
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
                 'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
-            ], 500); 
+            ], 500);
         }
     }
 
@@ -434,19 +522,19 @@ class TransaccionesAPIController extends Controller
             $order->marca_t_d = date("d/m/Y H:i");
             $order->received_by = $data['generated_by'];
             $order->save();
-    
+
             if ($order->status == "NOVEDAD") {
                 $transactionOld = Transaccion::where('tipo', 'debit')
                     ->where('id_origen', $order->id)
                     ->where('origen', "devolucion")
                     ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
                     ->get();
-    
+
                 $repetida = $transactionOld;
-    
+
                 if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
-    
+
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
                     $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;
@@ -460,20 +548,20 @@ class TransaccionesAPIController extends Controller
                     $newTrans->id_vendedor = $order->users[0]->vendedores[0]->id_master;
                     $newTrans->state = 1;
                     $newTrans->generated_by = $data['generated_by'];
-    
+
                     $this->transaccionesRepository->create($newTrans);
                     $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
-    
-                    $message = "Transacción con débito por estado ".$order->status . " y " . $order->estado_devolucion;
-                }else{
+
+                    $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
+                } else {
                     $message = "Transacción ya cobrada";
                 }
-            }else{
-                $message = "Transacción sin débito por estado".$order->status . " y " . $order->estado_devolucion;
+            } else {
+                $message = "Transacción sin débito por estado" . $order->status . " y " . $order->estado_devolucion;
             }
 
             DB::commit();
-    
+
             return response()->json([
                 "res" => $message,
                 "transaccion_repetida" => $repetida
@@ -497,25 +585,25 @@ class TransaccionesAPIController extends Controller
             $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
             $order->estado_devolucion = "EN BODEGA";
             $order->dl = "EN BODEGA";
-            $order->marca_t_d_l =  date("d/m/Y H:i");
+            $order->marca_t_d_l = date("d/m/Y H:i");
             $order->received_by = $data['generated_by'];
             $order->save();
-    
+
             if ($order->status == "NOVEDAD") {
                 $transactionOld = Transaccion::where('tipo', 'debit')
                     ->where('id_origen', $order->id)
                     ->where('origen', "devolucion")
                     ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
                     ->get();
-    
+
                 $repetida = $transactionOld;
-    
+
                 if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
-    
+
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
-                    $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;;
+                    $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;
                     $newTrans->valor_actual = $newSaldo;
                     $newTrans->valor_anterior = $order->users[0]->vendedores[0]->saldo;
                     $newTrans->marca_de_tiempo = new DateTime();
@@ -529,16 +617,16 @@ class TransaccionesAPIController extends Controller
                     $this->transaccionesRepository->create($newTrans);
                     $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
 
-                    $message = "Transacción con débito por estado ".$order->status . " y " . $order->estado_devolucion;
-                }else{
+                    $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
+                } else {
                     $message = "Transacción ya cobrada";
                 }
-            }else{
-                $message = "Transacción sin débito por estado".$order->status . " y " . $order->estado_devolucion;
+            } else {
+                $message = "Transacción sin débito por estado" . $order->status . " y " . $order->estado_devolucion;
             }
 
             DB::commit();
-    
+
             return response()->json([
                 "res" => $message,
                 "transaccion_repetida" => $repetida
@@ -562,33 +650,33 @@ class TransaccionesAPIController extends Controller
         try {
             $data = $request->json()->all();
             $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
-            if($data["return_status"]=="ENTREGADO EN OFICINA"){
+            if ($data["return_status"] == "ENTREGADO EN OFICINA") {
                 $order->estado_devolucion = $data["return_status"];
                 $order->dt = $data["return_status"];
                 $order->marca_t_d = date("d/m/Y H:i");
-                $order->received_by =$data['generated_by'];
+                $order->received_by = $data['generated_by'];
             }
-            if($data["return_status"]=="DEVOLUCION EN RUTA"){
+            if ($data["return_status"] == "DEVOLUCION EN RUTA") {
                 $order->estado_devolucion = $data["return_status"];
-                $order->dt =  $data["return_status"];
+                $order->dt = $data["return_status"];
                 $order->marca_t_d_t = date("d/m/Y H:i");
                 $order->received_by = $data['generated_by'];
             }
-        
+
             $order->save();
-                 
+
             if ($order->status == "NOVEDAD") {
                 $transactionOld = Transaccion::where('tipo', 'debit')
                     ->where('id_origen', $order->id)
                     ->where('origen', "devolucion")
                     ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
                     ->get();
-    
+
                 $repetida = $transactionOld;
-              
+
                 if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
-    
+
                     $newTrans = new Transaccion();
                     $newTrans->tipo = "debit";
                     $newTrans->monto = $order->users[0]->vendedores[0]->costo_devolucion;
@@ -602,21 +690,21 @@ class TransaccionesAPIController extends Controller
                     $newTrans->id_vendedor = $order->users[0]->vendedores[0]->id_master;
                     $newTrans->state = 1;
                     $newTrans->generated_by = $data['generated_by'];
-    
+
                     $this->transaccionesRepository->create($newTrans);
                     $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
-    
-                    $message = "Transacción con débito por estado ".$order->status . " y " . $order->estado_devolucion;
-                 
-                }else{
+
+                    $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
+
+                } else {
                     $message = "Transacción sin débito, ya ha sido cobrada";
                 }
-            }else{
-                $message = "Transacción sin débito por estado ".$order->status . " y " . $order->estado_devolucion;
+            } else {
+                $message = "Transacción sin débito por estado " . $order->status . " y " . $order->estado_devolucion;
             }
 
             DB::commit();
-    
+
             return response()->json([
                 "res" => $message,
                 "transaccion_repetida" => $repetida,
@@ -708,7 +796,7 @@ class TransaccionesAPIController extends Controller
             ], 500);
         }
     }
-    
+
 
     public function updateFieldTime(Request $request, $id)
     {
@@ -770,7 +858,7 @@ class TransaccionesAPIController extends Controller
                     $pedido->marca_t_d_t = $currentDateTimeText;
                     $pedido->received_by = $idUser;
                 }
-              
+
             } elseif ($from == "operator") {
                 if ($value == "ENTREGADO EN OFICINA") { //from operator, logistica
                     $pedido->estado_devolucion = $value;
