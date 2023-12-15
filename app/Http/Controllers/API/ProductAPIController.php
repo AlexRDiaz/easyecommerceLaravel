@@ -514,9 +514,15 @@ class ProductAPIController extends Controller
     public function update(Request $request, string $id)
     {
         //
-        $transaccion = Product::findOrFail($id);
-        $transaccion->update($request->all());
-        return response()->json($transaccion, Response::HTTP_OK);
+        $product = Product::find($id); // Encuentra al usuario por su ID
+    
+        if ($product) {
+        $product->update($request->all());
+        return response()->json(['message' => 'Producto actualizado con éxito',"producto"=>$product], 200);
+        }else{
+            return response()->json(['message' => 'Producto no encontrado'], 404);
+        }
+        
     }
 
     /**
