@@ -425,4 +425,43 @@ class ProductAPIController extends Controller {
         Product::where('product_id', $id)
             ->update(['active' => 0]);
     }
+    public function updateProductVariantStock(Request $request)
+    {
+        $data = $request->json()->all();
+    
+        $skuProduct = $data['sku_product']; // Esto tendrá un valor como "test2"
+        $quantity = $data['quantity'];
+    
+        $lastCPosition = strrpos($skuProduct, 'C');
+
+		$onlySku = substr($skuProduct, 0, $lastCPosition);
+		$productIdFromSKU = substr($skuProduct, $lastCPosition + 1);    
+
+
+		// Convierte el ID del producto a entero para la comparación.
+		$productIdFromSKU = intval($productIdFromSKU);
+
+        // Encuentra el producto por su SKU.
+        $product = Product::find($productIdFromSKU);
+        
+        if ($product === null) {
+            return null; // Retorna null si no se encuentra el producto
+        }
+    
+        if ($product) {
+            $result = $product->changeStock($skuProduct, $quantity);
+            if ($result === true) {
+                return response()->json(['message' => 'Stock updated successfully'], 200);
+            } elseif ($result === 'insufficient_stock_variant') {
+                return response()->json(['message' => 'Imposible realizar la confirmación. El stock de la variante es insuficiente'], 400);
+            } else {
+                return response()->json(['message' => 'Stock update failed'], 400);
+            }
+        } else {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+    }
+    
+
+
 }
