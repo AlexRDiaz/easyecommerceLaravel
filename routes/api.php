@@ -30,11 +30,6 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 });
 
 Route::middleware(['cors'])->group(function () {
-    Route::resource('pedidos_shopifies', App\Http\Controllers\API\pedidos_shopifiesAPIController::class)
-        ->except(['create', 'edit']);
-
-    Route::resource('schemas-tests', App\Http\Controllers\API\SchemasTestAPIController::class)
-        ->except(['create', 'edit']);
 
     Route::resource('pedidos-shopify', PedidosShopifyAPIController::class)
         ->except(['create', 'edit']);
