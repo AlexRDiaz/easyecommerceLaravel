@@ -231,8 +231,9 @@ class UpUserAPIController extends Controller
     $user->provider = "local";
     $user->confirmed = 1;
     $user->fecha_alta = $request->input('fecha_alta');
-    $permisosCadena = json_encode([]);
-    $user->permisos = $permisosCadena;
+    // $permisosCadena = json_encode([]);
+    // $user->permisos = $permisosCadena;
+    $user->permisos = json_encode($request->input('permisos'));
     $user->blocked = false;
     $user->save();
     // $user->providers()->attach($user->id, [

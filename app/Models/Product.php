@@ -60,6 +60,11 @@ class Product extends Model
 		return $this->belongsTo(Warehouse::class, 'warehouse_id', 'warehouse_id');
 
 	}
+	
+	public function productseller(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\ProductsSellerLink::class, 'product_id');
+    }
 
 	public function changeStock($skuProduct, $quantity)
 	{
