@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Mail\UserValidation;
+use App\Models\Integration;
 use App\Models\PedidosShopify;
 use App\Models\Provider;
 use App\Models\RolesFront;
@@ -474,6 +475,47 @@ class UpUserAPIController extends Controller
             'jwt' => $token,
             'user' => $user
         ], Response::HTTP_OK);
+    }
+
+
+    public function generateIntegration(Request $request)
+    {
+
+        $data = $request->json()->all();
+        $user = UpUser::find($data["user_id"]);
+    
+        if (!$user) {
+            return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+    
+        try {
+            // Intenta autenticar al usuario y generar un token
+            if (!$token = JWTAuth::fromUser($user)) {
+                return response()->json(['error' => 'No se pudo generar el token'], Response::HTTP_UNAUTHORIZED);
+            }
+
+           
+
+        $integration = Integration::where("name",$data["name"])->first();
+
+        if (!empty($integration)) {
+            return response()->json([
+                'integration'=>$integration,
+                'error' => 'Nombre ya ingresado'
+            ], 404);
+        }
+        $newIntegration=new Integration();
+        $newIntegration->name=$data["name"];
+        $newIntegration->description=$data["description"];
+        $newIntegration->token=$token;
+        $newIntegration->created_at=new DateTime();
+        $newIntegration->user_id=$data["user_id"];
+        $newIntegration->save();
+            return response()->json(['integration' => $newIntegration], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Error al generar el token',"e"=>$e], Response::HTTP_INTERNAL_SERVER_ERROR);
+        }
     }
 
     public function users($id)

@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\API\GenerateReportAPIController;
+use App\Http\Controllers\API\IntegrationAPIController;
 use App\Http\Controllers\API\OrdenesRetiroAPIController;
 use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\ProductAPIController;
@@ -118,9 +119,9 @@ Route::middleware(['cors'])->group(function () {
 
     //  ! ↓ LA ORIGINAL
     Route::middleware(['jwt.auth'])->group(function () {
-        // Rutas protegidas que requieren autenticación JWT
 
-        // Agrega más rutas protegidas aquí según sea necesario
+        Route::resource('integrations', IntegrationAPIController::class)
+            ->except(['create', 'edit']);
     });
 
 
@@ -241,10 +242,13 @@ Route::middleware(['cors'])->group(function () {
     Route::get('/users/master/{id}', [UpUserAPIController::class, 'getSellerMaster']);
     Route::get('/users/handle-callback', [UpUserAPIController::class, 'handleCallback']);
 
-    
+    Route::post('/users/generate-integration', [UpUserAPIController::class, 'generateIntegration']);
+
+
 
 
     Route::post('/login', [UpUserAPIController::class, 'login']);
+
 
     Route::get('users/{id}', [UpUserAPIController::class, 'users']);
 
