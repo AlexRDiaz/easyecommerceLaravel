@@ -25,6 +25,12 @@ class IntegrationAPIController extends Controller
         $integrations = Integration::all();
         return response()->json($integrations);
     }
+    public function getIntegrationsByUser($id)
+    {
+        //
+        $integrations = Integration::where("user_id",$id)->get();
+        return response()->json($integrations);
+    }
     /**
      * Store a newly created Integration in storage.
      * POST /integrations
@@ -45,42 +51,11 @@ class IntegrationAPIController extends Controller
             ], 404);
         }
 
-
         return response()->json([
             "res" =>$integration
         ]);
     
     }
-
-    public function store(Request $request): JsonResponse
-    {
-        $data = $request->json()->all();
-
-        $integration = Integration::where($data["name"])->get();
-
-        if (!empty($integration)) {
-
-
-            
-            return response()->json([
-                'error' => 'No data '
-            ], 404);
-        }
-        $newIntegration=new Integration();
-        $newIntegration->name=$data["name"];
-        $newIntegration->description=$data["description"];
-        
-        
-
-        
-
-
-        return response()->json([
-            "res" =>$integration
-        ]);
-    
-    }
-
 
 
     /**

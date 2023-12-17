@@ -119,6 +119,8 @@ Route::middleware(['cors'])->group(function () {
 
     //  ! ↓ LA ORIGINAL
     Route::middleware(['jwt.auth'])->group(function () {
+        
+        Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);
 
         Route::resource('integrations', IntegrationAPIController::class)
             ->except(['create', 'edit']);
