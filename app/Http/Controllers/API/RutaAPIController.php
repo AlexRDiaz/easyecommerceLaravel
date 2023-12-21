@@ -65,4 +65,24 @@ class RutaAPIController extends Controller
         //
     }
 
+
+    public function getSubRutasByRuta($rutaId)
+    {
+        // Encuentra la ruta por su ID y carga las subrutas relacionadas
+        $ruta = Ruta::with('sub_rutas_ruta_links.sub_ruta')->findOrFail($rutaId);
+    
+        // Extrae las subrutas y sus detalles, omitiendo aquellas sin nombre
+        $subRutas = $ruta->sub_rutas_ruta_links->map(function ($subRutasRutaLink) {
+            $subRuta = $subRutasRutaLink->sub_ruta;
+            // Verifica si la subruta tiene un título
+            if (!empty($subRuta->titulo)) {
+                // Concatena el nombre de la subruta y el ID con un guión
+                return $subRuta->titulo . '-' . $subRuta->id;
+            }
+            return null; // Retorna null si no hay título
+        })->filter(); // Utiliza filter para eliminar los valores null
+    
+        return response()->json($subRutas->values()); // values() para reindexar las claves del array
+    }
+    
 }
