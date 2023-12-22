@@ -79,6 +79,12 @@ class Transportadora extends Model
 					->withPivot('id', 'ruta_order', 'transportadora_order');
 	}
 
+	public function subrutas()
+	{
+		return $this->belongsToMany(SubRuta::class, 'transportadoras_rutas_links')
+					->withPivot('id', 'ruta_order', 'transportadora_order');
+	}
+
 	public function transportadoras_users_permissions_user_links()
 	{
 		return $this->hasMany(TransportadorasUsersPermissionsUserLink::class);

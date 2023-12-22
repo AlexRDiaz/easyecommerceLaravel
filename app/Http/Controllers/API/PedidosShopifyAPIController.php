@@ -7,6 +7,8 @@ use App\Models\PedidoFecha;
 use App\Models\pedidos_shopifies;
 use App\Models\PedidosShopifiesPedidoFechaLink;
 use App\Models\PedidosShopifiesRutaLink;
+use App\Models\PedidosShopifiesSubRutaLink;
+use App\Models\PedidosShopifiesOperadoreLink;
 use App\Models\PedidosShopifiesTransportadoraLink;
 use App\Models\PedidosShopify;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
@@ -64,8 +66,8 @@ class PedidosShopifyAPIController extends Controller
         // Actualiza el estado del pedido
         $pedido->status = $newStatus;
 
-        $pedido->confirmed_at=new DateTime();
-        $pedido-> confirmed_by=999;
+        $pedido->confirmed_at = new DateTime();
+        $pedido->confirmed_by = 999;
         $pedido->save();
 
         $user = UpUser::findOrFail($pedido->id_comercial);
@@ -152,18 +154,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! **************************************************
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
 
@@ -246,18 +248,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordena
         if ($orderBy !== null) {
             $pedidos->orderBy(key($orderBy), reset($orderBy));
@@ -344,18 +346,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordena
         if ($orderBy !== null) {
             $pedidos->orderBy(key($orderBy), reset($orderBy));
@@ -785,18 +787,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordenamiento ********************************** 
         $orderByText = null;
         $orderByDate = null;
@@ -1088,18 +1090,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordena
         $orderByText = null;
         $orderByDate = null;
@@ -1290,19 +1292,19 @@ class PedidosShopifyAPIController extends Controller
                 }
             }))->where((function ($pedidos) use ($not) {
 
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
             }
-        }
-                ))->get();
+            ))->get();
 
 
 
@@ -1588,7 +1590,7 @@ class PedidosShopifyAPIController extends Controller
                 'precio_total' => $formattedPrice,
                 'observacion' => $customer_note ?? "",
                 'ciudad_shipping' => $city,
-                'sku'=>$productos[0]['sku'],
+                'sku' => $productos[0]['sku'],
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
@@ -1772,8 +1774,7 @@ class PedidosShopifyAPIController extends Controller
                         if ($key === '/marca_tiempo_envio') {
                             $startDateFormatted = Carbon::createFromFormat('j/n/Y', $valor)->format('Y-m-d');
                             $pedidos->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted]);
-                        }
-                        elseif (strpos($filter, '.') !== false) {
+                        } elseif (strpos($filter, '.') !== false) {
                             $relacion = substr($filter, 0, strpos($filter, '.'));
                             $propiedad = substr($filter, strpos($filter, '.') + 1);
                             $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
@@ -1787,18 +1788,18 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }))->where((function ($pedidos) use ($not) {
-            foreach ($not as $condition) {
-                foreach ($condition as $key => $valor) {
-                    if (strpos($key, '.') !== false) {
-                        $relacion = substr($key, 0, strpos($key, '.'));
-                        $propiedad = substr($key, strpos($key, '.') + 1);
-                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                    } else {
-                        $pedidos->where($key, '!=', $valor);
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
                     }
                 }
-            }
-        }));
+            }));
         // ! Ordenamiento ********************************** 
         $orderByText = null;
         $orderByDate = null;
@@ -1930,6 +1931,49 @@ class PedidosShopifyAPIController extends Controller
             return response()->json(['orden' => 'Ruta&Transportadora actualizada exitosamente'], 200);
         }
     }
+
+    public function updateOrderSubRouteAndOperator(Request $request, $id)
+    {
+        $data = $request->json()->all();
+
+        $newSubRouteId = $data['subruta'];
+        $newOperatorId = $data['operador'];
+
+        $order = PedidosShopify::with(['subRuta', 'operadore'])->find($id);
+        if (!$order) {
+            return response()->json(['message' => 'Orden no encontrada'], 404);
+        }
+
+        // Actualizar o crear la relación con SubRuta
+        $resSubRuta = $order->pedidos_shopifies_sub_ruta_links;
+        if (count($resSubRuta) === 0) {
+            $createPedidoSubRuta = new PedidosShopifiesSubRutaLink();
+            $createPedidoSubRuta->pedidos_shopify_id = $order->id;
+            $createPedidoSubRuta->sub_ruta_id = $newSubRouteId;
+            $createPedidoSubRuta->save();
+        } else {
+            $pedidoSubRuta = PedidosShopifiesSubRutaLink::where('pedidos_shopify_id', $id)->first();
+            $pedidoSubRuta->sub_ruta_id = $newSubRouteId;
+            $pedidoSubRuta->save();
+        }
+
+        // Actualizar o crear la relación con Operador
+        $resOperador = $order->pedidos_shopifies_operadore_links;
+        if (count($resOperador) === 0) {
+            $createPedidoOperador = new PedidosShopifiesOperadoreLink();
+            $createPedidoOperador->pedidos_shopify_id = $order->id;
+            $createPedidoOperador->operadore_id = $newOperatorId;
+            $createPedidoOperador->save();
+        } else {
+            $pedidoOperador = PedidosShopifiesOperadoreLink::where('pedidos_shopify_id', $id)->first();
+            $pedidoOperador->operadore_id = $newOperatorId;
+            $pedidoOperador->save();
+        }
+
+        return response()->json(['orden' => 'SubRuta&Operador actualizados exitosamente'], 200);
+    }
+
+
 
     //  *
     public function getByDateRangeAll(Request $request)
@@ -2299,8 +2343,7 @@ class PedidosShopifyAPIController extends Controller
                     $pedido->marca_t_d = $currentDateTimeText;
                     $pedido->received_by = $idUser;
                 }
-            }
-            elseif ($from == "seller") {
+            } elseif ($from == "seller") {
                 if ($value == "EN BODEGA PROVEEDOR") { //from seller return scanner
                     $pedido->estado_devolucion = $value;
                     $pedido->marca_t_d = $currentDateTimeText;
