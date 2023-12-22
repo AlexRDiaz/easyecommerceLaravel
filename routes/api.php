@@ -400,3 +400,7 @@ Route::resource('providers', App\Http\Controllers\API\ProviderAPIController::cla
 
 Route::resource('up-users-providers-links', App\Http\Controllers\API\UpUsersProvidersLinkAPIController::class)
     ->except(['create', 'edit']);
+
+
+Route::resource('reserves', App\Http\Controllers\API\ReserveAPIController::class)
+    ->except(['create', 'edit']);
