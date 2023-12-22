@@ -375,9 +375,9 @@ class ProductAPIController extends Controller
             ->whereHas('warehouse.provider', function ($provider) use ($id) {
                 $provider->where('id', '=', $id);
             })
-            ->whereHas('warehouse', function ($warehouse) {
-                $warehouse->where('active', 1);
-            })
+            // ->whereHas('warehouse', function ($warehouse) {
+            //     $warehouse->where('active', 1);
+            // })
             ->where('active', 1); //los No delete
 
         // ! sort

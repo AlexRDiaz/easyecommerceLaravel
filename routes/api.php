@@ -282,13 +282,18 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/seller/{id}', [GenerateReportAPIController::class, 'getBySeller']);
     });
 
-    // *
-    Route::prefix('rutas')->group(function () {
-        Route::get('/', [RutaAPIController::class, 'index']);
-        Route::get('/active', [RutaAPIController::class, 'activeRoutes']);
-        Route::get('/{id}', [RutaAPIController::class, 'show']);
-    });
+ // *
+ Route::prefix('rutas')->group(function () {
+    Route::get('/', [RutaAPIController::class, 'index']);
+    Route::get('/active', [RutaAPIController::class, 'activeRoutes']);
+    Route::get('/{id}', [RutaAPIController::class, 'show']);
+    Route::post('/subroutesofroute/{id}', [RutaAPIController::class, 'getSubRutasByRuta']);
+});
 
+
+Route::prefix('subrutas')->group(function () {
+    Route::post('operadores/{id}', [SubRutaAPIController::class, 'getOperatorsbySubrouteAndTransportadora']);
+});
 
 
     // upUsersPedidos
