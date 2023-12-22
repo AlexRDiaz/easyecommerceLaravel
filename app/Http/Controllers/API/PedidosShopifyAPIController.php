@@ -1668,7 +1668,7 @@ class PedidosShopifyAPIController extends Controller
             // "status" => $createOrder->id_comercial,
 
             return response()->json([
-                'autome_response' => json_decode($response->getBody()->getContents()),
+                // 'autome_response' => json_decode($response->getBody()->getContents()),
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
                 'search' => 'MANDE',
