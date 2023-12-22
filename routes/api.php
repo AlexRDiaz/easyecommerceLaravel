@@ -8,6 +8,7 @@ use App\Http\Controllers\API\ProductAPIController;
 use App\Http\Controllers\API\ProductsSellerLinkAPIController;
 use App\Http\Controllers\API\ProviderAPIController;
 use App\Http\Controllers\API\RutaAPIController;
+use App\Http\Controllers\API\SubRutaAPIController;
 use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
 use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
