@@ -11,7 +11,8 @@ class Reserve extends Model
     public $fillable = [
         'product_id',
         'sku',
-        'stock'
+        'stock',
+        'id_comercial'
     ];
 
     protected $casts = [

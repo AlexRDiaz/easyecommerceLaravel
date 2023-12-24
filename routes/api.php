@@ -7,6 +7,7 @@ use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\ProductAPIController;
 use App\Http\Controllers\API\ProductsSellerLinkAPIController;
 use App\Http\Controllers\API\ProviderAPIController;
+use App\Http\Controllers\API\ReserveAPIController;
 use App\Http\Controllers\API\RutaAPIController;
 use App\Http\Controllers\API\SubRutaAPIController;
 use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
@@ -125,6 +126,24 @@ Route::middleware(['cors'])->group(function () {
 
         Route::resource('integrations', IntegrationAPIController::class)
             ->except(['create', 'edit']);
+
+
+
+
+       Route::resource('reserves', App\Http\Controllers\API\ReserveAPIController::class)
+            ->except(['create', 'edit']);
+
+
+     Route::prefix('reserves')->group(function () {
+                Route::get('/', [ReserveAPIController::class, 'index']);
+                Route::post('/find-by-product-and-sku', [ReserveAPIController::class, 'findByProductAndSku']);
+
+                Route::put('/{id}', [OrdenesRetiroAPIController::class, 'update']);
+                Route::post('/', [OrdenesRetiroAPIController::class, 'store']);
+            });
+
+
+
     });
 
 
@@ -272,6 +291,7 @@ Route::middleware(['cors'])->group(function () {
     });
 
 
+    
 
     Route::prefix('generate-reports')->group(function () {
         Route::get('/', [GenerateReportAPIController::class, 'index']);
@@ -392,6 +412,9 @@ Route::prefix('products')->group(function () {
 
 
 
+
+
+
 Route::resource('products', App\Http\Controllers\API\ProductAPIController::class)
     ->except(['create', 'edit']);
 
@@ -401,6 +424,3 @@ Route::resource('providers', App\Http\Controllers\API\ProviderAPIController::cla
 Route::resource('up-users-providers-links', App\Http\Controllers\API\UpUsersProvidersLinkAPIController::class)
     ->except(['create', 'edit']);
 
-
-Route::resource('reserves', App\Http\Controllers\API\ReserveAPIController::class)
-    ->except(['create', 'edit']);
