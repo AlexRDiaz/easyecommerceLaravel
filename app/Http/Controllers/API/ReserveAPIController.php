@@ -71,7 +71,7 @@ class ReserveAPIController extends Controller
         $input = $request->all();
         
         $reserve=Reserve::where('product_id',$input["product_id"])->where("sku",$input['sku'])
-                            ->where("id_comercial",$input['sku'])->first();
+                            ->where("id_comercial",$input['id_comercial'])->first();
  
         if($reserve==null){  
             return response()->json(['response' => false], Response::HTTP_NOT_FOUND);

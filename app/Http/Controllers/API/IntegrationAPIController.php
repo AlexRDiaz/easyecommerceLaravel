@@ -36,15 +36,19 @@ class IntegrationAPIController extends Controller
     public function putIntegrationsUrlStore(Request $request)
     {
         $authorizationHeader = $request->header('Authorization');
+        $input = $request->all();
+
         //
-        $integration = Integration::where("token",$authorizationHeader)->get();
+        $token = explode(" ", $authorizationHeader)[1];
+        $integration = Integration::where("token",$token)->first();
 
         if($integration==null){
             return response()->json(["response"=>"token not found"], Response::HTTP_NOT_FOUND);
-
+            
         }
-        
-        return response()->json(["response"=>"url saved succesfully","token"=>$authorizationHeader], Response::HTTP_OK);
+        $integration->store_url=$input["store_url"];
+        $integration->save();
+        return response()->json(["response"=>"url saved succesfully","integration"=>$integration], Response::HTTP_OK);
     }
     /**
      * Store a newly created Integration in storage.
