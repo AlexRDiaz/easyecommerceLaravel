@@ -67,17 +67,17 @@ class ReserveAPIController extends Controller
      * PUT/PATCH /reserves/{id}
      */
 
-     public function findByProductAndSku(Request $request){
-        $input = $request->all();
+     public function findByProductAndSku($productId,$sku,$idComercial){
+       
         
-        $reserve=Reserve::where('product_id',$input["product_id"])->where("sku",$input['sku'])
-                            ->where("id_comercial",$input['id_comercial'])->first();
+        $reserve=Reserve::where('product_id',$productId)->where("sku",$sku)
+                            ->where("id_comercial",$idComercial)->first();
  
         if($reserve==null){  
-            return response()->json(['response' => false], Response::HTTP_NOT_FOUND);
+            return response()->json(['response' => false]);
 
         }
-        return response()->json(['reserve' => $reserve,"response"=>true], Response::HTTP_OK);
+        return response()->json(['reserve' => $reserve,"response"=>true]);
 
 
      }

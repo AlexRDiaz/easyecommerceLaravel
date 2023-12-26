@@ -140,7 +140,7 @@ Route::middleware(['cors'])->group(function () {
 
      Route::prefix('reserves')->group(function () {
                 Route::get('/', [ReserveAPIController::class, 'index']);
-                Route::post('/find-by-product-and-sku', [ReserveAPIController::class, 'findByProductAndSku']);
+               // Route::post('/find-by-product-and-sku', [ReserveAPIController::class, 'findByProductAndSku']);
 
                 Route::put('/{id}', [OrdenesRetiroAPIController::class, 'update']);
                 Route::post('/', [OrdenesRetiroAPIController::class, 'store']);
