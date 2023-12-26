@@ -490,7 +490,7 @@ class UpUserAPIController extends Controller
     
         try {
             // Intenta autenticar al usuario y generar un token
-            if (!$token = JWTAuth::fromUser($user)) {
+            if (!$token = JWTAuth::claims(['exp' => null])->fromUser($user)) {
                 return response()->json(['error' => 'No se pudo generar el token'], Response::HTTP_UNAUTHORIZED);
             }
 
