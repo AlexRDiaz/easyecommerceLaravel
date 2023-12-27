@@ -81,6 +81,7 @@ class ReserveAPIController extends Controller
 
 
      }
+     
     public function update($id, UpdateReserveAPIRequest $request)
     {
         // $input = $request->all();
