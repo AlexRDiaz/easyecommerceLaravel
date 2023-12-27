@@ -17,14 +17,14 @@ use Illuminate\Http\Response;
 class ReserveAPIController extends Controller
 {
 
- 
+
     /**
      * Display a listing of the Reserves.
      * GET|HEAD /reserves
      */
     public function index(Request $request)
     {
-         $reserves = Reserve::all();
+        $reserves = Reserve::all();
         //     $request->except(['skip', 'limit']),
         //     $request->get('skip'),
         //     $request->get('limit')
@@ -39,12 +39,20 @@ class ReserveAPIController extends Controller
      */
     public function store(CreateReserveAPIRequest $request)
     {
-        $input = $request->all();
 
-         $reserve = Reserve::create($input);
+        $data = $request->json()->all();
+        $product_id = $data['product_id'];
+        $skuProduct = $data['sku_product'];
+        $units = $data['units'];
+        $description = $data['description'];
+        $type = $data['type'];
 
-         return response()->json(['reserve' => $reserve], Response::HTTP_OK);
-        }
+        $createReserve = new Reserve();
+
+
+        $createReserve->save();
+        return $createReserve;
+    }
 
     /**
      * Display the specified Reserve.
@@ -67,20 +75,18 @@ class ReserveAPIController extends Controller
      * PUT/PATCH /reserves/{id}
      */
 
-     public function findByProductAndSku(Request $request){
+    public function findByProductAndSku(Request $request)
+    {
         $input = $request->all();
-        
-        $reserve=Reserve::where('product_id',$input["product_id"])->where("sku",$input['sku'])
-                            ->where("id_comercial",$input['sku'])->first();
- 
-        if($reserve==null){  
+
+        $reserve = Reserve::where('product_id', $input["product_id"])->where("sku", $input['sku'])
+            ->where("id_comercial", $input['sku'])->first();
+
+        if ($reserve == null) {
             return response()->json(['response' => false], Response::HTTP_NOT_FOUND);
-
         }
-        return response()->json(['reserve' => $reserve,"response"=>true], Response::HTTP_OK);
-
-
-     }
+        return response()->json(['reserve' => $reserve, "response" => true], Response::HTTP_OK);
+    }
     public function update($id, UpdateReserveAPIRequest $request)
     {
         // $input = $request->all();

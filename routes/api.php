@@ -9,12 +9,14 @@ use App\Http\Controllers\API\ProductsSellerLinkAPIController;
 use App\Http\Controllers\API\ProviderAPIController;
 use App\Http\Controllers\API\ReserveAPIController;
 use App\Http\Controllers\API\RutaAPIController;
+use App\Http\Controllers\API\StockHistoryAPIController;
 use App\Http\Controllers\API\SubRutaAPIController;
 use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
 use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
 use App\Http\Controllers\API\WarehouseAPIController;
+use App\Models\Reserve;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -378,6 +380,19 @@ Route::prefix('subrutas')->group(function () {
         Route::put('/{id}', [ProductsSellerLinkAPIController::class, 'update']);
         Route::put('/delete/{id}', [ProductsSellerLinkAPIController::class, 'destroy']);
     });
+
+    // *
+    Route::prefix('stockhistory')->group(function () {
+        Route::post('/', [StockHistoryAPIController::class, 'store']);
+        Route::get('byproduct/{id}', [StockHistoryAPIController::class, 'showByProduct']);
+
+    });
+
+    //  *
+    Route::prefix('reserve')->group(function () {
+        Route::post('/', [ReserveAPIController::class, 'store']);
+    });
+
 });
 
 // api/upload
