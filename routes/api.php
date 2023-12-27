@@ -120,7 +120,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
 
     //  ! ↓ LA ORIGINAL
-    Route::put('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
+    Route::post('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
 
     Route::middleware(['jwt.auth'])->group(function () {
         
