@@ -68,36 +68,62 @@ class RutaAPIController extends Controller
     }
 
     
-    public function getSubRutasByRuta(Request $request, $rutaId)
+   // public function getSubRutasByRuta(Request $request, $rutaId)
+    // {
+    //     // Extraer el ID de la transportadora del JSON
+    //     $data = $request->json()->all();
+    //     $transportadoraId = $data['transportadora_id'];
+
+    //     // Busca la ruta específica
+    //     $ruta = Ruta::find($rutaId);
+    //     if (!$ruta) {
+    //         return response()->json(['mensaje' => 'Ruta no encontrada'], 404);
+    //     }
+
+    //     // Busca la transportadora para asegurarse de que exista
+    //     $transportadora = Transportadora::find($transportadoraId);
+    //     if (!$transportadora) {
+    //         return response()->json(['mensaje' => 'Transportadora no encontrada'], 404);
+    //     }
+
+    //     // Obtiene las subrutas que están asociadas con la ruta y la transportadora especificada
+    //     $subRutas = $ruta->sub_rutas()
+    //         ->whereHas('operadores.transportadoras', function ($query) use ($transportadoraId) {
+    //             $query->where('transportadoras.id', $transportadoraId);
+    //         })
+    //         ->get()
+    //         ->map(function ($subRuta) {
+    //             // Construye el string con el formato "titulo-id"
+    //             return $subRuta->titulo . '-' . $subRuta->id;
+    //         });
+
+    //     return response()->json($subRutas);
+    // }
+
+    public function getTransportadorasConRutasYSubRutas(Request $request,$rutaId)
     {
-        // Extraer el ID de la transportadora del JSON
+        
         $data = $request->json()->all();
         $transportadoraId = $data['transportadora_id'];
+
+        $transportadoras = Transportadora::with(['rutas' => function ($query) use ($rutaId,$transportadoraId) {
+            $query->where('rutas.id', $rutaId)->with(['sub_rutas' => function ($query) use ($transportadoraId) {
+                $query->where('sub_rutas.id_operadora', $transportadoraId);
+            }]);
+        }])->where('transportadoras.id', $transportadoraId)->get();
     
-        // Busca la ruta específica
-        $ruta = Ruta::find($rutaId);
-        if (!$ruta) {
-            return response()->json(['mensaje' => 'Ruta no encontrada'], 404);
+        $subRutasNombres = [];
+        foreach ($transportadoras as $transportadora) {
+            foreach ($transportadora->rutas as $ruta) {
+                foreach ($ruta->sub_rutas as $subRuta) {
+                    if (!empty($subRuta->titulo)) {
+                        $subRutasNombres[] = $subRuta->titulo . '-' . $subRuta->id;
+                    }
+                }
+            }
         }
     
-        // Busca la transportadora para asegurarse de que exista
-        $transportadora = Transportadora::find($transportadoraId);
-        if (!$transportadora) {
-            return response()->json(['mensaje' => 'Transportadora no encontrada'], 404);
-        }
-    
-        // Obtiene las subrutas que están asociadas con la ruta y la transportadora especificada
-        $subRutas = $ruta->sub_rutas()
-                          ->whereHas('operadores.transportadoras', function ($query) use ($transportadoraId) {
-                              $query->where('transportadoras.id', $transportadoraId);
-                          })
-                          ->get()
-                          ->map(function ($subRuta) {
-                              // Construye el string con el formato "titulo-id"
-                              return $subRuta->titulo . '-' . $subRuta->id;
-                          });
-    
-        return response()->json($subRutas);
+        return response()->json($subRutasNombres);
     }
     
 }

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\SubRuta;
 use App\Models\Transportadora;
 use App\Models\Ruta;
+use App\Models\Operadore;
 use Illuminate\Http\Request;
 
 class SubRutaAPIController extends Controller
@@ -21,51 +22,53 @@ class SubRutaAPIController extends Controller
         return response()->json($subrutas);
     }
 
-    
+
     public function getOperatorsbySubrouteAndTransportadora(Request $request, $subRutaId)
     {
         // Extraer los datos del JSON
         $data = $request->json()->all();
         $transportadoraId = $data['transportadora_id'];
-    
-        $subRuta = SubRuta::find($subRutaId);
-        
-        if (!$subRuta) {
-            return response()->json(['mensaje' => 'SubRuta no encontrada'], 404);
-        }
-    
+
         // Busca la transportadora para asegurarse de que exista
         $transportadora = Transportadora::find($transportadoraId);
         if (!$transportadora) {
             return response()->json(['mensaje' => 'Transportadora no encontrada'], 404);
         }
-    
-        // Obtiene los operadores que están en la subruta y asociados con la transportadora especificada
-        $operadores = $subRuta->operadores()
-                              ->whereHas('transportadoras', function ($query) use ($transportadoraId) {
-                                  $query->where('transportadoras.id', $transportadoraId);
-                              })
-                              ->with('up_users')
-                              ->get()
-                              ->filter(function ($operador) {
-                                  // Verifica si el operador tiene un username asociado
-                                  return !empty($operador->up_users->first()) && !empty($operador->up_users->first()->username);
-                              })
-                              ->map(function ($operador) {
-                                  // Construye el string con el formato "username-id"
-                                  $username = $operador->up_users->first()->username;
-                                  return $username . '-' . $operador->id;
-                              })
-                              ->values(); // Reindexa el arreglo para asegurar que es un arreglo de strings
-    
-        return response()->json($operadores);
+
+        // Verifica si se deben obtener todos los operadores de la transportadora
+        if ($subRutaId == 9999) {
+            $operadores = Operadore::whereHas('transportadoras', function ($query) use ($transportadoraId) {
+                $query->where('transportadoras.id', $transportadoraId);
+            })
+                ->with('up_users')
+                ->get();
+        } else {
+            $subRuta = SubRuta::find($subRutaId);
+            if (!$subRuta) {
+                return response()->json(['mensaje' => 'SubRuta no encontrada'], 404);
+            }
+
+            // Obtiene los operadores que están en la subruta y asociados con la transportadora especificada
+            $operadores = $subRuta->operadores()
+                ->whereHas('transportadoras', function ($query) use ($transportadoraId) {
+                    $query->where('transportadoras.id', $transportadoraId);
+                })
+                ->with('up_users')
+                ->get();
+        }
+
+        // Filtra y mapea los operadores
+        $operadoresFiltrados = $operadores->filter(function ($operador) {
+            return !empty($operador->up_users->first()) && !empty($operador->up_users->first()->username);
+        })
+            ->map(function ($operador) {
+                $username = $operador->up_users->first()->username;
+                return $username . '-' . $operador->id;
+            })
+            ->values();
+
+        return response()->json($operadoresFiltrados);
     }
-    
-
-
-
-
-
 
 
 
