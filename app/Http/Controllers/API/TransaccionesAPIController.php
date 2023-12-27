@@ -302,20 +302,11 @@ class TransaccionesAPIController extends Controller
             $pedido->status_last_modified_by = $data['generated_by'];
             $pedido->comentario = $data["comentario"];
             $pedido->tipo_pago = $data["tipo"];
+             $pedido->costo_envio= $data['monto_debit'];
             if ($data["archivo"] != "") {
                 $pedido->archivo = $data["archivo"];
             }
             $pedido->save();
-
-            // $request->merge(['comentario' => 'Recaudo  de valor de producto por pedido ' . $pedido->status]);
-            // $request->merge(['origen' => 'recaudo']);
-
-            // $this->Credit($request);
-
-            // $request->merge(['comentario' => 'Costo de envio por pedido '. $pedido->status]);
-            // $request->merge(['origen' => 'valor Producto Bodega']);
-            // $request->merge(['monto' => $data['monto_debit']]);
-
             $SellerCreditFinalValue = $this->updateProductAndProviderBalance(
                 // "TEST2C1003",
                 $pedido->sku,
@@ -413,6 +404,7 @@ class TransaccionesAPIController extends Controller
             $pedido->status_last_modified_by = $data['generated_by'];
             $pedido->comentario = $data["comentario"];
             $pedido->archivo = $data["archivo"];
+            $pedido->costo_envio= $data['monto_debit'];
             $pedido->save();
 
 
@@ -457,12 +449,9 @@ class TransaccionesAPIController extends Controller
                 $order->estado_devolucion == "EN BODEGA"
             ) {
 
-                $transactionOld = Transaccion::where('tipo', 'debit')
-                    ->where('id_origen', $order->id)
-                    ->where('origen', "devolucion")->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
-                    ->get();
-                if ($transactionOld == []) {
-
+            
+                if ($order->costo_devolucion == null) {
+                    $order->costo_devolucion= $order->users[0]->vendedores[0]->costo_devolucion;
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
 
                     $newTrans = new Transaccion();
@@ -524,18 +513,12 @@ class TransaccionesAPIController extends Controller
             $order->do = "ENTREGADO EN OFICINA";
             $order->marca_t_d = date("d/m/Y H:i");
             $order->received_by = $data['generated_by'];
-            $order->save();
-
             if ($order->status == "NOVEDAD") {
-                $transactionOld = Transaccion::where('tipo', 'debit')
-                    ->where('id_origen', $order->id)
-                    ->where('origen', "devolucion")
-                    ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
-                    ->get();
+  
 
-                $repetida = $transactionOld;
+                if ($order->costo_devolucion==null) { // Verifica si está vacío convirtiendo a un array
+                    $order->costo_devolucion= $order->users[0]->vendedores[0]->costo_devolucion;
 
-                if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
 
                     $newTrans = new Transaccion();
@@ -562,7 +545,7 @@ class TransaccionesAPIController extends Controller
             } else {
                 $message = "Transacción sin débito por estado" . $order->status . " y " . $order->estado_devolucion;
             }
-
+            $order->save();
             DB::commit();
 
             return response()->json([
@@ -590,18 +573,13 @@ class TransaccionesAPIController extends Controller
             $order->dl = "EN BODEGA";
             $order->marca_t_d_l = date("d/m/Y H:i");
             $order->received_by = $data['generated_by'];
-            $order->save();
 
             if ($order->status == "NOVEDAD") {
-                $transactionOld = Transaccion::where('tipo', 'debit')
-                    ->where('id_origen', $order->id)
-                    ->where('origen', "devolucion")
-                    ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
-                    ->get();
+              
 
-                $repetida = $transactionOld;
+                if ($order->costo_devolucion==null) { // Verifica si está vacío convirtiendo a un array
+                    $order->costo_devolucion= $order->users[0]->vendedores[0]->costo_devolucion;
 
-                if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
 
                     $newTrans = new Transaccion();
@@ -627,6 +605,7 @@ class TransaccionesAPIController extends Controller
             } else {
                 $message = "Transacción sin débito por estado" . $order->status . " y " . $order->estado_devolucion;
             }
+            $order->save();
 
             DB::commit();
 
@@ -666,18 +645,11 @@ class TransaccionesAPIController extends Controller
                 $order->received_by = $data['generated_by'];
             }
 
-            $order->save();
-
+          
             if ($order->status == "NOVEDAD") {
-                $transactionOld = Transaccion::where('tipo', 'debit')
-                    ->where('id_origen', $order->id)
-                    ->where('origen', "devolucion")
-                    ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
-                    ->get();
+                if ($order->costo_devolucion==null) { // Verifica si está vacío convirtiendo a un array
+                    $order->costo_devolucion= $order->users[0]->vendedores[0]->costo_devolucion;
 
-                $repetida = $transactionOld;
-
-                if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
 
                     $newTrans = new Transaccion();
@@ -705,6 +677,7 @@ class TransaccionesAPIController extends Controller
             } else {
                 $message = "Transacción sin débito por estado " . $order->status . " y " . $order->estado_devolucion;
             }
+            $order->save();
 
             DB::commit();
 
@@ -745,18 +718,13 @@ class TransaccionesAPIController extends Controller
                 $order->received_by = $data['generated_by'];
             }
 
-            $order->save();
-
+         
             if ($order->status == "NOVEDAD") {
-                $transactionOld = Transaccion::where('tipo', 'debit')
-                    ->where('id_origen', $order->id)
-                    ->where('origen', "devolucion")
-                    ->where('id_vendedor', $order->users[0]->vendedores[0]->id_master)
-                    ->get();
 
-                $repetida = $transactionOld;
 
-                if (empty($transactionOld->toArray())) { // Verifica si está vacío convirtiendo a un array
+                if ($order->costo_devolucion==null) { // Verifica si está vacío convirtiendo a un array
+                    $order->costo_devolucion= $order->users[0]->vendedores[0]->costo_devolucion;
+
                     $newSaldo = $order->users[0]->vendedores[0]->saldo - $order->users[0]->vendedores[0]->costo_devolucion;
 
                     $newTrans = new Transaccion();
@@ -784,6 +752,7 @@ class TransaccionesAPIController extends Controller
             } else {
                 $message = "Transacción sin débito por estado " . $order->status . " y " . $order->estado_devolucion;
             }
+            $order->save();
 
             DB::commit();
 
