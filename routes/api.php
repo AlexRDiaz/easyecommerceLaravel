@@ -145,9 +145,6 @@ Route::middleware(['cors'])->group(function () {
                 Route::put('/{id}', [OrdenesRetiroAPIController::class, 'update']);
                 Route::post('/', [OrdenesRetiroAPIController::class, 'store']);
             });
-
-
-
     });
 
 
