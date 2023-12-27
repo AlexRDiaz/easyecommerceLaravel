@@ -122,10 +122,14 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
 
     //  ! ↓ LA ORIGINAL
+
     Route::middleware(['jwt.auth'])->group(function () {
         
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);
+        Route::put('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
+ 
 
+        
         Route::resource('integrations', IntegrationAPIController::class)
             ->except(['create', 'edit']);
 
@@ -138,7 +142,7 @@ Route::middleware(['cors'])->group(function () {
 
      Route::prefix('reserves')->group(function () {
                 Route::get('/', [ReserveAPIController::class, 'index']);
-                Route::post('/find-by-product-and-sku', [ReserveAPIController::class, 'findByProductAndSku']);
+               // Route::post('/find-by-product-and-sku', [ReserveAPIController::class, 'findByProductAndSku']);
 
                 Route::put('/{id}', [OrdenesRetiroAPIController::class, 'update']);
                 Route::post('/', [OrdenesRetiroAPIController::class, 'store']);

@@ -8,6 +8,7 @@ use App\Models\Integration;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Http\Response;
 
 /**
  * Class IntegrationAPIController
@@ -30,6 +31,24 @@ class IntegrationAPIController extends Controller
         //
         $integrations = Integration::where("user_id",$id)->get();
         return response()->json($integrations);
+    }
+
+    public function putIntegrationsUrlStore(Request $request)
+    {
+        $authorizationHeader = $request->header('Authorization');
+        $input = $request->all();
+
+        //
+        $token = explode(" ", $authorizationHeader)[1];
+        $integration = Integration::where("token",$token)->first();
+
+        if($integration==null){
+            return response()->json(["response"=>"token not found"], Response::HTTP_NOT_FOUND);
+            
+        }
+        $integration->store_url=$input["store_url"];
+        $integration->save();
+        return response()->json(["response"=>"url saved succesfully","integration"=>$integration], Response::HTTP_OK);
     }
     /**
      * Store a newly created Integration in storage.
