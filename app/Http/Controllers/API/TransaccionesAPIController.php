@@ -296,7 +296,6 @@ class TransaccionesAPIController extends Controller
             $startDateFormatted = new DateTime();
 
             $pedido = PedidosShopify::findOrFail($data['id_origen']);
-            $pedido->costo_transportadora = $pedido['transportadora']['costo_transportadora'];
             $pedido->status = "ENTREGADO";
             $pedido->fecha_entrega = now()->format('j/n/Y');
             $pedido->status_last_modified_at = date('Y-m-d H:i:s');

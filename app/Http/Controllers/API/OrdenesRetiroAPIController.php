@@ -8,6 +8,7 @@ use App\Models\OrdenesRetiro;
 use App\Models\OrdenesRetirosUsersPermissionsUserLink;
 use App\Models\UpUser;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 
@@ -69,6 +70,54 @@ class OrdenesRetiroAPIController extends Controller
 
         return response()->json(['code' => 200]);
     }
+
+    public function withdrawalProvider(Request $request, $id)
+    {
+        //     // Obtiene los datos del cuerpo de la solicitud
+        $data = $request->validate([
+            'monto' => 'required',
+            'fecha' => 'required',
+            'email' => 'required|email',
+            'id_vendedor' => 'required'
+        ]);
+
+        // //     // Obtener datos del request
+        $monto = $request->input('monto');
+        $fecha = $request->input('fecha');
+        $email = $request->input('email');
+        $idVendedor  = $request->input('id_vendedor');
+
+        // //     // Generar código único
+        $numerosUtilizados = [];
+        while (count($numerosUtilizados) < 10000000) {
+            $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+            if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                $numerosUtilizados[] = $numeroAleatorio;
+                break;
+            }
+        }
+        $resultCode = $numeroAleatorio;
+      //  $resultCode = implode('', array_slice($numerosUnicos, 0, 8));
+
+        
+        Mail::to($email)->send(new ValidationCode($resultCode,$monto));
+      
+        //     // Crea un registro de retiro
+            $withdrawal = new OrdenesRetiro();
+            $withdrawal->monto =$monto;
+            $withdrawal->fecha = $fecha;
+            $withdrawal->codigo_generado = $resultCode;
+            $withdrawal->estado = 'PENDIENTE';
+            $withdrawal->id_vendedor = $idVendedor;
+            $withdrawal->save();
+        
+            $ordenUser=new OrdenesRetirosUsersPermissionsUserLink(); 
+            $ordenUser->ordenes_retiro_id=$withdrawal->id;
+            $ordenUser->user_id=$id;
+            $ordenUser->save();
+
+            return response()->json(["response"=>"code generated succesfully","code"=>$resultCode], Response::HTTP_OK);
+        }
 
     public function getOrdenesRetiroNew($id, Request $request)
     { 
