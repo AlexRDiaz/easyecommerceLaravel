@@ -279,6 +279,8 @@ Route::middleware(['cors'])->group(function () {
 
 
     Route::get('users/{id}', [UpUserAPIController::class, 'users']);
+    //  *
+    Route::post('users/userbyemail', [UpUserAPIController::class, 'userByEmail']);
 
     Route::get('users/pdf/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'userspdf']);
 

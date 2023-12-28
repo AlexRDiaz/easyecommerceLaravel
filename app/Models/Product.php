@@ -65,6 +65,11 @@ class Product extends Model
 		return $this->hasMany(\App\Models\ProductsSellerLink::class, 'product_id');
 	}
 
+	public function reserve(): \Illuminate\Database\Eloquent\Relations\HasMany
+	{
+		return $this->hasMany(\App\Models\Reserve::class, 'product_id');
+	}
+
 	public function changeStock($skuProduct, $quantity)
 	{
 		$lastCPosition = strrpos($skuProduct, 'C');
