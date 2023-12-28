@@ -903,21 +903,38 @@ class TransaccionesAPIController extends Controller
 
     public function rollbackTransaction(Request $request)
     {
+        DB::beginTransaction();
+
+
         $data = $request->json()->all();
         $generated_by = $data['generated_by'];
 
         $ids = $data['ids'];
+        $idOrigen=$data["id_origen"];
         $reqTrans = [];
         $reqPedidos = [];
+
+        try {
+            //code...
+      
+
+            $order = PedidosShopify::find($idOrigen);
+
+            $order->costo_devolucion=null;
+            $order->costo_envio=null;
+            $order->status="PEDIDO PROGRAMADO";
+            $order->estado_devolucion="PENDIENTE";
+            $order->save();
+
 
         foreach ($ids as $id) {
 
             $transaction = Transaccion::find($id);
             array_push($reqTrans, $transaction);
+            $pedido = PedidosShopify::where("id", $transaction->id_origen)->first();
 
             if ($transaction->state == 1) {
 
-                $pedido = PedidosShopify::where("id", $transaction->id_origen)->first();
                 array_push($reqPedidos, $pedido);
 
                 $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
@@ -969,10 +986,18 @@ class TransaccionesAPIController extends Controller
             }
         }
 
+        DB::commit();
         return response()->json([
             "transacciones" => $reqTrans,
             "pedidps" => $reqPedidos
 
         ]);
+
+    } catch (\Exception $e) {
+        DB::rollback();
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
+    }
     }
 }
