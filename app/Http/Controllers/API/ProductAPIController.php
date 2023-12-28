@@ -515,14 +515,13 @@ class ProductAPIController extends Controller
     {
         //
         $product = Product::find($id); // Encuentra al usuario por su ID
-    
+
         if ($product) {
-        $product->update($request->all());
-        return response()->json(['message' => 'Producto actualizado con éxito',"producto"=>$product], 200);
-        }else{
+            $product->update($request->all());
+            return response()->json(['message' => 'Producto actualizado con éxito', "producto" => $product], 200);
+        } else {
             return response()->json(['message' => 'Producto no encontrado'], 404);
         }
-        
     }
 
     /**
@@ -534,33 +533,34 @@ class ProductAPIController extends Controller
         Product::where('product_id', $id)
             ->update(['active' => 0]);
     }
+
     public function updateProductVariantStock(Request $request)
     {
         $data = $request->json()->all();
-    
+
         $skuProduct = $data['sku_product']; // Esto tendrá un valor como "test2"
         $quantity = $data['quantity'];
-    
+
         $lastCPosition = strrpos($skuProduct, 'C');
 
-        if($skuProduct==null){
-            $skuProduct="UKNOWNPC0";
+        if ($skuProduct == null) {
+            $skuProduct = "UKNOWNPC0";
         }
-        
-		$onlySku = substr($skuProduct, 0, $lastCPosition);
-		$productIdFromSKU = substr($skuProduct, $lastCPosition + 1);    
+
+        $onlySku = substr($skuProduct, 0, $lastCPosition);
+        $productIdFromSKU = substr($skuProduct, $lastCPosition + 1);
 
 
-		// Convierte el ID del producto a entero para la comparación.
-		$productIdFromSKU = intval($productIdFromSKU);
+        // Convierte el ID del producto a entero para la comparación.
+        $productIdFromSKU = intval($productIdFromSKU);
 
         // Encuentra el producto por su SKU.
         $product = Product::find($productIdFromSKU);
-        
+
         if ($product === null) {
             return null; // Retorna null si no se encuentra el producto
         }
-    
+
         if ($product) {
             $result = $product->changeStock($skuProduct, $quantity);
             if ($result === true) {
@@ -574,7 +574,4 @@ class ProductAPIController extends Controller
             return response()->json(['message' => 'Product not found'], 404);
         }
     }
-    
-
-
 }
