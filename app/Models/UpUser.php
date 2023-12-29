@@ -133,6 +133,7 @@ class UpUser extends Model implements Authenticatable, JWTSubject
 		'estado',
 		'codigo_generado',
 		'permisos',
+		'payment_information',
 		'telefono_1',
 		'telefono_2',
 		'created_by_id',

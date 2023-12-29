@@ -116,6 +116,9 @@ class OrdenesRetiroAPIController extends Controller
             $ordenUser->ordenes_retiro_id=$withdrawal->id;
             $ordenUser->user_id=$id;
             $ordenUser->save();
+
+            return response()->json(["response"=>"solicitud generada exitosamente"], Response::HTTP_OK);
+
         }
 
     public function getOrdenesRetiroNew($id, Request $request)
