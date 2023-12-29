@@ -129,6 +129,7 @@ Route::middleware(['cors'])->group(function () {
 
     Route::middleware(['jwt.auth'])->group(function () {
         Route::put('/users/update-paiment-information/{id}', [UpUserAPIController::class, 'updatePaymentInformation']);
+        Route::put('/users/get-paiment-information/{id}', [UpUserAPIController::class, 'getPaymentInformation']);
 
         
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);

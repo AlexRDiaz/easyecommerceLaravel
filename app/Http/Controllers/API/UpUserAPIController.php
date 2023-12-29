@@ -541,23 +541,62 @@ class UpUserAPIController extends Controller
         return response()->json(['user' => $upUser], Response::HTTP_OK);
     }
 
-    public function updatePaymentInformation(Request $request, $id){
+    public function updatePaymentInformation(Request $request, $id)
+    {
         try {
             $data = $request->json()->all();
-            $jsonData = json_encode($data); // Convertir el array a JSON
-    
-            $encryptedData = encrypt($jsonData); // Encriptar el JSON
-    
+
             $user = UpUser::find($id);
-            $user->payment_information = $encryptedData;
+
+            if ($user->payment_information == null) {
+                $jsonData = json_encode([$data]);
+                $encryptedData = encrypt($jsonData);
+                $user->payment_information = $encryptedData;
+
+            } else {
+                $currentPaymentInformation =  $this->getPaymentInformationLocal($id);
+                  array_push($currentPaymentInformation, $data);
+               $jsonData2 = json_encode($currentPaymentInformation);
+                  $encryptedData2 = encrypt($jsonData2);
+              $user->payment_information = $encryptedData2;
+
+            }
+
             $user->save();
-    
-            return response()->json(['message' => 'User modified successfully',$encryptedData], Response::HTTP_OK);
+
+            return response()->json(['message' => 'User modified successfully', $currentPaymentInformation], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json(['error' => 'User modify failed', $e], Response::HTTP_BAD_REQUEST);
         }
     }
-    
+
+    public function getPaymentInformation($id)
+    {
+        try {
+
+
+            $user = UpUser::find($id);
+            $decriptedData = decrypt($user->payment_information);
+
+            return response()->json(['message' => 'Get successfully', 'data' => json_decode($decriptedData)], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Get failed', $e], Response::HTTP_BAD_REQUEST);
+        }
+    }
+    public function getPaymentInformationLocal($id)
+    {
+        try {
+
+
+            $user = UpUser::find($id);
+            $decriptedData = decrypt($user->payment_information);
+
+            return json_decode($decriptedData);
+        } catch (\Exception $e) {
+            return $e;
+        }
+    }
+
     public function managePermission(Request $request)
     {
         $viewName = $request->input('view_name');
@@ -1032,9 +1071,9 @@ class UpUserAPIController extends Controller
     public function userByEmail(Request $request)
     {
         $data = $request->json()->all();
-        
+
         $email = $data['email'];
-    
+
         // Utiliza first() para obtener un solo resultado
         $upUser = UpUser::with([
             'roles_fronts',
@@ -1043,14 +1082,13 @@ class UpUserAPIController extends Controller
             'operadores',
             'providers',
         ])->where('email', 'like', '%' . $email . '%')->first();
-    
+
         // Verifica si el usuario no se encuentra
         if (!$upUser) {
             return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
         }
-    
+
         // Utiliza compact() para enviar la respuesta
         return response()->json(['user' => $upUser], Response::HTTP_OK);
     }
-    
 }
