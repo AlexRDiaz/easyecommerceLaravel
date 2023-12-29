@@ -32,7 +32,7 @@ class ProviderTransaction extends Model
         
     ];
 
-	public function product()
+	public function pedido()
 	{
 		return $this->belongsTo(PedidosShopify::class, 'origin_id', 'id');
 	}
