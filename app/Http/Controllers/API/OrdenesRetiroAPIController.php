@@ -97,21 +97,25 @@ class OrdenesRetiroAPIController extends Controller
         
         Mail::to($email)->send(new ValidationCode($resultCode,$monto));
       
-        //     // Crea un registro de retiro
-            // $withdrawal = new OrdenesRetiro();
-            // $withdrawal->monto =$monto;
-            // $withdrawal->fecha = new  DateTime();
-            // $withdrawal->codigo_generado = $resultCode;
-            // $withdrawal->estado = 'PENDIENTE';
-            // $withdrawal->id_vendedor = $idVendedor;
-            // $withdrawal->save();
-        
-            // $ordenUser=new OrdenesRetirosUsersPermissionsUserLink(); 
-            // $ordenUser->ordenes_retiro_id=$withdrawal->id;
-            // $ordenUser->user_id=$id;
-            // $ordenUser->save();
-
+      
             return response()->json(["response"=>"code generated succesfully","code"=>$resultCode], Response::HTTP_OK);
+        }
+
+        public function postWhitdrawalProviderAproved(Request $request,$id){
+            $data = $request->json()->all();
+
+                 $withdrawal = new OrdenesRetiro();
+            $withdrawal->monto =$data["monto"];
+            $withdrawal->fecha = new  DateTime();
+            $withdrawal->codigo_generado = $data["codigo"];
+            $withdrawal->estado = 'APROBADO';
+            $withdrawal->id_vendedor =  $data["id_vendedor"];
+            $withdrawal->save();
+        
+            $ordenUser=new OrdenesRetirosUsersPermissionsUserLink(); 
+            $ordenUser->ordenes_retiro_id=$withdrawal->id;
+            $ordenUser->user_id=$id;
+            $ordenUser->save();
         }
 
     public function getOrdenesRetiroNew($id, Request $request)
