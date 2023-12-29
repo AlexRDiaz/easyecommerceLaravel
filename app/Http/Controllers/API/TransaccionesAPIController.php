@@ -9,7 +9,11 @@ use App\Models\UpUser;
 use App\Models\Vendedore;
 use App\Models\Product;
 use App\Models\ProviderTransaction;
+use App\Models\StockHistory;
 use App\Models\Provider;
+
+use App\Http\Controllers\API\ProductAPIController;
+
 
 use App\Repositories\transaccionesRepository;
 use App\Repositories\vendedorRepository;
@@ -19,7 +23,6 @@ use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
-
 use function PHPUnit\Framework\isEmpty;
 
 class TransaccionesAPIController extends Controller
@@ -256,12 +259,14 @@ class TransaccionesAPIController extends Controller
 
             $amountToDeduct = $price * $quantity;
 
-            $diferencia = $totalPrice - $amountToDeduct;
+            $total = $totalPrice;
+            $diferencia = $amountToDeduct;
 
             $provider = Provider::findOrFail($providerId);
             $provider->saldo += $amountToDeduct;
             $provider->save();
 
+            
             $providerTransaction = new ProviderTransaction([
                 'transaction_type' => 'Pago Producto',
                 'amount' => $amountToDeduct,
@@ -276,12 +281,11 @@ class TransaccionesAPIController extends Controller
             ]);
             $providerTransaction->save();
 
-
-            DB::commit();
-            return $diferencia;
+            DB::commit(); // Confirmar los cambios
+            return ["total" => $total, "valor_producto" => $diferencia, "error" => null];
         } catch (\Exception $e) {
             DB::rollback();
-            return response()->json(['error' => $e->getMessage()], 500);
+            return ["total" => null, "valor_producto" => null, "error" => $e->getMessage()];
         }
     }
 
@@ -317,15 +321,41 @@ class TransaccionesAPIController extends Controller
                 // 22.90,
             );
 
+            // $productController = new ProductAPIController();
+            
+            // $splitSku = $productController->splitSku($pedido->sku);
+            // $onlySku = $splitSku['sku'];
+            // $productIdFromSKU = $splitSku['id'];
+            
+            // $resultupdateStock = $productController->changeStockGen(
+            //     $productIdFromSKU,
+            //     $onlySku,
+            //     $pedido->cantidad_total,
+            //     0);
 
-            $request->merge(['comentario' => 'Recaudo  de valor de producto por pedido' . $pedido->status]);
+            // Verifica si hubo un error en la actualización del balance del producto y proveedor
+            if ($SellerCreditFinalValue['error']) {
+                throw new \Exception($SellerCreditFinalValue['error']);
+            }
+
+            $request->merge(['comentario' => 'Recaudo  de valor por pedido' . $pedido->status]);
             $request->merge(['origen' => 'recaudo']);
-            if ($SellerCreditFinalValue != null) {
-                $request->merge(['monto' => $SellerCreditFinalValue]);
+
+            if ($SellerCreditFinalValue['total'] != null) {
+                $request->merge(['monto' => $SellerCreditFinalValue['total']]);
+
             }
 
             $this->Credit($request);
 
+            // !*********
+            $request->merge(['comentario' => 'Costo de de valor de Producto en Bodega ' . $pedido->status]);
+            $request->merge(['origen' => 'valor producto bodega']);
+            $request->merge(['monto' => $SellerCreditFinalValue['valor_producto']]);
+
+            $this->Debit($request);
+
+            // !*********
 
             $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
             $request->merge(['origen' => 'envio']);
@@ -399,7 +429,7 @@ class TransaccionesAPIController extends Controller
             $pedido->status_last_modified_by = $data['generated_by'];
             $pedido->comentario = $data["comentario"];
             $pedido->archivo = $data["archivo"];
-
+          
             if ($pedido->costo_envio == null) {
                 $pedido->costo_envio = $data['monto_debit'];
                 $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
@@ -567,6 +597,19 @@ class TransaccionesAPIController extends Controller
             $order->dl = "EN BODEGA";
             $order->marca_t_d_l = date("d/m/Y H:i");
             $order->received_by = $data['generated_by'];
+
+
+            // ! suma stock  cuando pedido ya se encuentra "EN BODEGA" JP
+            $productController = new ProductAPIController();
+
+            $searchResult = $productController->updateProductVariantStockInternal(
+                $order->cantidad_total,
+                $order->sku,
+                1,
+                $order->id_comercial,
+            );
+
+            // !
 
             if ($order->status == "NOVEDAD") {
 

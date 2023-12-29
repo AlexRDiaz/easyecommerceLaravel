@@ -133,11 +133,13 @@ class ReserveAPIController extends Controller
         $reserve = Reserve::where('product_id', $productId)->where("sku", $sku)
             ->where("id_comercial", $idComercial)->first();
 
+
         if ($reserve == null) {
             return response()->json(['response' => false]);
         }
         return response()->json(['reserve' => $reserve, "response" => true], Response::HTTP_OK);
     }
+
     public function update($id, UpdateReserveAPIRequest $request)
     {
         // $input = $request->all();

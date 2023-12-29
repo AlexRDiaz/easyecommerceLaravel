@@ -205,4 +205,5 @@ class Product extends Model
 		$variant = collect($features['variants'] ?? [])->firstWhere('sku', $skuProduct);
 		return $variant['price'] ?? $this->price; // Retorna el precio de la variante o el del producto general si no se encuentra
 	}
+
 }

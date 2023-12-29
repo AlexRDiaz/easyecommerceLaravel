@@ -24,7 +24,8 @@ class Reserve extends Model
         'product_id' => 'required',
         'sku' => 'required|string|max:255',
         'stock' => 'required',
-        'warehouse_price'=> 'required'
+        'warehouse_price' => 'required'
+
     ];
 
     public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -32,3 +33,5 @@ class Reserve extends Model
         return $this->belongsTo(\App\Models\Product::class, 'product_id');
     }
 }
+
+?>
