@@ -7,6 +7,7 @@ use App\Mail\ValidationCode;
 use App\Models\OrdenesRetiro;
 use App\Models\OrdenesRetirosUsersPermissionsUserLink;
 use App\Models\UpUser;
+use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -73,21 +74,16 @@ class OrdenesRetiroAPIController extends Controller
 
     public function withdrawalProvider(Request $request, $id)
     {
-        //     // Obtiene los datos del cuerpo de la solicitud
         $data = $request->validate([
             'monto' => 'required',
-            'fecha' => 'required',
             'email' => 'required|email',
             'id_vendedor' => 'required'
         ]);
-
-        // //     // Obtener datos del request
         $monto = $request->input('monto');
-        $fecha = $request->input('fecha');
         $email = $request->input('email');
         $idVendedor  = $request->input('id_vendedor');
 
-        // //     // Generar código único
+        //     // Generar código único
         $numerosUtilizados = [];
         while (count($numerosUtilizados) < 10000000) {
             $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
@@ -97,7 +93,6 @@ class OrdenesRetiroAPIController extends Controller
             }
         }
         $resultCode = $numeroAleatorio;
-      //  $resultCode = implode('', array_slice($numerosUnicos, 0, 8));
 
         
         Mail::to($email)->send(new ValidationCode($resultCode,$monto));
@@ -105,7 +100,7 @@ class OrdenesRetiroAPIController extends Controller
         //     // Crea un registro de retiro
             $withdrawal = new OrdenesRetiro();
             $withdrawal->monto =$monto;
-            $withdrawal->fecha = $fecha;
+            $withdrawal->fecha = new  DateTime();
             $withdrawal->codigo_generado = $resultCode;
             $withdrawal->estado = 'PENDIENTE';
             $withdrawal->id_vendedor = $idVendedor;
