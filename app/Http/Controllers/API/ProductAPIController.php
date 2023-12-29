@@ -623,7 +623,7 @@ class ProductAPIController extends Controller
 
             if ($type == 0 && $quantity > $reserve->stock) {
                 // No se puede restar más de lo que hay en stock
-                return response()->json(['message' => 'Cantidad excede el stock disponible'], 400);
+                return response()->json(['message' => 'No Dispone de Stock en la Reserva Comuniquese con el Proveedor'], 400);
             }
 
             // Actualizar el stock
