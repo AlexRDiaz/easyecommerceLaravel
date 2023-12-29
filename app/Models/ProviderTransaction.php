@@ -31,4 +31,10 @@ class ProviderTransaction extends Model
     public static array $rules = [
         
     ];
+
+	public function product()
+	{
+		return $this->belongsTo(PedidosShopify::class, 'origin_id', 'id');
+	}
+
 }

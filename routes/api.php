@@ -7,6 +7,7 @@ use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\ProductAPIController;
 use App\Http\Controllers\API\ProductsSellerLinkAPIController;
 use App\Http\Controllers\API\ProviderAPIController;
+use App\Http\Controllers\API\ProviderTransactionsAPIController;
 use App\Http\Controllers\API\ReserveAPIController;
 use App\Http\Controllers\API\RutaAPIController;
 use App\Http\Controllers\API\StockHistoryAPIController;
@@ -394,6 +395,11 @@ Route::prefix('subrutas')->group(function () {
     //  *
     Route::prefix('reserve')->group(function () {
         Route::post('/', [ReserveAPIController::class, 'store']);
+    });
+
+    //  *
+    Route::prefix('providertransaction')->group(function () {
+        Route::post('provider/{id}', [ProviderTransactionsAPIController::class, 'getByProvider']);
     });
 
 });
