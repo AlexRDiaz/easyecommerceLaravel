@@ -541,23 +541,23 @@ class UpUserAPIController extends Controller
         return response()->json(['user' => $upUser], Response::HTTP_OK);
     }
 
-    public function updatePaymentInformation(Request $request,$id){
+    public function updatePaymentInformation(Request $request, $id){
         try {
-            //code...
-        
-        $data = $request->json()->all();
-        $encriptedData= bcrypt($data);
-        $user = UpUser::find($id);
-        $user->payment_information=$encriptedData;
-        $user->save();
-        return response()->json(['message' => 'User modified succesfully'], Response::HTTP_OK);
+            $data = $request->json()->all();
+            $jsonData = json_encode($data); // Convertir el array a JSON
+    
+            $encryptedData = encrypt($jsonData); // Encriptar el JSON
+    
+            $user = UpUser::find($id);
+            $user->payment_information = $encryptedData;
+            $user->save();
+    
+            return response()->json(['message' => 'User modified successfully',$encryptedData], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'User modify failed', $e], Response::HTTP_BAD_REQUEST);
         }
-        catch (\Exception $e) {
-            return response()->json(['error' => 'User modify failed'], Response::HTTP_BAD_REQUEST);
-
-        }
-
     }
+    
     public function managePermission(Request $request)
     {
         $viewName = $request->input('view_name');

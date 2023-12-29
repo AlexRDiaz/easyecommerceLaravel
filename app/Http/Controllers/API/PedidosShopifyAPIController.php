@@ -1580,6 +1580,14 @@ class PedidosShopifyAPIController extends Controller
 
             // Crear una nueva orden
             $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
+
+            $sku = $productos[0]['sku'];
+$parts = explode('C', $sku);
+$lastIdProduct="";
+$id_product = end($parts);
+if (is_numeric($id_product)) {
+    $lastIdProduct =$id_product;
+}
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
                 'tienda_temporal' => $productos[0]['vendor'],
@@ -1591,6 +1599,7 @@ class PedidosShopifyAPIController extends Controller
                 'observacion' => $customer_note ?? "",
                 'ciudad_shipping' => $city,
                 'sku' => $productos[0]['sku'],
+                'id_product'=>$lastIdProduct,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
@@ -1672,8 +1681,10 @@ class PedidosShopifyAPIController extends Controller
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
                 'search' => 'MANDE',
-                'and' => []
+                'and' => [],
+                'id_product'=>$id_product
             ], 200);
+
         } else {
             return response()->json([
                 'error' => 'Esta orden ya existe',

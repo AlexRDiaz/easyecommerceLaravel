@@ -128,6 +128,8 @@ Route::middleware(['cors'])->group(function () {
     Route::post('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
 
     Route::middleware(['jwt.auth'])->group(function () {
+        Route::put('/users/update-paiment-information/{id}', [UpUserAPIController::class, 'updatePaymentInformation']);
+
         
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);
  
@@ -258,7 +260,6 @@ Route::middleware(['cors'])->group(function () {
     Route::post('/users/general', [UpUserAPIController::class, 'storeGeneral']);
     Route::post('/users/providers', [App\Http\Controllers\API\UpUserAPIController::class, 'storeProvider']);
     Route::put('/users/providers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateProvider']);
-    Route::put('/users/update-paiment-information/{id}', [UpUserAPIController::class, 'updatePaymentInformation']);
 
     
     Route::get('/users/subproviders/{id}/{search?}', [App\Http\Controllers\API\UpUserAPIController::class, 'getSubProviders']);
