@@ -4,6 +4,8 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Reserve;
+use App\Models\StockHistory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -557,26 +559,47 @@ class ProductAPIController extends Controller
         return ['sku' => $onlySku, 'id' => $productIdFromSKU];
     }
 
+    public function updateProductVariantStockInternal($quantity, $skuProduct, $type, $idComercial)
+    {
+        $result = $this->splitSku($skuProduct);
+
+        $onlySku = $result['sku'];
+        $productIdFromSKU = $result['id'];
+
+        $product = Product::find($productIdFromSKU);
+
+        if ($product === null) {
+            return null; // Retorna null si no se encuentra el producto
+        }
+
+        if ($product) {
+
+            $result = $product->changeStockGen($productIdFromSKU, $onlySku, $quantity, $type);
+
+            $currentDateTime = date('Y-m-d H:i:s');
+
+            $createHistory = new StockHistory();
+                $createHistory->product_id =  $productIdFromSKU;
+                $createHistory->variant_sku = $onlySku;
+                $createHistory->type = $type;
+                $createHistory->date = $currentDateTime;
+                $createHistory->units = $quantity;
+                $createHistory->last_stock = $product->stock-$quantity;
+                $createHistory->current_stock = $product->stock;
+                $createHistory->description = "Incremento de stock General Pedido EN BODEGA";
+                
+                $createHistory->save();
+
+        } else {
+            return response()->json(['message' => 'Product not found'], 404);
+        }
+
+    }
+    // ! ↓ FUNCIONAL ↓ 
     public function updateProductVariantStock(Request $request)
     {
         $reserveController = new ReserveAPIController();
         $data = $request->json()->all();
-
-        // $skuProduct = $data['sku_product']; // Esto tendrá un valor como "test2"
-        // $quantity = $data['quantity'];
-
-        // $lastCPosition = strrpos($skuProduct, 'C');
-
-        // if ($skuProduct == null) {
-        //     $skuProduct = "UKNOWNPC0";
-        // }
-
-        // $onlySku = substr($skuProduct, 0, $lastCPosition);
-        // $productIdFromSKU = substr($skuProduct, $lastCPosition + 1);
-
-
-        // // Convierte el ID del producto a entero para la comparación.
-        // $productIdFromSKU = intval($productIdFromSKU);
 
         $quantity = $data['quantity'];
         $skuProduct = $data['sku_product']; // Esto tendrá un valor como "test2"
@@ -588,123 +611,60 @@ class ProductAPIController extends Controller
         $onlySku = $result['sku'];
         $productIdFromSKU = $result['id'];
 
-        $searchResult = $reserveController->findByProductAndSku($productIdFromSKU, $onlySku, $idComercial);
+        $response = $reserveController->findByProductAndSku($productIdFromSKU, $onlySku, $idComercial);
 
+        // Decode the JSON response to get the data
+        $searchResult = json_decode($response->getContent());
 
-        // !!!!!!!!!
-        if ($searchResult) {
-            // Reserva no encontrada
-            // return response()->json(['message' => 'Reserva no encontrada'], 404);
-            // Comprobar si la operación es válida
-            if ($type == 0 && $quantity > $searchResult->stock) {
+        if ($searchResult && $searchResult->response) {
+            $reserve = $searchResult->reserve;
+
+            if ($type == 0 && $quantity > $reserve->stock) {
                 // No se puede restar más de lo que hay en stock
                 return response()->json(['message' => 'Cantidad excede el stock disponible'], 400);
             }
 
             // Actualizar el stock
-            $searchResult->stock += ($type == 1) ? $quantity : -$quantity;
-            $searchResult->save();
+            $reserve->stock += ($type == 1) ? $quantity : -$quantity;
+
+            // Assuming you have a 'Reserve' model that you want to save after updating
+            $reserveModel = Reserve::find($reserve->id);
+            if ($reserveModel) {
+                $reserveModel->stock = $reserve->stock;
+                $reserveModel->save();
+            }
 
             // Devolver la respuesta
-            return response()->json(['message' => 'Stock actualizado con éxito', 'reserve' => $searchResult]);
+            return response()->json(['message' => 'Stock actualizado con éxito', 'reserve' => $reserveModel]);
         } else {
             // Encuentra el producto por su SKU.
             $product = Product::find($productIdFromSKU);
 
             if ($product === null) {
-                return null; // Retorna null si no se encuentra el producto
+                return null; 
             }
 
             if ($product) {
-                // $result = $product->changeStock($skuProduct, $quantity);
-                // if ($result === true) {
-                //     return response()->json(['message' => 'Stock updated successfully'], 200);
-                // } elseif ($result === 'insufficient_stock_variant') {
-                //     return response()->json(['message' => 'Imposible realizar la confirmación. El stock de la variante es insuficiente'], 400);
-                // } else {
-                //     return response()->json(['message' => 'Stock update failed'], 400);
-                // }
                 $result = $product->changeStockGen($productIdFromSKU, $onlySku, $quantity, $type);
+                $currentDateTime = date('Y-m-d H:i:s');
+
+                $createHistory = new StockHistory();
+                $createHistory->product_id =  $productIdFromSKU;
+                $createHistory->variant_sku = $onlySku;
+                $createHistory->type = $type;
+                $createHistory->date = $currentDateTime;
+                $createHistory->units = $quantity;
+                $createHistory->last_stock = $product->stock + $quantity;
+                $createHistory->current_stock = $product->stock;
+                $createHistory->description = "Reducción de stock General Pedido ENVIADO";
+                
+                $createHistory->save();
 
             } else {
                 return response()->json(['message' => 'Product not found'], 404);
             }
         }
 
-
-        // !!!!!!!!!
-
-    }
-
-    public function changeStockGen($id, $skuProduct, $quantity, $type)
-    {
-        //from editProduct with idproduct
-        // Convierte el ID del producto a entero para la comparación.
-        $productIdFromSKU = intval($id);
-
-        // Verifica si el ID del producto extraído del SKU coincide con el ID del producto actual.
-        if ($this->product_id == $productIdFromSKU) {
-            if ($type == 0) {
-                if ($this->stock < $quantity) {
-                    error_log("*insufficient_stock");
-                    return 'insufficient_stock';
-                }
-            }
-
-            // Actualiza el stock general del producto
-            if ($type == 1) {
-                $this->stock += $quantity;
-            } else {
-                $this->stock -= $quantity;
-            }
-
-            $product = Product::find($id);
-            $isvariable = $product->isvariable;
-            $features = json_decode($this->features, true);
-            if ($isvariable == 1) {
-                if (isset($features['variants']) && is_array($features['variants'])) {
-                    // Aquí suponemos que 'features' contiene un array de variantes con su 'sku' y 'inventory_quantity'.
-                    foreach ($features['variants'] as $key => $variant) {
-                        // Verifica si el SKU de la variante coincide.
-                        if ($variant['sku'] == $skuProduct) {
-                            if ($type == 0) {
-                                if ($variant['inventory_quantity'] < $quantity) {
-                                    // Revertir el cambio en stock general si no hay suficiente stock en la variante
-                                    // $this->stock += $quantity;
-                                    if ($type == 1) {
-                                        $this->stock -= $quantity;
-                                    } else {
-                                        $this->stock += $quantity;
-                                    }
-                                    $this->save();
-                                    error_log("*insufficient_stock_variant");
-
-                                    return 'insufficient_stock_variant';
-                                }
-                            }
-                            // Resta la cantidad del stock de la variante.
-                            // $features['variants'][$key]['inventory_quantity'] -= $quantity;
-                            if ($type == 1) {
-                                $features['variants'][$key]['inventory_quantity'] += $quantity;
-                            } else {
-                                $features['variants'][$key]['inventory_quantity'] -= $quantity;
-                            }
-                            $features['variants'][$key]['inventory_quantity'] = strval($features['variants'][$key]['inventory_quantity']);
-
-                            break; // Salir del loop si ya encontramos y actualizamos la variante
-                        }
-                    }
-                }
-            }
-
-            // Guardar los cambios en el producto y sus variantes.
-            $this->features = json_encode($features);
-            $this->save();
-            return true;
-        }
-
-        // Si llegamos aquí, significa que no se encontró el producto con ese ID.
-        return false;
     }
 
 

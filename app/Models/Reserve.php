@@ -12,7 +12,8 @@ class Reserve extends Model
         'product_id',
         'sku',
         'stock',
-        'id_comercial'
+        'id_comercial',
+        'warehouse_price'
     ];
 
     protected $casts = [
@@ -22,7 +23,8 @@ class Reserve extends Model
     public static array $rules = [
         'product_id' => 'required',
         'sku' => 'required|string|max:255',
-        'stock' => 'required'
+        'stock' => 'required',
+        'warehouse_price' => 'required'
     ];
 
     public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -30,3 +32,5 @@ class Reserve extends Model
         return $this->belongsTo(\App\Models\Product::class, 'product_id');
     }
 }
+
+?>

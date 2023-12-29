@@ -15,6 +15,7 @@ use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
 use App\Http\Controllers\API\WarehouseAPIController;
+use App\Http\Controllers\API\StockHistoryAPIController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -412,6 +413,7 @@ Route::prefix('products')->group(function () {
 
 Route::prefix('stockhistory')->group(function () {
     Route::post('/', [StockHistoryAPIController::class, 'store']);
+    Route::post('/v2', [StockHistoryAPIController::class, 'storeD']);
     Route::get('byproduct/{id}', [StockHistoryAPIController::class, 'showByProduct']);
 
 });
