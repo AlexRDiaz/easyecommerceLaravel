@@ -1,11 +1,13 @@
 <?php
 
 
+
 namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Http\Controllers\API\ProductAPIController;
 use App\Models\Ruta;
+
 use App\Models\Product;
 use App\Models\StockHistory;
 use Illuminate\Http\Request;
@@ -13,11 +15,32 @@ use Illuminate\Http\Request;
 class StockHistoryAPIController extends Controller
 {
 
+    /**
+     * Display a listing of the resource.
+     */
+    public function index()
+    {
+        //
+    }
+
+    /**
+     * Show the form for creating a new resource.
+     */
+    public function create()
+    {
+        //
+    }
+
+    /**
+     * Store a newly created resource in storage.
+     */
+
     public function store(Request $request)
     {
         //
         $data = $request->json()->all();
-        //id|product_id|variant_id|type|date|units|last_stock|current_stock|description|
+
+
         $product_id = $data['product_id'];
         $skuProduct = $data['sku_product'];
         $units = $data['units'];
@@ -31,6 +54,7 @@ class StockHistoryAPIController extends Controller
         if ($product === null) {
             return response()->json(['message' => 'Product not found'], 404);
         }
+
 
         $last_stock = $product->stock;
         $result = $product->changeStockGen($product_id, $skuProduct, $units, $type);
@@ -51,6 +75,7 @@ class StockHistoryAPIController extends Controller
 
         return $product;
     }
+
 
     public function storeD(Request $request)
     {
@@ -95,18 +120,50 @@ class StockHistoryAPIController extends Controller
         return $product;
     }
 
+    /**
+     * Display the specified resource.
+     */
+    public function show(string $id)
+    {
+        //
+    }
 
+    /**
+     * Show the form for editing the specified resource.
+     */
+    public function edit(string $id)
+    {
+        //
+    }
+
+    /**
+     * Update the specified resource in storage.
+     */
+    public function update(Request $request, string $id)
+    {
+        //
+    }
+
+    /**
+     * Remove the specified resource from storage.
+     */
+    public function destroy(string $id)
+    {
+        //
+    }
+
+
+    public function showByProduct(string $id)
+    {
+        //
+
+        $history = StockHistory::where('product_id', $id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+        if (!$history) {
+            return response()->json(['message' => 'No se ha encontrado un producto con el ID especificado'], 404);
+        }
+        return response()->json($history);
+    }
 }
 
-
-
-
-
-
-
-
-
-
-
-
-?>

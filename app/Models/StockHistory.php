@@ -30,29 +30,32 @@ use Illuminate\Database\Eloquent\Model;
  */
 class StockHistory extends Model
 {
-    protected $table = 'stock_history';
 
-    protected $casts = [
-        'product_id' => 'int',
-        'type' => 'int',
-        'date' => 'datetime',
-        'units' => 'int',
-        'last_stock' => 'int',
-        'current_stock' => 'int'
-    ];
-    protected $fillable = [
-        'product_id',
-        'variant_sku',
-        'type',
-        'date',
-        'units',
-        'last_stock',
-        'current_stock',
-        'description'
-    ];
+	protected $table = 'stock_history';
 
-    public function product()
-    {
-        return $this->belongsTo(Product::class);
-    }
+	protected $casts = [
+		'product_id' => 'int',
+		'type' => 'int',
+		'date' => 'datetime',
+		'units' => 'int',
+		'last_stock' => 'int',
+		'current_stock' => 'int'
+	];
+
+	protected $fillable = [
+		'product_id',
+		'variant_sku',
+		'type',
+		'date',
+		'units',
+		'last_stock',
+		'current_stock',
+		'description'
+	];
+
+	public function product()
+	{
+		return $this->belongsTo(Product::class);
+	}
 }
+

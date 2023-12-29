@@ -538,6 +538,7 @@ class ProductAPIController extends Controller
             ->update(['active' => 0]);
     }
 
+
     public function splitSku($skuProduct)
     {
         // Verificar si el SKU es nulo y asignar un valor predeterminado
@@ -565,6 +566,7 @@ class ProductAPIController extends Controller
 
         $onlySku = $result['sku'];
         $productIdFromSKU = $result['id'];
+
 
         $product = Product::find($productIdFromSKU);
 
@@ -666,6 +668,5 @@ class ProductAPIController extends Controller
         }
 
     }
-
 
 }

@@ -25,6 +25,7 @@ class Reserve extends Model
         'sku' => 'required|string|max:255',
         'stock' => 'required',
         'warehouse_price' => 'required'
+
     ];
 
     public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo

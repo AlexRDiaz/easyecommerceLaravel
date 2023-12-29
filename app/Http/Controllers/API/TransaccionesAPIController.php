@@ -340,8 +340,10 @@ class TransaccionesAPIController extends Controller
 
             $request->merge(['comentario' => 'Recaudo  de valor por pedido' . $pedido->status]);
             $request->merge(['origen' => 'recaudo']);
+
             if ($SellerCreditFinalValue['total'] != null) {
                 $request->merge(['monto' => $SellerCreditFinalValue['total']]);
+
             }
 
             $this->Credit($request);
@@ -418,10 +420,6 @@ class TransaccionesAPIController extends Controller
         DB::beginTransaction();
 
         try {
-
-
-
-
             $data = $request->json()->all();
             $pedido = PedidosShopify::findOrFail($data['id_origen']);
 
@@ -431,16 +429,15 @@ class TransaccionesAPIController extends Controller
             $pedido->status_last_modified_by = $data['generated_by'];
             $pedido->comentario = $data["comentario"];
             $pedido->archivo = $data["archivo"];
-            $pedido->costo_envio = $data['monto_debit'];
+          
+            if ($pedido->costo_envio == null) {
+                $pedido->costo_envio = $data['monto_debit'];
+                $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
+                $request->merge(['origen' => 'envio']);
+                $request->merge(['monto' => $data['monto_debit']]);
+                $this->Debit($request);
+            }
             $pedido->save();
-
-
-            $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
-            $request->merge(['origen' => 'envio']);
-            $request->merge(['monto' => $data['monto_debit']]);
-
-            $this->Debit($request);
-
 
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
             return response()->json([
@@ -710,7 +707,6 @@ class TransaccionesAPIController extends Controller
                     $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
 
                     $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
-
                 } else {
                     $message = "Transacción sin débito, ya ha sido cobrada";
                 }
@@ -785,7 +781,6 @@ class TransaccionesAPIController extends Controller
                     $this->vendedorRepository->update($newSaldo, $order->users[0]->vendedores[0]->id);
 
                     $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
-
                 } else {
                     $message = "Transacción sin débito, ya ha sido cobrada";
                 }
@@ -870,7 +865,6 @@ class TransaccionesAPIController extends Controller
                     $pedido->marca_t_d_t = $currentDateTimeText;
                     $pedido->received_by = $idUser;
                 }
-
             } elseif ($from == "operator") {
                 if ($value == "ENTREGADO EN OFICINA") { //from operator, logistica
                     $pedido->estado_devolucion = $value;
@@ -943,76 +937,100 @@ class TransaccionesAPIController extends Controller
 
     public function rollbackTransaction(Request $request)
     {
+        DB::beginTransaction();
+
+
         $data = $request->json()->all();
         $generated_by = $data['generated_by'];
 
         $ids = $data['ids'];
+        $idOrigen = $data["id_origen"];
         $reqTrans = [];
         $reqPedidos = [];
 
-        foreach ($ids as $id) {
+        try {
+            //code...
 
-            $transaction = Transaccion::find($id);
-            array_push($reqTrans, $transaction);
 
-            if ($transaction->state == 1) {
+            $order = PedidosShopify::find($idOrigen);
 
+            $order->costo_devolucion = null;
+            $order->costo_envio = null;
+            $order->status = "PEDIDO PROGRAMADO";
+            $order->estado_devolucion = "PENDIENTE";
+            $order->save();
+
+
+            foreach ($ids as $id) {
+
+                $transaction = Transaccion::find($id);
+                array_push($reqTrans, $transaction);
                 $pedido = PedidosShopify::where("id", $transaction->id_origen)->first();
-                array_push($reqPedidos, $pedido);
 
-                $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
-                if ($transaction->tipo == "credit") {
-                    $transactionResetValues = new Transaccion();
-                    $transactionResetValues->tipo = "debit";
-                    $transactionResetValues->monto = $transaction->monto;
-                    $transactionResetValues->valor_anterior = $vendedor[0]->saldo;
-                    $transactionResetValues->valor_actual = $vendedor[0]->saldo - $transaction->monto;
-                    $transactionResetValues->marca_de_tiempo = new DateTime();
-                    $transactionResetValues->id_origen = $transaction->id_origen;
-                    $transactionResetValues->codigo = $transaction->codigo;
-                    $transactionResetValues->origen = "reembolso";
-                    $transactionResetValues->id_vendedor = $transaction->id_vendedor;
-                    $transactionResetValues->comentario = "error de transaccion";
-                    $transactionResetValues->state = 0;
-                    $transactionResetValues->generated_by = $generated_by;
+                if ($transaction->state == 1) {
+
+                    array_push($reqPedidos, $pedido);
+
+                    $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
+                    if ($transaction->tipo == "credit") {
+                        $transactionResetValues = new Transaccion();
+                        $transactionResetValues->tipo = "debit";
+                        $transactionResetValues->monto = $transaction->monto;
+                        $transactionResetValues->valor_anterior = $vendedor[0]->saldo;
+                        $transactionResetValues->valor_actual = $vendedor[0]->saldo - $transaction->monto;
+                        $transactionResetValues->marca_de_tiempo = new DateTime();
+                        $transactionResetValues->id_origen = $transaction->id_origen;
+                        $transactionResetValues->codigo = $transaction->codigo;
+                        $transactionResetValues->origen = "reembolso";
+                        $transactionResetValues->id_vendedor = $transaction->id_vendedor;
+                        $transactionResetValues->comentario = "error de transaccion";
+                        $transactionResetValues->state = 0;
+                        $transactionResetValues->generated_by = $generated_by;
 
 
-                    $transactionResetValues->save();
-                    $vendedor[0]->saldo = $vendedor[0]->saldo - $transaction->monto;
+                        $transactionResetValues->save();
+                        $vendedor[0]->saldo = $vendedor[0]->saldo - $transaction->monto;
+                    }
+                    if ($transaction->tipo == "debit") {
+
+                        $transactionResetValues = new Transaccion();
+                        $transactionResetValues->tipo = "credit";
+                        $transactionResetValues->monto = $transaction->monto;
+                        $transactionResetValues->valor_anterior = $vendedor[0]->saldo;
+                        $transactionResetValues->valor_actual = $vendedor[0]->saldo + $transaction->monto;
+                        $transactionResetValues->marca_de_tiempo = new DateTime();
+                        $transactionResetValues->id_origen = $transaction->id_origen;
+                        $transactionResetValues->codigo = $transaction->codigo;
+                        $transactionResetValues->origen = "reembolso";
+                        $transactionResetValues->id_vendedor = $transaction->id_vendedor;
+                        $transactionResetValues->comentario = "error de transaccion";
+                        $transactionResetValues->state = 0;
+                        $transactionResetValues->generated_by = $generated_by;
+
+                        $transactionResetValues->save();
+
+
+
+
+                        $vendedor[0]->saldo = $vendedor[0]->saldo + $transaction->monto;
+                    }
+                    $transaction->state = 0;
+                    $transaction->save();
+                    $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
                 }
-                if ($transaction->tipo == "debit") {
-
-                    $transactionResetValues = new Transaccion();
-                    $transactionResetValues->tipo = "credit";
-                    $transactionResetValues->monto = $transaction->monto;
-                    $transactionResetValues->valor_anterior = $vendedor[0]->saldo;
-                    $transactionResetValues->valor_actual = $vendedor[0]->saldo + $transaction->monto;
-                    $transactionResetValues->marca_de_tiempo = new DateTime();
-                    $transactionResetValues->id_origen = $transaction->id_origen;
-                    $transactionResetValues->codigo = $transaction->codigo;
-                    $transactionResetValues->origen = "reembolso";
-                    $transactionResetValues->id_vendedor = $transaction->id_vendedor;
-                    $transactionResetValues->comentario = "error de transaccion";
-                    $transactionResetValues->state = 0;
-                    $transactionResetValues->generated_by = $generated_by;
-
-                    $transactionResetValues->save();
-
-
-
-
-                    $vendedor[0]->saldo = $vendedor[0]->saldo + $transaction->monto;
-                }
-                $transaction->state = 0;
-                $transaction->save();
-                $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
             }
+
+            DB::commit();
+            return response()->json([
+                "transacciones" => $reqTrans,
+                "pedidps" => $reqPedidos
+
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json([
-            "transacciones" => $reqTrans,
-            "pedidps" => $reqPedidos
-
-        ]);
     }
 }

@@ -7,15 +7,19 @@ use App\Http\Controllers\API\PedidosShopifyAPIController;
 use App\Http\Controllers\API\ProductAPIController;
 use App\Http\Controllers\API\ProductsSellerLinkAPIController;
 use App\Http\Controllers\API\ProviderAPIController;
+use App\Http\Controllers\API\ProviderTransactionsAPIController;
 use App\Http\Controllers\API\ReserveAPIController;
 use App\Http\Controllers\API\RutaAPIController;
+use App\Http\Controllers\API\StockHistoryAPIController;
 use App\Http\Controllers\API\SubRutaAPIController;
 use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
 use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
 use App\Http\Controllers\API\WarehouseAPIController;
-use App\Http\Controllers\API\StockHistoryAPIController;
+
+use App\Models\Reserve;
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -121,11 +125,11 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
 
     //  ! ↓ LA ORIGINAL
+    Route::post('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
 
     Route::middleware(['jwt.auth'])->group(function () {
         
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);
-        Route::put('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
  
 
         
@@ -275,6 +279,8 @@ Route::middleware(['cors'])->group(function () {
 
 
     Route::get('users/{id}', [UpUserAPIController::class, 'users']);
+    //  *
+    Route::post('users/userbyemail', [UpUserAPIController::class, 'userByEmail']);
 
     Route::get('users/pdf/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'userspdf']);
 
@@ -380,6 +386,24 @@ Route::prefix('subrutas')->group(function () {
         Route::put('/{id}', [ProductsSellerLinkAPIController::class, 'update']);
         Route::put('/delete/{id}', [ProductsSellerLinkAPIController::class, 'destroy']);
     });
+
+    // *
+    Route::prefix('stockhistory')->group(function () {
+        Route::post('/', [StockHistoryAPIController::class, 'store']);
+        Route::get('byproduct/{id}', [StockHistoryAPIController::class, 'showByProduct']);
+
+    });
+
+    //  *
+    Route::prefix('reserve')->group(function () {
+        Route::post('/', [ReserveAPIController::class, 'store']);
+    });
+
+    //  *
+    Route::prefix('providertransaction')->group(function () {
+        Route::post('provider/{id}', [ProviderTransactionsAPIController::class, 'getByProvider']);
+    });
+
 });
 
 // api/upload
