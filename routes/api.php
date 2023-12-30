@@ -18,6 +18,7 @@ use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
 use App\Http\Controllers\API\WarehouseAPIController;
 
+use App\Http\Controllers\API\ShopifyWebhookAPIController;
 use App\Models\Reserve;
 
 use Illuminate\Http\Request;
@@ -127,9 +128,19 @@ Route::middleware(['cors'])->group(function () {
     //  ! ↓ LA ORIGINAL
     Route::post('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
 
+
+
+    Route::post('/shopify/webhooks/customer_data_request',  [ShopifyWebhookAPIController::class, 'handleCustomerDataRequest']);
+    Route::post('/shopify/webhooks/customer_redact', [ShopifyWebhookAPIController::class, 'handleCustomerRedact']);
+    Route::post('/shopify/webhooks/shop_redact',  [ShopifyWebhookAPIController::class, 'handleShopRedact']);
+    
+
     Route::middleware(['jwt.auth'])->group(function () {
+    
+        Route::put('/users/modify-account/{id}', [UpUserAPIController::class, 'modifyAccount']);
+
         Route::put('/users/update-paiment-information/{id}', [UpUserAPIController::class, 'updatePaymentInformation']);
-        Route::put('/users/get-paiment-information/{id}', [UpUserAPIController::class, 'getPaymentInformation']);
+        Route::get('/users/get-paiment-information/{id}', [UpUserAPIController::class, 'getPaymentInformation']);
 
         
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);

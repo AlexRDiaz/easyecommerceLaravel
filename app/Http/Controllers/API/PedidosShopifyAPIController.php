@@ -548,7 +548,7 @@ class PedidosShopifyAPIController extends Controller
         $not = $data['not'];
         // ! *************************************
 
-        $pedidos = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta', 'printedBy', 'sentBy'])
+        $pedidos = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta', 'printedBy', 'sentBy', 'product.warehouse.provider'])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {

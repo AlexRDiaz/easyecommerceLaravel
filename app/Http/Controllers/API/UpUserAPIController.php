@@ -548,7 +548,7 @@ class UpUserAPIController extends Controller
 
             $user = UpUser::find($id);
 
-            if ($user->payment_information == null) {
+            if ($user->payment_information == null ||$user->payment_information == "" ) {
                 $jsonData = json_encode([$data]);
                 $encryptedData = encrypt($jsonData);
                 $user->payment_information = $encryptedData;
@@ -570,15 +570,41 @@ class UpUserAPIController extends Controller
         }
     }
 
+     public function modifyAccount(Request $request, $id)
+    {
+        try {
+            $data = $request->json()->all();
+
+            $user = UpUser::find($id);
+
+                $jsonData = json_encode($data["account_data"]);
+                $encryptedData = encrypt($jsonData);
+                $user->payment_information = $encryptedData;
+
+
+            $user->save();
+
+            return response()->json(['message' => 'User modified successfully'], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'User modify failed', $e], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+
     public function getPaymentInformation($id)
     {
         try {
 
 
             $user = UpUser::find($id);
+            if($user->payment_information!=null){
             $decriptedData = decrypt($user->payment_information);
-
+            
             return response()->json(['message' => 'Get successfully', 'data' => json_decode($decriptedData)], Response::HTTP_OK);
+            }else{
+                return response()->json(['message' => 'Empty', 'data' => []], Response::HTTP_OK);
+
+            }
         } catch (\Exception $e) {
             return response()->json(['error' => 'Get failed', $e], Response::HTTP_BAD_REQUEST);
         }
