@@ -18,7 +18,7 @@ use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
 use App\Http\Controllers\API\WarehouseAPIController;
 
-use App\Http\Controllers\ShopifyWebhookAPIController;
+use App\Http\Controllers\API\ShopifyWebhookAPIController;
 use App\Models\Reserve;
 
 use Illuminate\Http\Request;
