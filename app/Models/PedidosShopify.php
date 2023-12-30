@@ -276,4 +276,10 @@ class PedidosShopify extends Model
 	{
 		return $this->belongsTo(UpUser::class, 'status_last_modified_by', 'id');
 	}
+	
+	public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'id_product');
+    }
+
 }
