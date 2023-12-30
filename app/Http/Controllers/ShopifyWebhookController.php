@@ -45,19 +45,23 @@ class ShopifyWebhookController extends Controller
     public function handleShopRedact(Request $request)
     {
         // Verifica si el webhook es válido (puedes implementar lógica adicional para validar el webhook)
-        if ($request->header('X-Shopify-Topic') === 'shop/redact') {
-            // Obtiene la carga útil del webhook
-            $webhookPayload = $request->all();
+        $requestContent = $request->getContent();
+        $providedHmac = $request->header('X-Shopify-Hmac-SHA256');
 
-            // Aquí puedes manejar la solicitud de eliminación de datos de la tienda
-            // Por ejemplo, eliminar los datos de la tienda de tu sistema
+        // Verificar la autenticidad del contenido utilizando tu llave secreta
+        $calculatedHmac = base64_encode(hash_hmac('sha256', $requestContent, 'tu_llave_secreta', true));
 
-            // Responde al webhook con un código de estado 200 para confirmar la recepción
+        // Comparar el HMAC proporcionado con el calculado
+        if (hash_equals($providedHmac, $calculatedHmac)) {
+            // El HMAC coincide, la solicitud es auténtica, continua con el procesamiento del webhook
+            // ... tu lógica de manejo del webhook ...
+
             return response()->json(['message' => 'Webhook recibido'], 200);
+        } else {
+            // El HMAC no coincide, la solicitud no es auténtica, devuelve un código de estado 401
+            Log::warning('Intento de solicitud no autenticada.');
+            return response()->json(['error' => 'No autorizado'], 401);
         }
-
-        // Si el webhook no es el esperado, responde con un código de estado 404 (no encontrado)
-        return response()->json(['error' => 'Webhook no válido'], 404);
     }
 
 }
