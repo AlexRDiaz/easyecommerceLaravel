@@ -334,43 +334,26 @@ class TransaccionesAPIController extends Controller
                 $pedido->archivo = $data["archivo"];
             }
             $pedido->save();
-            // $SellerCreditFinalValue = $this->updateProductAndProviderBalance(
-            //     "TEST2C1003",
-            //     $pedido->sku,
-            //     $pedido->precio_total,
-            //     $pedido->cantidad_total,
-            //     $data['generated_by'],
-            //     $data['id_origen'],
-            //     22.90,
-            // );
+            $SellerCreditFinalValue = $this->updateProductAndProviderBalance(
+                // "TEST2C1003",
+                $pedido->sku,
+                $pedido->precio_total,
+                $pedido->cantidad_total,
+                $data['generated_by'],
+                $data['id_origen'],
+                // 22.90,
+            );
 
-            // Log::info('SellerCreditFinalValue', [$SellerCreditFinalValue]);
+            $request->merge(['comentario' => 'Recaudo  de valor por pedido' . $pedido->status]);
+            $request->merge(['origen' => 'recaudo']);
 
-            // $productController = new ProductAPIController();
+            if ($SellerCreditFinalValue['total'] != null) {
+                $request->merge(['monto' => $SellerCreditFinalValue['total']]);
 
-            // $splitSku = $productController->splitSku($pedido->sku);
-            // $onlySku = $splitSku['sku'];
-            // $productIdFromSKU = $splitSku['id'];
+            }
 
-            // $resultupdateStock = $productController->changeStockGen(
-            //     $productIdFromSKU,
-            //     $onlySku,
-            //     $pedido->cantidad_total,
-            //     0);
+            $this->Credit($request);
 
-            // Verifica si hubo un error en la actualización del balance del producto y proveedor
-            // if ($SellerCreditFinalValue['error']) {
-            //     throw new \Exception($SellerCreditFinalValue['error']);
-            // }
-
-            // $request->merge(['comentario' => 'Recaudo  de valor por pedido' . $pedido->status]);
-            // $request->merge(['origen' => 'recaudo']);
-
-            // if ($SellerCreditFinalValue['total'] != null) {
-            //     $request->merge(['monto' => $SellerCreditFinalValue['total']]);
-            // }
-
-            // $this->Credit($request);
 
             // !*********
             if ($SellerCreditFinalValue['valor_producto'] != null) {
@@ -383,13 +366,11 @@ class TransaccionesAPIController extends Controller
             }
             // !*********
 
-            // $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
-            // $request->merge(['origen' => 'envio']);
-            // $request->merge(['monto' => $data['monto_debit']]);
+            $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
+            $request->merge(['origen' => 'envio']);
+            $request->merge(['monto' => $data['monto_debit']]);
 
-            // $this->Debit($request);
-
-
+            $this->Debit($request);
 
 
 
