@@ -25,6 +25,8 @@ use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use function PHPUnit\Framework\isEmpty;
 
+use Illuminate\Support\Facades\Log;
+
 class TransaccionesAPIController extends Controller
 {
     protected $transaccionesRepository;
@@ -232,20 +234,40 @@ class TransaccionesAPIController extends Controller
     {
         DB::beginTransaction();
         try {
+            
+            // Log::info('updateProductAndProviderBalance called with:', [
+            //     'skuProduct' => $skuProduct,
+            //     'totalPrice' => $totalPrice,
+            //     'quantity' => $quantity,
+            //     'generated_by' => $generated_by,
+            //     'id_origin' => $id_origin
+            // ]);
 
             if ($skuProduct == null) {
                 $skuProduct = "UKNOWNPC0";
             }
+            // Log::info('updateProductAndProviderBalance called with:', [
+            //     'skuProduct' => $skuProduct,
+            //     'totalPrice' => $totalPrice,
+            //     'quantity' => $quantity,
+            //     'generated_by' => $generated_by,
+            //     'id_origin' => $id_origin
+            // ]);
             $productId = substr($skuProduct, strrpos($skuProduct, 'C') + 1);
             $firstPart = substr($skuProduct, 0, strrpos($skuProduct, 'C'));
 
+            // Log::info('productid', [$productId]);
+            // Log::info('sku', [$firstPart]);
 
             // Buscar el producto por ID    
             $product = Product::with('warehouse')->find($productId);
 
+            // Log::info('product', [$product]);
+
             if ($product === null) {
                 DB::commit();
-                return null; // Retorna null si no se encuentra el producto
+                // return null; // Retorna null si no se encuentra el producto
+                return ["total" => null, "valor_producto" => null, "error" => "Product Not Found!"];
             }
 
             $providerId = $product->warehouse->provider_id;
@@ -321,6 +343,8 @@ class TransaccionesAPIController extends Controller
                 // 22.90,
             );
 
+            // Log::info('SellerCreditFinalValue', [$SellerCreditFinalValue]);
+
             // $productController = new ProductAPIController();
             
             // $splitSku = $productController->splitSku($pedido->sku);
@@ -334,9 +358,9 @@ class TransaccionesAPIController extends Controller
             //     0);
 
             // Verifica si hubo un error en la actualización del balance del producto y proveedor
-            if ($SellerCreditFinalValue['error']) {
-                throw new \Exception($SellerCreditFinalValue['error']);
-            }
+            // if ($SellerCreditFinalValue['error']) {
+            //     throw new \Exception($SellerCreditFinalValue['error']);
+            // }
 
             $request->merge(['comentario' => 'Recaudo  de valor por pedido' . $pedido->status]);
             $request->merge(['origen' => 'recaudo']);
@@ -348,13 +372,16 @@ class TransaccionesAPIController extends Controller
 
             $this->Credit($request);
 
+
             // !*********
-            $request->merge(['comentario' => 'Costo de de valor de Producto en Bodega ' . $pedido->status]);
-            $request->merge(['origen' => 'valor producto bodega']);
-            $request->merge(['monto' => $SellerCreditFinalValue['valor_producto']]);
+            if ($SellerCreditFinalValue['valor_producto'] != null) {
+            
+                $request->merge(['comentario' => 'Costo de de valor de Producto en Bodega ' . $pedido->status]);
+                $request->merge(['origen' => 'valor producto bodega']);
+                $request->merge(['monto' => $SellerCreditFinalValue['valor_producto']]);
 
-            $this->Debit($request);
-
+                $this->Debit($request);
+            }
             // !*********
 
             $request->merge(['comentario' => 'Costo de envio por pedido ' . $pedido->status]);
