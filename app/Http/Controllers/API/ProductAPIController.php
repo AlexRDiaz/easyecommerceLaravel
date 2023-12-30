@@ -200,7 +200,8 @@ class ProductAPIController extends Controller
             ->when(count($categoryFilters) > 0, function ($query) use ($categoryFilters) {
                 $query->where(function ($query) use ($categoryFilters) {
                     foreach ($categoryFilters as $category) {
-                        $query->orWhereRaw("JSON_CONTAINS(JSON_EXTRACT(features, '$.categories'), '\"$category\"')");
+                        // $query->orWhereRaw("JSON_CONTAINS(JSON_EXTRACT(features, '$.categories'), '\"$category\"')");
+                        $query->orWhereRaw("JSON_CONTAINS(JSON_EXTRACT(features, '$.categories[*].name'), '\"$category\"')");
                     }
                 });
             });
