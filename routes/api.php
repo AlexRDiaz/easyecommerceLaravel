@@ -127,9 +127,13 @@ Route::middleware(['cors'])->group(function () {
     //  ! ↓ LA ORIGINAL
     Route::post('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
 
+
+
+
+
     Route::middleware(['jwt.auth'])->group(function () {
         Route::put('/users/update-paiment-information/{id}', [UpUserAPIController::class, 'updatePaymentInformation']);
-        Route::put('/users/get-paiment-information/{id}', [UpUserAPIController::class, 'getPaymentInformation']);
+        Route::get('/users/get-paiment-information/{id}', [UpUserAPIController::class, 'getPaymentInformation']);
 
         
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);

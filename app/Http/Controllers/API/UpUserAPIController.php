@@ -576,9 +576,14 @@ class UpUserAPIController extends Controller
 
 
             $user = UpUser::find($id);
+            if($user->payment_information!=null){
             $decriptedData = decrypt($user->payment_information);
-
+            
             return response()->json(['message' => 'Get successfully', 'data' => json_decode($decriptedData)], Response::HTTP_OK);
+            }else{
+                return response()->json(['message' => 'Empty', 'data' => []], Response::HTTP_OK);
+
+            }
         } catch (\Exception $e) {
             return response()->json(['error' => 'Get failed', $e], Response::HTTP_BAD_REQUEST);
         }
