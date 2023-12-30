@@ -18,6 +18,7 @@ use App\Http\Controllers\API\UpUserAPIController;
 use App\Http\Controllers\API\VendedoreAPIController;
 use App\Http\Controllers\API\WarehouseAPIController;
 
+use App\Http\Controllers\ShopifyWebhookAPIController;
 use App\Models\Reserve;
 
 use Illuminate\Http\Request;
@@ -129,7 +130,10 @@ Route::middleware(['cors'])->group(function () {
 
 
 
-
+    Route::post('/shopify/webhooks/customer_data_request',  [ShopifyWebhookAPIController::class, 'modifyAccount']);
+    Route::post('/shopify/webhooks/customer_redact', [ShopifyWebhookAPIController::class, 'modifyAccount']);
+    Route::post('/shopify/webhooks/shop_redact',  [ShopifyWebhookAPIController::class, 'modifyAccount']);
+    
 
     Route::middleware(['jwt.auth'])->group(function () {
     
