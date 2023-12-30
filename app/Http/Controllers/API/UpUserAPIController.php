@@ -577,7 +577,7 @@ class UpUserAPIController extends Controller
 
             $user = UpUser::find($id);
 
-                $jsonData = json_encode([$data["account_data"]]);
+                $jsonData = json_encode($data["account_data"]);
                 $encryptedData = encrypt($jsonData);
                 $user->payment_information = $encryptedData;
 
