@@ -570,6 +570,27 @@ class UpUserAPIController extends Controller
         }
     }
 
+     public function modifyAccount(Request $request, $id)
+    {
+        try {
+            $data = $request->json()->all();
+
+            $user = UpUser::find($id);
+
+                $jsonData = json_encode([$data["account_data"]]);
+                $encryptedData = encrypt($jsonData);
+                $user->payment_information = $encryptedData;
+
+
+            $user->save();
+
+            return response()->json(['message' => 'User modified successfully'], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'User modify failed', $e], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+
     public function getPaymentInformation($id)
     {
         try {
