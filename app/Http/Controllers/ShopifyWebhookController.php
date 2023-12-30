@@ -49,7 +49,7 @@ class ShopifyWebhookController extends Controller
         $providedHmac = $request->header('X-Shopify-Hmac-SHA256');
 
         // Verificar la autenticidad del contenido utilizando tu llave secreta
-        $calculatedHmac = base64_encode(hash_hmac('sha256', $requestContent, 'tu_llave_secreta', true));
+        $calculatedHmac = base64_encode(hash_hmac('sha256', $requestContent, '5dd4d59dc579a8bc4972383c42be5b7b', true));
 
         // Comparar el HMAC proporcionado con el calculado
         if (hash_equals($providedHmac, $calculatedHmac)) {
