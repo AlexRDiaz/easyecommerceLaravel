@@ -18,3 +18,5 @@ Route::get('/', function () {
 });
 
 Route::post('/shopify/webhooks/customer_data_request', 'ShopifyWebhookController@handleCustomerDataRequest');
+Route::post('/shopify/webhooks/customer_redact', 'ShopifyWebhookController@handleCustomerRedact');
+Route::post('/shopify/webhooks/shop_redact', 'ShopifyWebhookController@handleShopRedact');
