@@ -548,7 +548,7 @@ class UpUserAPIController extends Controller
 
             $user = UpUser::find($id);
 
-            if ($user->payment_information == null) {
+            if ($user->payment_information == null ||$user->payment_information == "" ) {
                 $jsonData = json_encode([$data]);
                 $encryptedData = encrypt($jsonData);
                 $user->payment_information = $encryptedData;
