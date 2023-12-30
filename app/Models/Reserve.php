@@ -33,7 +33,7 @@ class Reserve extends Model
         return $this->belongsTo(\App\Models\Product::class, 'product_id');
     }
 
-    public function idMaster(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function seller(): \Illuminate\Database\Eloquent\Relations\BelongsTo
     {
         return $this->belongsTo(\App\Models\UpUser::class, 'id_comercial');
     }
