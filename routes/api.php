@@ -130,9 +130,9 @@ Route::middleware(['cors'])->group(function () {
 
 
 
-    Route::post('/shopify/webhooks/customer_data_request',  [ShopifyWebhookAPIController::class, 'modifyAccount']);
-    Route::post('/shopify/webhooks/customer_redact', [ShopifyWebhookAPIController::class, 'modifyAccount']);
-    Route::post('/shopify/webhooks/shop_redact',  [ShopifyWebhookAPIController::class, 'modifyAccount']);
+    Route::post('/shopify/webhooks/customer_data_request',  [ShopifyWebhookAPIController::class, 'handleCustomerDataRequest']);
+    Route::post('/shopify/webhooks/customer_redact', [ShopifyWebhookAPIController::class, 'handleCustomerRedact']);
+    Route::post('/shopify/webhooks/shop_redact',  [ShopifyWebhookAPIController::class, 'handleShopRedact']);
     
 
     Route::middleware(['jwt.auth'])->group(function () {
