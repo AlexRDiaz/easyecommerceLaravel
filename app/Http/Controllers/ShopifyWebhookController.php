@@ -45,21 +45,21 @@ class ShopifyWebhookController extends Controller
     public function handleShopRedact(Request $request)
     {
         // Verifica si el webhook es válido (puedes implementar lógica adicional para validar el webhook)
-        $requestContent = $request->getContent();
-        $providedHmac = $request->header('X-Shopify-Hmac-SHA256');
+        $shopifySecret = '5dd4d59dc579a8bc4972383c42be5b7b'; // Tu secreto de aplicación Shopify
 
-        // Verificar la autenticidad del contenido utilizando tu llave secreta
-        $calculatedHmac = base64_encode(hash_hmac('sha256', $requestContent, '5dd4d59dc579a8bc4972383c42be5b7b', true));
+        $hmacHeader = $request->header('X-Shopify-Hmac-SHA256');
+        $data = $request->getContent();
 
-        // Comparar el HMAC proporcionado con el calculado
-        if (hash_equals($providedHmac, $calculatedHmac)) {
-            // El HMAC coincide, la solicitud es auténtica, continua con el procesamiento del webhook
+        // Calcula el HMAC usando tu secreto
+        $calculatedHmac = base64_encode(hash_hmac('sha256', $data, $shopifySecret, true));
+
+        // Compara el HMAC proporcionado con el calculado
+        if (hash_equals($hmacHeader, $calculatedHmac)) {
+            // La firma es válida, el webhook es auténtico
             // ... tu lógica de manejo del webhook ...
-
             return response()->json(['message' => 'Webhook recibido'], 200);
         } else {
-            // El HMAC no coincide, la solicitud no es auténtica, devuelve un código de estado 401
-            Log::warning('Intento de solicitud no autenticada.');
+            // La firma no coincide, el webhook podría no ser auténtico
             return response()->json(['error' => 'No autorizado'], 401);
         }
     }
