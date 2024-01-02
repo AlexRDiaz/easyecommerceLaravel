@@ -18,11 +18,35 @@ class SubRutaAPIController extends Controller
     {
         //
         $subrutas = SubRuta::all();
-        //$rutas = Ruta::with('transportadoras', 'sub_rutas')->get();
         return response()->json($subrutas);
     }
 
-
+    public function getSubroutesByTransportadoraId($transportadoraId)
+    {
+        try {
+            $subrutas = SubRuta::where('id_operadora', $transportadoraId)->get();
+    
+            // Filtra las subrutas para excluir aquellas con títulos vacíos y luego las transforma.
+            $subrutasTransformed = $subrutas->filter(function ($subruta) {
+                return !empty($subruta->titulo);
+            })->map(function ($subruta) {
+                return $subruta->titulo . '-' . $subruta->id;
+            })->values();
+    
+            // Si necesitas verificar si hay resultados o no.
+            if ($subrutasTransformed->isEmpty()) {
+                return response()->json(['message' => 'No subrutas found for the provided transportadora id'], 404);
+            }
+    
+            return response()->json($subrutasTransformed);
+    
+        } catch (\Exception $e) {
+            // Log::error("Error fetching subrutas: " . $e->getMessage());
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
+    }
+    
+    
     public function getOperatorsbySubrouteAndTransportadora(Request $request, $subRutaId)
     {
         // Extraer los datos del JSON

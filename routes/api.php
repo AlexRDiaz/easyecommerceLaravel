@@ -317,6 +317,8 @@ Route::middleware(['cors'])->group(function () {
 
 
 Route::prefix('subrutas')->group(function () {
+    Route::get('/', [SubRutaAPIController::class, 'index']);
+    Route::get('bytransport/{id}', [SubRutaAPIController::class, 'getSubroutesByTransportadoraId']);
     Route::post('operadores/{id}', [SubRutaAPIController::class, 'getOperatorsbySubrouteAndTransportadora']);
 });
 
