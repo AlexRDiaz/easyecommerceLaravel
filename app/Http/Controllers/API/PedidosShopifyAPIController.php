@@ -1582,12 +1582,12 @@ class PedidosShopifyAPIController extends Controller
             $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
 
             $sku = $productos[0]['sku'];
-$parts = explode('C', $sku);
-$lastIdProduct="";
-$id_product = end($parts);
-if (is_numeric($id_product)) {
-    $lastIdProduct =$id_product;
-}
+            $parts = explode('C', $sku);
+            $lastIdProduct = "";
+            $id_product = end($parts);
+            if (is_numeric($id_product)) {
+                $lastIdProduct = $id_product;
+            }
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
                 'tienda_temporal' => $productos[0]['vendor'],
@@ -1599,7 +1599,7 @@ if (is_numeric($id_product)) {
                 'observacion' => $customer_note ?? "",
                 'ciudad_shipping' => $city,
                 'sku' => $productos[0]['sku'],
-                'id_product'=>$lastIdProduct,
+                'id_product' => $lastIdProduct,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
@@ -1682,9 +1682,8 @@ if (is_numeric($id_product)) {
                 'orden_ingresada' => $createOrder,
                 'search' => 'MANDE',
                 'and' => [],
-                'id_product'=>$id_product
+                'id_product' => $id_product
             ], 200);
-
         } else {
             return response()->json([
                 'error' => 'Esta orden ya existe',
@@ -1699,13 +1698,13 @@ if (is_numeric($id_product)) {
                     'producto' => $listOfProducts
                 ],
                 'orden_existente' => $search,
-            ], 401);
+            ], 200);
         }
     }
 
     public function sendToAutome($url, $data)
     {
-        $client = new Client();
+        $client = new Client(); 
         $response = $client->post($url, [
             'data' => [
                 "id" => $data->id,
