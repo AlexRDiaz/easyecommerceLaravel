@@ -52,6 +52,8 @@ Route::middleware(['cors'])->group(function () {
         ->except(['create', 'edit']);
     //  ************************* LOGISTIC **************************
 
+   
+
     // ! esta es solo para ver lo que tiene registrado en cada usuario en los permisos
     Route::get('permisos', [App\Http\Controllers\API\UpUserAPIController::class, 'getPermisos']);
 
@@ -415,6 +417,8 @@ Route::prefix('products')->group(function () {
     Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
 });
 
+
+Route::post('operadoresoftransport', [App\Http\Controllers\API\UpUserAPIController::class, 'getOperatorsTransportLaravel']);
 
 
 

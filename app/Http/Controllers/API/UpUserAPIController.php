@@ -1025,4 +1025,29 @@ class UpUserAPIController extends Controller
         return response()->json(['codigo' => $code], 200);
     }
 
+    public function getOperatorsTransportLaravel(Request $request){
+        // $data = $request->json()->all();
+        // $idTransportadora = $data['idTransportadora'];
+    
+        $users = UpUser::with(['operadores.sub_rutas', 'roles_fronts', 'operadores.transportadoras'])
+                ->whereHas('roles_fronts', function($query) {
+                    $query->where('titulo', 'OPERADOR');
+                })
+                // ->whereHas('operadores.transportadoras', function($query) use ($idTransportadora) {
+                //     $query->where('transportadoras.id', $idTransportadora);
+                // })
+                ->get();
+    
+        return response()->json([
+            'data' => $users,
+            'total' => $users->count()
+        ], 200);
+    }
+    
+    // http://localhost:8000/api/operadoresoftransport
+    // {
+        // "idTransportadora" : 19
+    // }
+    
+
 }
