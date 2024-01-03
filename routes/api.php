@@ -407,13 +407,6 @@ Route::prefix('subrutas')->group(function () {
         Route::put('/delete/{id}', [ProductsSellerLinkAPIController::class, 'destroy']);
     });
 
-    // *
-    Route::prefix('stockhistory')->group(function () {
-        Route::post('/', [StockHistoryAPIController::class, 'store']);
-        Route::get('byproduct/{id}', [StockHistoryAPIController::class, 'showByProduct']);
-
-    });
-
     //  *
     Route::prefix('reserve')->group(function () {
         Route::post('/', [ReserveAPIController::class, 'store']);
