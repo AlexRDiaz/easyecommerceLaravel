@@ -1498,13 +1498,13 @@ class PedidosShopifyAPIController extends Controller
     {
 
         $data = $request->json()->all();
-        error_log("request".strval($data));
+        error_log("request desde railway".strval($data));
         //GENERATE DATE
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
         $fechaActual = $currentDate->format('d/m/Y');
 
-        // ID DATE ORDER FOR RELATION
+        // ID DATE ORDER FOR RELATI
         $dateOrder = "";
         
         //VARIABLES FOR ENTITY
