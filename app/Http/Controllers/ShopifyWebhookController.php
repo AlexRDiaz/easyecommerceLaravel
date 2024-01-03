@@ -64,10 +64,20 @@ class ShopifyWebhookController extends Controller
         }
     }
 
-   
-    public function authCallback(Request $request){
-        return response()->json(['message' => 'Webhook verificado'], 200);
+    public function handleShopRedact2(Request $request)
+    {
+        $hmacHeader = $request->header('X-Shopify-Hmac-SHA256');
+        $data = file_get_contents('php://input');
 
+        $verified = $this->verifyWebhook($data, $hmacHeader);
+
+        if ($verified) {
+            // El webhook es auténtico, procesar el payload
+            // ...
+            return response()->json(['message' => 'Webhook verificado'], 200);
+        } else {
+            // El webhook no es auténtico, responder con un código de estado 401
+            return response()->json(['error' => 'No autorizado'], 401);
+        }
     }
-
 }

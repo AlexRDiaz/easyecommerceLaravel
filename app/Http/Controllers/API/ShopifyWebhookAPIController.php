@@ -68,4 +68,12 @@ class ShopifyWebhookAPIController extends Controller
 
         }
     }
+
+    
+    public function authCallback(Request $request){
+
+        
+        return response()->json(['message' => 'Webhook verificado'], 200);
+
+    }
 }
