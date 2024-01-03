@@ -1498,7 +1498,7 @@ class PedidosShopifyAPIController extends Controller
     {
 
        // $data = $request->json()->all();
-        error_log($request);
+        error_log("request".$request);
         //GENERATE DATE
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
