@@ -1496,6 +1496,9 @@ class PedidosShopifyAPIController extends Controller
 
     public function shopifyPedidos(Request $request, $id)
     {
+
+       // $data = $request->json()->all();
+        error_log($request);
         //GENERATE DATE
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
@@ -1503,7 +1506,7 @@ class PedidosShopifyAPIController extends Controller
 
         // ID DATE ORDER FOR RELATION
         $dateOrder = "";
-
+        
         //VARIABLES FOR ENTITY
         $listOfProducts = [];
         $order_number = $request->input('order_number');

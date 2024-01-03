@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Laravel\Socialite\Facades\Socialite;
 
 class ShopifyWebhookAPIController extends Controller
 {
@@ -73,7 +74,20 @@ class ShopifyWebhookAPIController extends Controller
     public function authCallback(Request $request){
 
         
-        return response()->json(['message' => 'Webhook verificado'], 200);
-
+        return Socialite::driver('shopify')->scopes(['read_products', 'write_products']) // Define los permisos requeridos
+        ->redirect();
     }
+
+    public function handleCallback(Request $request)
+    {
+        // Manejar la respuesta de autorización de Shopify
+        $shopifyUser = Socialite::driver('shopify')->user();
+
+        // $shopifyUser contendrá la información del usuario autenticado por Shopify
+        // Puedes procesar esta información, iniciar sesión del usuario, etc.
+
+        // Por ejemplo, devolver la información del usuario como respuesta a la aplicación cliente
+        return response()->json(['user' => $shopifyUser]);
+    }
+
 }
