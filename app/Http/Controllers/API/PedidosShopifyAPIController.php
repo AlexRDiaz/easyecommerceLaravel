@@ -13,6 +13,7 @@ use App\Models\PedidosShopifiesTransportadoraLink;
 use App\Models\PedidosShopify;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
 use App\Models\Ruta;
+use App\Models\TransaccionPedidoTransportadora;
 use App\Models\TransportStats;
 use App\Models\UpUser;
 use App\Models\UpUsersPedidosShopifiesLink;
@@ -1704,7 +1705,7 @@ class PedidosShopifyAPIController extends Controller
 
     public function sendToAutome($url, $data)
     {
-        $client = new Client(); 
+        $client = new Client();
         $response = $client->post($url, [
             'data' => [
                 "id" => $data->id,
@@ -2367,7 +2368,9 @@ class PedidosShopifyAPIController extends Controller
             if ($value != "NOVEDAD_date") {
                 $pedido->status = $value;
             }
+
             $pedido->fill($datarequest);
+
             if ($value == "ENTREGADO" || $value == "NO ENTREGADO") {
                 $pedido->fecha_entrega = $date;
             }
@@ -2377,6 +2380,25 @@ class PedidosShopifyAPIController extends Controller
             }
             $pedido->status_last_modified_at = $currentDateTime;
             $pedido->status_last_modified_by = $idUser;
+
+            // // * if it exists, delete from transaccion_pedidos_transportadora
+            // error_log("delete from tpt");
+
+            $idTransportadora = $pedido['transportadora'][0]['id'];
+            $fechaEntrega = now()->format('j/n/Y');
+
+            $transaccion = TransaccionPedidoTransportadora::where('id_pedido', $id)
+                ->where('id_transportadora', $idTransportadora)
+                ->where('fecha_entrega', $fechaEntrega)
+                ->get();
+
+            $transaccionFound = $transaccion->first();
+
+            if ($transaccionFound !== null) {
+                // error_log($transaccionFound->id);
+                $transaccionFound->delete();
+                // error_log("deleted");
+            }
         }
 
         //v0
