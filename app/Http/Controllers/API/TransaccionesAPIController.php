@@ -233,39 +233,19 @@ class TransaccionesAPIController extends Controller
     {
         DB::beginTransaction();
         try {
-            
-            // Log::info('updateProductAndProviderBalance called with:', [
-            //     'skuProduct' => $skuProduct,
-            //     'totalPrice' => $totalPrice,
-            //     'quantity' => $quantity,
-            //     'generated_by' => $generated_by,
-            //     'id_origin' => $id_origin
-            // ]);
-
             if ($skuProduct == null) {
                 $skuProduct = "UKNOWNPC0";
             }
-            // Log::info('updateProductAndProviderBalance called with:', [
-            //     'skuProduct' => $skuProduct,
-            //     'totalPrice' => $totalPrice,
-            //     'quantity' => $quantity,
-            //     'generated_by' => $generated_by,
-            //     'id_origin' => $id_origin
-            // ]);
             $productId = substr($skuProduct, strrpos($skuProduct, 'C') + 1);
             $firstPart = substr($skuProduct, 0, strrpos($skuProduct, 'C'));
 
-            // Log::info('productid', [$productId]);
             // Log::info('sku', [$firstPart]);
 
             // Buscar el producto por ID    
             $product = Product::with('warehouse')->find($productId);
 
-            // Log::info('product', [$product]);
-
             if ($product === null) {
                 DB::commit();
-                // return null; // Retorna null si no se encuentra el producto
                 return ["total" => null, "valor_producto" => null, "error" => "Product Not Found!"];
             }
 
@@ -274,9 +254,8 @@ class TransaccionesAPIController extends Controller
 
             $price = $product->price;
 
-            if ($product->isVariant($firstPart)) {
-                $price = $product->getVariantPrice($firstPart);
-            }
+            // Log::info('price', [$price]);
+
 
             $amountToDeduct = $price * $quantity;
 
