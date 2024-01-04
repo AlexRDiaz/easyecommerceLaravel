@@ -1522,11 +1522,8 @@ class PedidosShopifyAPIController extends Controller
         foreach ($productos as $element) {
             error_log("identificador2: " . $element['id']);
             error_log("product id: " . $element['product_id']);
-
-
-
             $atributos = array_keys($element);
-
+           
             // Registra los atributos presentes en $element
             error_log("Atributos en \$element: " . implode(', ', $atributos));
 
@@ -1539,6 +1536,7 @@ class PedidosShopifyAPIController extends Controller
                 'title' => $element['title']
             ];
         }
+        var_dump($productos);
 
         $search = PedidosShopify::where([
             'numero_orden' => $order_number,
