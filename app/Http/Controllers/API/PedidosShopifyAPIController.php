@@ -1496,17 +1496,14 @@ class PedidosShopifyAPIController extends Controller
 
     public function shopifyPedidos(Request $request, $id)
     {
-
-        $data = $request->json()->all();
-        //error_log("request desde railway".strval($data));
         //GENERATE DATE
         date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
         $fechaActual = $currentDate->format('d/m/Y');
 
-        // ID DATE ORDER FOR RELATI
+        // ID DATE ORDER FOR RELATION
         $dateOrder = "";
-        
+
         //VARIABLES FOR ENTITY
         $listOfProducts = [];
         $order_number = $request->input('order_number');
@@ -1523,8 +1520,7 @@ class PedidosShopifyAPIController extends Controller
 
         //ADD PRODUCT TO LIST FOR NEW OBJECT
         foreach ($productos as $element) {
-              
-            error_log("producto de line items: " . strval($element));
+            error_log("identificador2: " . $element['id']);
             error_log("product id: " . $element['product_id']);
 
 
