@@ -71,12 +71,7 @@ class ShopifyWebhookAPIController extends Controller
     }
 
     
-    public function authCallback(Request $request){
 
-        
-        return Socialite::driver('shopify')->scopes(['read_products', 'write_products']) // Define los permisos requeridos
-        ->redirect();
-    }
 
     public function handleCallback(Request $request)
     {

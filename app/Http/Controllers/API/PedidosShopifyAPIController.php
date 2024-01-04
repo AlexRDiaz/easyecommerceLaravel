@@ -1522,8 +1522,11 @@ class PedidosShopifyAPIController extends Controller
         foreach ($productos as $element) {
             error_log("identificador2: " . $element['id']);
             error_log("product id: " . $element['product_id']);
+
+
+
             $atributos = array_keys($element);
-           
+
             // Registra los atributos presentes en $element
             error_log("Atributos en \$element: " . implode(', ', $atributos));
 
@@ -1536,7 +1539,6 @@ class PedidosShopifyAPIController extends Controller
                 'title' => $element['title']
             ];
         }
-        var_dump($productos);
 
         $search = PedidosShopify::where([
             'numero_orden' => $order_number,
@@ -1587,6 +1589,11 @@ class PedidosShopifyAPIController extends Controller
             if (is_numeric($id_product)) {
                 $lastIdProduct = $id_product;
             }
+            // $observation=[
+            //     "customer_note"=>  $customer_note ?? "",
+            //     "variants"=> $listOfProducts
+            // ];
+            
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
                 'tienda_temporal' => $productos[0]['vendor'],
@@ -1601,7 +1608,7 @@ class PedidosShopifyAPIController extends Controller
                 'id_product' => $lastIdProduct,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
-                'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
+                'producto_extra' =>implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
