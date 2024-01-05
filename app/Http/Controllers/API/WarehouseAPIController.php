@@ -5,6 +5,7 @@ namespace App\Http\Controllers\API;
 use App\Http\Controllers\Controller;
 use App\Models\Warehouse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Mail;
 
 class WarehouseAPIController extends Controller
 {
@@ -33,7 +34,17 @@ class WarehouseAPIController extends Controller
             ]);
 
             $warehouse = Warehouse::create($validatedData);
-            return response()->json($warehouse, 201); // 201: Recurso creado
+            if ($warehouse) {
+                $to = 'dcarlosamam@gmail.com';
+                $subject = 'Aprobación de una bodega nueva';
+                $message = 'Se ha creado la bodega "' . $request->branch_name . '" a la espera de la aprobación de funcionamiento.';
+                Mail::raw($message, function ($mail) use ($to, $subject) {
+                    $mail->to($to)->subject($subject);
+                });
+
+                return response()->json($warehouse, 201); // 201: Recurso creado
+
+            }
         } catch (\Exception $e) {
             return response()->json(['error' => $e->getMessage()], 500); // 500: Error interno del servidor
         }

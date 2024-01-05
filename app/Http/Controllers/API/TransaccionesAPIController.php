@@ -300,7 +300,8 @@ class TransaccionesAPIController extends Controller
             $startDateFormatted = new DateTime();
 
             // $pedido = PedidosShopify::findOrFail($data['id_origen']);
-            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore'])->findOrFail($data['id_origen']);
+            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore','transactionTransportadora'])->findOrFail($data['id_origen']);
+            return $pedido;
 
             $pedido->status = "ENTREGADO";
             $pedido->fecha_entrega = now()->format('j/n/Y');

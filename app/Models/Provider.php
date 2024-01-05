@@ -42,6 +42,7 @@ class Provider extends Model
 
     public function warehouses(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\Warehouse::class, 'warehouse_id');
+        return $this->hasMany(\App\Models\Warehouse::class, 'provider_id');
     }
+
 }
