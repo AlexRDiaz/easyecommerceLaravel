@@ -56,7 +56,7 @@ class ProviderAPIController extends Controller
     }
 
 
-    public function updateField(Request $request, $id)
+    public function updateRequest(Request $request, $id)
     {
         // Recuperar los datos del formulario
         $data = $request->all();

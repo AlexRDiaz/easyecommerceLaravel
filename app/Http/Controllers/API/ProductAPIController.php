@@ -558,6 +558,19 @@ class ProductAPIController extends Controller
             ->update(['active' => 0]);
     }
 
+    public function updateRequest(Request $request, $id)
+    {
+        $data = $request->all();
+
+        $provider = Product::findOrFail($id);
+
+        $provider->fill($data);
+        $provider->save();
+
+        // Respuesta de éxito
+        return response()->json(['message' => 'Registro actualizado con éxito', "res" => $provider], 200);
+    }
+
 
     public function splitSku($skuProduct)
     {

@@ -75,6 +75,9 @@ class WarehouseAPIController extends Controller
             'city' => 'nullable|string|max:80',
             'collection' => 'nullable|json',
             'provider_id' => 'nullable|integer',
+            'active' => 'nullable|integer',
+            'approved'=> 'nullable|integer',
+            'provider_id' => 'nullable|integer',
         ]);
 
         $warehouse = Warehouse::where('warehouse_id', $warehouse_id)->first();
