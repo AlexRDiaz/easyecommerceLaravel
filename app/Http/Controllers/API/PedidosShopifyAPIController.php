@@ -1536,7 +1536,8 @@ class PedidosShopifyAPIController extends Controller
                 'name' => $element['product_id'],
                 'quantity' => $element['quantity'],
                 'price' => $element['price'],
-                'title' => $element['title']
+                'title' => $element['title'],
+                'variant_title'=> $element['variant_title']
             ];
         }
 
@@ -1608,7 +1609,7 @@ class PedidosShopifyAPIController extends Controller
                 'id_product' => $lastIdProduct,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
-                'producto_extra' =>implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
+                'producto_extra' =>implode(', ', array_column(array_slice($listOfProducts, 1), 'variant_title')),
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
