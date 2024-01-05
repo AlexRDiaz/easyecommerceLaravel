@@ -167,114 +167,115 @@ class UpUserAPIController extends Controller
         return response()->json(['message' => 'Subproveedor creado con éxito', 'user_id' => $user->id, 'user_id'], 201);
 
     }
-    
-    public function editAutome(Request $request,$id){
+
+    public function editAutome(Request $request, $id)
+    {
         $data = $request->json()->all();
-        
-        $user = UpUser::find($id); 
-        $user->enable_autome=$data["enable_autome"];
-        $user->config_autome=$data["config_autome"];
+
+        $user = UpUser::find($id);
+        $user->enable_autome = $data["enable_autome"];
+        $user->config_autome = $data["config_autome"];
         $user->save();
     }
 
-    public function updateSubProvider(Request $request,$id)
+    public function updateSubProvider(Request $request, $id)
     {
         // Valida los datos de entrada (puedes agregar reglas de validación aquí)
-       // Valida los datos de entrada para la actualización
-       $request->validate([
-        'username' => 'required|string|max:255',
-        'email' => 'required|email|unique:up_users,email,' . $id,
-        // Asegúrate de manejar la unicidad del email excepto para el usuario que se está actualizando
-    ]);
+        // Valida los datos de entrada para la actualización
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|unique:up_users,email,' . $id,
+            // Asegúrate de manejar la unicidad del email excepto para el usuario que se está actualizando
+        ]);
 
-    $user = UpUser::find($id); // Encuentra al usuario por su ID
+        $user = UpUser::find($id); // Encuentra al usuario por su ID
 
-    if ($user) {
-        $user->username = $request->input('username');
-        $user->email = $request->input('email');
-        $user->blocked = $request->input('blocked');
-        $user->save(); // Guarda los cambios en el usuario
+        if ($user) {
+            $user->username = $request->input('username');
+            $user->email = $request->input('email');
+            $user->blocked = $request->input('blocked');
+            $user->save(); // Guarda los cambios en el usuario
 
-        return response()->json(['message' => 'Vendedor actualizado con éxito',"user"=>$user], 200);
-    } else {
-        return response()->json(['message' => 'Usuario no encontrado'], 404);
-    }
+            return response()->json(['message' => 'Vendedor actualizado con éxito', "user" => $user], 200);
+        } else {
+            return response()->json(['message' => 'Usuario no encontrado'], 404);
+        }
     }
 
 
     public function storeProvider(Request $request)
     {
-    // // Valida los datos de entrada (puedes agregar reglas de validación aquí)
-    $request->validate([
-        'username' => 'required|string|max:255',
-        'email' => 'required|email|unique:up_users',
-    ]);
+        // // Valida los datos de entrada (puedes agregar reglas de validación aquí)
+        $request->validate([
+            'username' => 'required|string|max:255',
+            'email' => 'required|email|unique:up_users',
+        ]);
 
-    $numerosUtilizados = [];
-    while (count($numerosUtilizados) < 10000000) {
-        $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
-        if (!in_array($numeroAleatorio, $numerosUtilizados)) {
-            $numerosUtilizados[] = $numeroAleatorio;
-            break;
+        $numerosUtilizados = [];
+        while (count($numerosUtilizados) < 10000000) {
+            $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+            if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                $numerosUtilizados[] = $numeroAleatorio;
+                break;
+            }
         }
-    }
-    $resultCode = $numeroAleatorio;
+        $resultCode = $numeroAleatorio;
 
 
-    $user = new UpUser();
-    $user->username = $request->input('username');
-    $user->email = $request->input('email');
-    $user->codigo_generado = $resultCode;
-    $user->password = bcrypt($request->input('password')); // Puedes utilizar bcrypt para encriptar la contraseña
-    $user->fecha_alta = $request->input('FechaAlta'); // Fecha actual
-    $user->confirmed = $request->input('confirmed');
-    $user->estado = "NO VALIDADO";
-    $user->provider = "local";
-    $user->confirmed = 1;
-    $user->fecha_alta = $request->input('fecha_alta');
-    // $permisosCadena = json_encode([]);
-    // $user->permisos = $permisosCadena;
-    $user->permisos = json_encode($request->input('permisos'));
-    $user->blocked = false;
-    $user->save();
-    // $user->providers()->attach($user->id, [
-    // ]);
+        $user = new UpUser();
+        $user->username = $request->input('username');
+        $user->email = $request->input('email');
+        $user->codigo_generado = $resultCode;
+        $user->password = bcrypt($request->input('password')); // Puedes utilizar bcrypt para encriptar la contraseña
+        $user->fecha_alta = $request->input('FechaAlta'); // Fecha actual
+        $user->confirmed = $request->input('confirmed');
+        $user->estado = "NO VALIDADO";
+        $user->provider = "local";
+        $user->confirmed = 1;
+        $user->fecha_alta = $request->input('fecha_alta');
+        // $permisosCadena = json_encode([]);
+        // $user->permisos = $permisosCadena;
+        $user->permisos = json_encode($request->input('permisos'));
+        $user->blocked = false;
+        $user->save();
+        // $user->providers()->attach($user->id, [
+        // ]);
 
 
-    // $provider= new Provider();
-    // $provider->user_id = $user->id;
-    // $provider->name = $request->input('porvider_name');
-    // $provider->description= $request->input('description');
-    // $provider->phone = $request->input('provider_phone');
-    // $provider->createdAt= new DateTime();
+        // $provider= new Provider();
+        // $provider->user_id = $user->id;
+        // $provider->name = $request->input('porvider_name');
+        // $provider->description= $request->input('description');
+        // $provider->phone = $request->input('provider_phone');
+        // $provider->createdAt= new DateTime();
 
 
-    $newUpUsersRoleLink = new UpUsersRoleLink();
-    $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
-    $newUpUsersRoleLink->role_id = $request->input('role'); // Asigna el ID del rol existente
-    $newUpUsersRoleLink->save();
+        $newUpUsersRoleLink = new UpUsersRoleLink();
+        $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
+        $newUpUsersRoleLink->role_id = $request->input('role'); // Asigna el ID del rol existente
+        $newUpUsersRoleLink->save();
 
 
-    $userRoleFront = new UpUsersRolesFrontLink();
-    $userRoleFront->user_id = $user->id;
-    $userRoleFront->roles_front_id = 5;
-    $userRoleFront->save();
+        $userRoleFront = new UpUsersRolesFrontLink();
+        $userRoleFront->user_id = $user->id;
+        $userRoleFront->roles_front_id = 5;
+        $userRoleFront->save();
 
-    $provider = new Provider();
-    $provider->name = $request->input('provider_name');
-    $provider->phone = $request->input('provider_phone');
-    $provider->description= $request->input('description');
-    $provider->created_at= new DateTime();
-    $provider->user_id = $user->id;
-   
-    $provider->save();
-    $user->providers()->attach($provider->id, [
-    ]);
-  
-   // Mail::to($user->email)->send(new UserValidation($resultCode));
+        $provider = new Provider();
+        $provider->name = $request->input('provider_name');
+        $provider->phone = $request->input('provider_phone');
+        $provider->description = $request->input('description');
+        $provider->created_at = new DateTime();
+        $provider->user_id = $user->id;
+
+        $provider->save();
+        $user->providers()->attach($provider->id, [
+        ]);
+
+        // Mail::to($user->email)->send(new UserValidation($resultCode));
 
 
-    return response()->json(['message' => 'Vendedor creado con éxito'], 200);
+        return response()->json(['message' => 'Vendedor creado con éxito'], 200);
 
     }
 
@@ -363,27 +364,27 @@ class UpUserAPIController extends Controller
             'email' => 'required|email|unique:up_users,email,' . $id,
             // Asegúrate de manejar la unicidad del email excepto para el usuario que se está actualizando
         ]);
-    
+
         $user = UpUser::find($id); // Encuentra al usuario por su ID
-    
+
         if ($user) {
             $user->username = $request->input('username');
             $user->email = $request->input('email');
             $user->save(); // Guarda los cambios en el usuario
-    
-           $provider = $user->providers[0]; 
-           // Suponiendo una relación "user has one provider"
+
+            $provider = $user->providers[0];
+            // Suponiendo una relación "user has one provider"
             if ($provider) {
                 $provider->name = $request->input('provider_name');
                 $provider->phone = $request->input('provider_phone');
                 $provider->description = $request->input('description');
-                
+
                 $provider->save(); // Guarda los cambios en el proveedor
             }
-    
-       
-    
-            return response()->json(['message' => 'Vendedor actualizado con éxito',"proveedor"=>$provider,"user"=>$user], 200);
+
+
+
+            return response()->json(['message' => 'Vendedor actualizado con éxito', "proveedor" => $provider, "user" => $user], 200);
         } else {
             return response()->json(['message' => 'Usuario no encontrado'], 404);
         }
@@ -441,7 +442,7 @@ class UpUserAPIController extends Controller
     {
         // Agrega tu lógica para eliminar un UpUser aquí.
     }
-   public function login(Request $request)
+    public function login(Request $request)
     {
         $credentials = $request->only('email', 'password');
 
@@ -483,38 +484,38 @@ class UpUserAPIController extends Controller
 
         $data = $request->json()->all();
         $user = UpUser::find($data["user_id"]);
-    
+
         if (!$user) {
             return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
         }
-    
+
         try {
             // Intenta autenticar al usuario y generar un token
-            if (!$token = JWTAuth::fromUser($user,['exp' => null])) {
+            if (!$token = JWTAuth::fromUser($user, ['exp' => null])) {
                 return response()->json(['error' => 'No se pudo generar el token'], Response::HTTP_UNAUTHORIZED);
             }
 
-           
 
-        $integration = Integration::where("name",$data["name"])->first();
 
-        if (!empty($integration)) {
-            return response()->json([
-                'integration'=>$integration,
-                'error' => 'Nombre ya ingresado'
-            ], 404);
-        }
-        $newIntegration=new Integration();
-        $newIntegration->name=$data["name"];
-        $newIntegration->description=$data["description"];
-        $newIntegration->token=$token;
-        $newIntegration->created_at=new DateTime();
-        $newIntegration->user_id=$data["user_id"];
-        $newIntegration->save();
+            $integration = Integration::where("name", $data["name"])->first();
+
+            if (!empty($integration)) {
+                return response()->json([
+                    'integration' => $integration,
+                    'error' => 'Nombre ya ingresado'
+                ], 404);
+            }
+            $newIntegration = new Integration();
+            $newIntegration->name = $data["name"];
+            $newIntegration->description = $data["description"];
+            $newIntegration->token = $token;
+            $newIntegration->created_at = new DateTime();
+            $newIntegration->user_id = $data["user_id"];
+            $newIntegration->save();
             return response()->json(['integration' => $newIntegration], Response::HTTP_OK);
 
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Error al generar el token',"e"=>$e], Response::HTTP_INTERNAL_SERVER_ERROR);
+            return response()->json(['error' => 'Error al generar el token', "e" => $e], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
     }
 
@@ -585,35 +586,35 @@ class UpUserAPIController extends Controller
         return response()->json(['message' => 'Permisos actualizados correctamente'], Response::HTTP_OK);
     }
 
-    public function getPermissionsSellerPrincipalforNewSeller(Request $request,$userId)
+    public function getPermissionsSellerPrincipalforNewSeller(Request $request, $userId)
     {
         $upUser = UpUser::find($userId);
-    
+
         // Si el usuario no existe, devuelve un error
         if (!$upUser) {
             return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
         }
-    
+
         // Decodificar el JSON de la columna permisos a un array
         $permissions = json_decode($upUser->permisos, true);
         $formattedPermissions = [];
-    
+
         foreach ($permissions as $permission) {
             $formattedPermissions[] = [
                 'view_name' => $permission,
                 'active' => true
             ];
         }
-    
+
         // Codifica el array resultante a JSON y luego agrégalo a un array con la clave "accesos"
         $result = [
             'accesos' => json_encode($formattedPermissions)
         ];
-    
+
         // Retorna la lista de permisos en el formato deseado
         return response()->json($result, Response::HTTP_OK);
     }
-    
+
 
     public function getSellers($id, $search = null)
     {
@@ -646,9 +647,9 @@ class UpUserAPIController extends Controller
         $upUser = UpUser::with([
             'roles_fronts',
             'providers',
-        ])->whereNot("id",$id)->where("blocked",0)->whereHas('providers', function ($query) use ($id) {
-                $query->where('user_id', $id);
-            });
+        ])->whereNot("id", $id)->where("blocked", 0)->whereHas('providers', function ($query) use ($id) {
+            $query->where('user_id', $id);
+        });
 
 
         if (!empty($search)) {
@@ -1025,18 +1026,56 @@ class UpUserAPIController extends Controller
         return response()->json(['codigo' => $code], 200);
     }
 
-    public function getOperatorsTransportLaravel(Request $request){
-        // $data = $request->json()->all();
-        // $idTransportadora = $data['idTransportadora'];
+    public function getOperatorsTransportLaravel(Request $request)
+    {
+        $data = $request->json()->all();
+        $filtersOr = $data['or'];
+        $Map = $data['and'];
+        $searchValue = $data['searchValue'];
     
-        $users = UpUser::with(['operadores.sub_rutas', 'roles_fronts', 'operadores.transportadoras'])
-                ->whereHas('roles_fronts', function($query) {
-                    $query->where('titulo', 'OPERADOR');
-                })
-                // ->whereHas('operadores.transportadoras', function($query) use ($idTransportadora) {
-                //     $query->where('transportadoras.id', $idTransportadora);
-                // })
-                ->get();
+        $users = UpUser::with(['operadores.sub_rutas.rutas', 'rolesFronts', 'operadores.transportadoras'])
+            ->whereHas('rolesFronts', function ($query) {
+                $query->where('titulo', 'OPERADOR');
+            })
+            ->whereHas('operadores.sub_rutas.rutas', function ($query) {
+                $query->where('active', 1);
+            })
+            ->whereHas('operadores.transportadoras', function ($query) {
+                $query->where('active', 1);
+            })
+            ->where(function ($users) use ($searchValue, $filtersOr) {
+                foreach ($filtersOr as $field) {
+                    if (strpos($field, '.') !== false) {
+                        // Si es un campo anidado
+                        $relations = explode('.', $field);
+                        $property = array_pop($relations);
+            
+                        $users->orWhereHas(implode('.', $relations), function ($q) use ($property, $searchValue) {
+                            $q->where($property, 'LIKE', '%' . $searchValue . '%');
+                        });
+                    } else {
+                        // Si no es un campo anidado
+                        $users->orWhere($field, 'LIKE', '%' . $searchValue . '%');
+                    }
+                }
+            })
+            
+            ->where((function ($users) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($users, $relacion, $propiedad, $valor);
+                        } else {
+                            $users->where($key, '=', $valor);
+                        }
+                    }
+                }
+            }));
+        
+    
+        $users = $users->get();
     
         return response()->json([
             'data' => $users,
@@ -1044,10 +1083,24 @@ class UpUserAPIController extends Controller
         ], 200);
     }
     
-    // http://localhost:8000/api/operadoresoftransport
-    // {
-        // "idTransportadora" : 19
-    // }
-    
+    private function recursiveWhereHas($query, $relation, $property, $searchTerm)
+    {
+        if ($searchTerm == "null") {
+            $searchTerm = null;
+        }
+        if (strpos($property, '.') !== false) {
+
+            $nestedRelation = substr($property, 0, strpos($property, '.'));
+            $nestedProperty = substr($property, strpos($property, '.') + 1);
+
+            $query->whereHas($relation, function ($q) use ($nestedRelation, $nestedProperty, $searchTerm) {
+                $this->recursiveWhereHas($q, $nestedRelation, $nestedProperty, $searchTerm);
+            });
+        } else {
+            $query->whereHas($relation, function ($q) use ($property, $searchTerm) {
+                $q->where($property, '=', $searchTerm);
+            });
+        }
+    }
 
 }

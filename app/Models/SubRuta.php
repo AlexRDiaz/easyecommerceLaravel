@@ -38,10 +38,12 @@ class SubRuta extends Model
 	];
 
 	protected $fillable = [
+		'id',
 		'titulo',
 		'id_operadora',
 		'created_by_id',
-		'updated_by_id'
+		'updated_by_id',
+		'active'
 	];
 
 	public function admin_user()

@@ -39,6 +39,7 @@ class Operadore extends Model
 	];
 
 	protected $fillable = [
+		'id',
 		'telefono',
 		'costo_operador',
 		'created_by_id',
