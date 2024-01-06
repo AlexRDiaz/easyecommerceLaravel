@@ -1537,7 +1537,7 @@ class PedidosShopifyAPIController extends Controller
                 'quantity' => $element['quantity'],
                 'price' => $element['price'],
                 'title' => $element['title'],
-               // 'variant_title'=> $element['variant_title']
+                'variant_title'=> $element['variant_title']
             ];
         }
 
