@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Ramsey\Uuid\Uuid;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -545,13 +546,16 @@ class UpUserAPIController extends Controller
     {
         try {
             $data = $request->json()->all();
-
+            $myuuid = Uuid::uuid4();
+            $data["id"]= $myuuid;
             $user = UpUser::find($id);
 
             if ($user->payment_information == null ||$user->payment_information == "" ) {
+            
                 $jsonData = json_encode([$data]);
                 $encryptedData = encrypt($jsonData);
                 $user->payment_information = $encryptedData;
+
 
             } else {
                 $currentPaymentInformation =  $this->getPaymentInformationLocal($id);
@@ -573,9 +577,11 @@ class UpUserAPIController extends Controller
      public function modifyAccount(Request $request, $id)
     {
         try {
-            $data = $request->json()->all();
 
-            $user = UpUser::find($id);
+            $data = $request->json()->all();
+             $user = UpUser::find($id);
+            // $myuuid = Uuid::uuid4();
+            // $data["account_data"]["id"]= $myuuid;
 
                 $jsonData = json_encode($data["account_data"]);
                 $encryptedData = encrypt($jsonData);

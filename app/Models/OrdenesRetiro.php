@@ -53,7 +53,8 @@ class OrdenesRetiro extends Model
 		'comentario',
 		'created_by_id',
 		'updated_by_id',
-		'id_vendedor'
+		'id_vendedor',
+		'account_id'
 	];
 
 	public function admin_user()

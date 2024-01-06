@@ -476,57 +476,56 @@ class TransaccionesAPIController extends Controller
 
             // error_log("NO ENTREGADO aqui deberia hacer la inserciion en tpt");
 
-            // $idTransportadora = $pedido['transportadora'][0]['id'];
-            // $fechaEntrega = now()->format('j/n/Y');
+            $idTransportadora = $pedido['transportadora'][0]['id'];
+            $fechaEntrega = now()->format('j/n/Y');
 
-            // $precioTotal = $pedido['precio_total'];
-            // $costoTransportadora = $pedido['transportadora'][0]['costo_transportadora'];
-            // $idOper = null;
-            // if ($pedido['operadore']->isEmpty()) {
-            //     // error_log("operadore vacio");
-            //     // error_log("idO: " . $idOper);
-            // } else {
-            //     // error_log("operadore NO vacio");
-            //     $idOper = $pedido['operadore'][0]['id'];
-            //     // error_log("idO: " . $idOper);
-            // }
-            // // return response()->json($pedido);
-            // // return response()->json(["idPedido" => $data['id_origen'], "idTransportadora" => $idTransportadora, "fechaEntrega" => $fechaEntrega, "idOper" => $idOper], 200);
+            $precioTotal = $pedido['precio_total'];
+            $costoTransportadora = $pedido['transportadora'][0]['costo_transportadora'];
+            $idOper = null;
+            if ($pedido['operadore']->isEmpty()) {
+                // error_log("operadore vacio");
+                // error_log("idO: " . $idOper);
+            } else {
+                // error_log("operadore NO vacio");
+                $idOper = $pedido['operadore'][0]['id'];
+                // error_log("idO: " . $idOper);
+            }
+            // return response()->json($pedido);
+            // return response()->json(["idPedido" => $data['id_origen'], "idTransportadora" => $idTransportadora, "fechaEntrega" => $fechaEntrega, "idOper" => $idOper], 200);
 
 
-            // $transaccion = TransaccionPedidoTransportadora::where('id_pedido',  $data['id_origen'])
-            //     ->where('id_transportadora', $idTransportadora)
-            //     ->where('fecha_entrega', $fechaEntrega)
-            //     ->get();
+            $transaccion = TransaccionPedidoTransportadora::where('id_pedido',  $data['id_origen'])
+                ->where('id_transportadora', $idTransportadora)
+                ->where('fecha_entrega', $fechaEntrega)
+                ->get();
 
-            // if ($transaccion->isEmpty()) {
-            //     // error_log("new tpt");
-            //     //
-            //     $transaccionNew = new TransaccionPedidoTransportadora();
-            //     $transaccionNew->status = "NO ENTREGADO";
-            //     $transaccionNew->fecha_entrega = $fechaEntrega;
-            //     $transaccionNew->precio_total = $precioTotal;
-            //     $transaccionNew->costo_transportadora = $costoTransportadora;
-            //     $transaccionNew->id_pedido = $data['id_origen'];
-            //     $transaccionNew->id_transportadora = $idTransportadora;
-            //     $transaccionNew->id_operador = $idOper;
+            if ($transaccion->isEmpty()) {
+                // error_log("new tpt");
+                //
+                $transaccionNew = new TransaccionPedidoTransportadora();
+                $transaccionNew->status = "NO ENTREGADO";
+                $transaccionNew->fecha_entrega = $fechaEntrega;
+                $transaccionNew->precio_total = $precioTotal;
+                $transaccionNew->costo_transportadora = $costoTransportadora;
+                $transaccionNew->id_pedido = $data['id_origen'];
+                $transaccionNew->id_transportadora = $idTransportadora;
+                $transaccionNew->id_operador = $idOper;
 
-            //     $transaccionNew->save();
-            //     // error_log("new saved");
-            // } else {
-            //     //upt
-            //     // error_log("upt tpt");
-            //     $transaccionToUpdate = $transaccion->first();
-            //     $transaccionToUpdate->status = "NO ENTREGADO";
-            //     $transaccionToUpdate->costo_transportadora = $costoTransportadora;
-            //     $transaccionToUpdate->save();
-            //     // error_log("updated");
-            // }
+                $transaccionNew->save();
+                // error_log("new saved");
+            } else {
+                //upt
+                // error_log("upt tpt");
+                $transaccionToUpdate = $transaccion->first();
+                $transaccionToUpdate->status = "NO ENTREGADO";
+                $transaccionToUpdate->costo_transportadora = $costoTransportadora;
+                $transaccionToUpdate->save();
+                // error_log("updated");
+            }
 
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
             return response()->json([
-                "res" => "transaccion exitosa",
-                "pedido"=>$pedido
+                "res" => "transaccion exitosa"
             ]);
         } catch (\Exception $e) {
             DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción

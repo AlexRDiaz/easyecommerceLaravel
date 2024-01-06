@@ -1537,7 +1537,7 @@ class PedidosShopifyAPIController extends Controller
                 'quantity' => $element['quantity'],
                 'price' => $element['price'],
                 'title' => $element['title'],
-                'variant_title'=> $element['variant_title']
+               // 'variant_title'=> $element['variant_title']
             ];
         }
 
@@ -1603,7 +1603,7 @@ class PedidosShopifyAPIController extends Controller
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion' => implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title')),
+                'observacion' =>  json_encode($productos),
                 'ciudad_shipping' => $city,
                 'sku' => $productos[0]['sku'],
                 'id_product' => $lastIdProduct,
