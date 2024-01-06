@@ -1603,7 +1603,7 @@ class PedidosShopifyAPIController extends Controller
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion' =>  json_encode($listOfProducts),
+                'observacion' =>  "json_encode",
                 'ciudad_shipping' => $city,
                 'sku' => $productos[0]['sku'],
                 'id_product' => $lastIdProduct,
