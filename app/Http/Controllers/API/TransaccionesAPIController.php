@@ -13,6 +13,7 @@ use App\Models\StockHistory;
 use App\Models\Provider;
 
 use App\Http\Controllers\API\ProductAPIController;
+use App\Models\OrdenesRetiro;
 use App\Models\TransaccionPedidoTransportadora;
 use App\Repositories\transaccionesRepository;
 use App\Repositories\vendedorRepository;
@@ -182,6 +183,42 @@ class TransaccionesAPIController extends Controller
         $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
 
         return response()->json("Monto acreditado");
+    }
+
+    public function DebitLocal($vendedorId, $tipo,$monto, $idOrigen,$codigo,$origen,$comentario,$generated_by)
+    {
+        $startDateFormatted = new DateTime();
+        // $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
+
+
+
+        $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
+        $vendedor = $user['vendedores'][0];
+        $saldo = $vendedor->saldo;
+        $nuevoSaldo = $saldo + $monto;
+        $vendedor->saldo = $nuevoSaldo;
+
+
+        $newTrans = new Transaccion();
+
+        $newTrans->tipo = "Debit";
+        $newTrans->monto = $monto;
+        $newTrans->valor_anterior = $saldo;
+
+        $newTrans->valor_actual = $nuevoSaldo;
+        $newTrans->marca_de_tiempo = $startDateFormatted;
+        $newTrans->id_origen = $idOrigen;
+        $newTrans->codigo = $codigo;
+
+        $newTrans->origen = $origen;
+        $newTrans->comentario = $comentario;
+        $newTrans->id_vendedor = $vendedorId;
+        $newTrans->state = 1;
+        $newTrans->generated_by = $generated_by;
+        $this->transaccionesRepository->create($newTrans);
+        $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
+
+        return response()->json("Monto debitado");
     }
     public function Debit(Request $request)
     {
@@ -1140,5 +1177,43 @@ class TransaccionesAPIController extends Controller
                 'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
             ], 500);
         }
+    }
+
+    public function debitWithdrawall(Request $request,$id){
+        // "data": {
+        //     "Estado": "REALIZADO",
+        //     "Comprobante": comprobante,
+        //     "FechaTransferencia":
+        //         "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute} "
+        //   }
+
+
+
+
+          DB::beginTransaction();
+
+          try {
+              $data = $request->json()->all();
+              // $pedido = PedidosShopify::findOrFail($data['id_origen']);
+              $orden = OrdenesRetiro::findOrFail($data[$id]);
+  
+              $orden->estado = "REALIZADO";
+              $orden->comprobante = $data['comprobante'];
+              $orden->fecha_transferencia=$data['fecha_transferencia'];
+              $orden->save();
+              $this->DebitLocal($data['vendedor_id'],'debit', $data['monto'], $orden->id,"retiro-".$orden->id,'retiro','orden de retiro pagada',$data['generated_by']);
+        
+              DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+              return response()->json([
+                  "res" => "transaccion exitosa"
+              ]);
+          } catch (\Exception $e) {
+              DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+              // Maneja el error aquí si es necesario
+              return response()->json([
+                  'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+              ], 500);
+          }
+
     }
 }
