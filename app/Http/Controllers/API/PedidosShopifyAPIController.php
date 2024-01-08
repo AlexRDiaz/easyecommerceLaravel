@@ -1625,7 +1625,7 @@ class PedidosShopifyAPIController extends Controller
                 'ciudad_shipping' =>"",
                 'sku' =>
                 "",
-                'id_product' => "",
+                'id_product' => 0,
                 'id_comercial' =>"",
                 'producto_p' => "",
                 'producto_extra' =>"",
