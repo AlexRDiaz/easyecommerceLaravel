@@ -490,7 +490,7 @@ class ProductAPIController extends Controller
 
 
             if ($newProduct) {
-                $to = 'dcarlosamam@gmail.com';
+                $to = 'easyecommercetest@gmail.com';
                 $subject = 'Aprobación de un nuevo producto';
                 $message = 'La bodega "' . $warehouse->branch_name . '" ha agregado un nuevo producto "' . $newProduct->product_name . '" con el id "' . $newProduct->product_id . '" para la respectiva aprobación.';
                 Mail::raw($message, function ($mail) use ($to, $subject) {

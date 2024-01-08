@@ -25,7 +25,7 @@ class ProviderAPIController extends Controller
 
     public function getProviders($search = null)
     {
-        $providers = Provider::with(['user','warehouses']);
+        $providers = Provider::with(['user', 'warehouses']);
 
         if (!empty($search)) {
             $providers->where(function ($query) use ($search) {
@@ -37,13 +37,13 @@ class ProviderAPIController extends Controller
             });
         }
 
-        return response()->json(['providers' => $providers->get()]);
+        return response()->json(['providers' => $providers->where('active', 1)->get()]);
     }
 
     public function index()
     {
         //
-        $providers = Provider::with('warehouses')->get();
+        $providers = Provider::with('warehouses')->where('active', 1)->get();
         return response()->json(['providers' => $providers]);
     }
 

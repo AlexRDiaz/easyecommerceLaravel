@@ -397,6 +397,8 @@ Route::prefix('subrutas')->group(function () {
 
         Route::get('/all/{search?}', [ProviderAPIController::class, 'getProviders']);
         Route::get('/nofilter', [ProviderAPIController::class, 'index']);
+        Route::put('/update/{id}', [ProviderAPIController::class, 'updateRequest']);
+
     });
 
     // *
