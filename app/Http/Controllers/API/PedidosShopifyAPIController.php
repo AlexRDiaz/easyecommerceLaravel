@@ -1613,12 +1613,12 @@ class PedidosShopifyAPIController extends Controller
             // ]);
             
             $createOrder = new PedidosShopify([
-                'marca_t_i' =>"",
-                'tienda_temporal' =>"",
-                'numero_orden' => "",
-                'direccion_shipping' => "",
-                'nombre_shipping' => "",
-                'telefono_shipping' =>"",
+                'marca_t_i' => $fechaHoraActual,
+                'tienda_temporal' =>$productos[0]['vendor'],
+                'numero_orden' => $order_number,
+                'direccion_shipping' => $address1,
+                'nombre_shipping' => $name,
+                'telefono_shipping' => $phone,
                 'precio_total' =>"",
                 'observacion' => "",
                 //implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title')),
