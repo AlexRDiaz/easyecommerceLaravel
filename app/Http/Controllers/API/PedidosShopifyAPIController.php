@@ -1497,7 +1497,6 @@ class PedidosShopifyAPIController extends Controller
     public function shopifyPedidos(Request $request, $id)
     {
         //GENERATE DATE
-        date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
         $fechaActual = $currentDate->format('d/m/Y');
 
@@ -1603,13 +1602,13 @@ class PedidosShopifyAPIController extends Controller
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion' =>  "json_encode",
+                'observacion' => "",
                 'ciudad_shipping' => $city,
                 'sku' => $productos[0]['sku'],
                 'id_product' => $lastIdProduct,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
-                'producto_extra' =>implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
+                'producto_extra' =>"",
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
@@ -1708,6 +1707,7 @@ class PedidosShopifyAPIController extends Controller
             ], 200);
         }
     }
+
 
     public function sendToAutome($url, $data)
     {
