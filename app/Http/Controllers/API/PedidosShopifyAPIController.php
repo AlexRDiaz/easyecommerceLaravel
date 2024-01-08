@@ -1581,24 +1581,56 @@ class PedidosShopifyAPIController extends Controller
             }
             error_log("******************proceso 2 terminado************************\n");
 
+            // $createOrder = new PedidosShopify([
+            //     'marca_t_i' => $fechaHoraActual,
+            //     'tienda_temporal' => $productos[0]['vendor'],
+            //     'numero_orden' => $order_number,
+            //     'direccion_shipping' => $address1,
+            //     'nombre_shipping' => $name,
+            //     'telefono_shipping' => $phone,
+            //     'precio_total' => $formattedPrice,
+            //     'observacion' => "",
+            //     //implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title')),
+            //     'ciudad_shipping' => $city,
+            //     'sku' =>
+            //      $productos[0]['sku'],
+            //     'id_product' => $lastIdProduct,
+            //     'id_comercial' => $id,
+            //     'producto_p' => $listOfProducts[0]['title'],
+            //     'producto_extra' =>"",
+            //     //implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
+            //     'cantidad_total' => $listOfProducts[0]['quantity'],
+            //     'estado_interno' => "PENDIENTE",
+            //     'status' => "PEDIDO PROGRAMADO",
+            //     'estado_logistico' => 'PENDIENTE',
+            //     'estado_pagado' => 'PENDIENTE',
+            //     'estado_pago_logistica' => 'PENDIENTE',
+            //     'estado_devolucion' => 'PENDIENTE',
+            //     'do' => 'PENDIENTE',
+            //     'dt' => 'PENDIENTE',
+            //     'dl' => 'PENDIENTE'
+        
+            // ]);
+            
             $createOrder = new PedidosShopify([
-                'marca_t_i' => $fechaHoraActual,
-                'tienda_temporal' => $productos[0]['vendor'],
-                'numero_orden' => $order_number,
-                'direccion_shipping' => $address1,
-                'nombre_shipping' => $name,
-                'telefono_shipping' => $phone,
-                'precio_total' => $formattedPrice,
+                'marca_t_i' =>"",
+                'tienda_temporal' =>"",
+                'numero_orden' => "",
+                'direccion_shipping' => "",
+                'nombre_shipping' => "",
+                'telefono_shipping' =>"",
+                'precio_total' =>"",
                 'observacion' => "",
                 //implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title')),
-                'ciudad_shipping' => $city,
-                'sku' => $productos[0]['sku'],
-                'id_product' => $lastIdProduct,
-                'id_comercial' => $id,
-                'producto_p' => $listOfProducts[0]['title'],
+                'ciudad_shipping' =>"",
+                'sku' =>
+                "",
+                'id_product' => "",
+                'id_comercial' =>"",
+                'producto_p' => "",
                 'producto_extra' =>"",
                 //implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
-                'cantidad_total' => $listOfProducts[0]['quantity'],
+                'cantidad_total' => "",
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
                 'estado_logistico' => 'PENDIENTE',
@@ -1608,6 +1640,7 @@ class PedidosShopifyAPIController extends Controller
                 'do' => 'PENDIENTE',
                 'dt' => 'PENDIENTE',
                 'dl' => 'PENDIENTE'
+        
             ]);
             
             $createOrder->save();
