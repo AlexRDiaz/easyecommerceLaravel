@@ -1576,7 +1576,7 @@ class PedidosShopifyAPIController extends Controller
 
 
             $sku = $productos[0]['sku'];
-            $lastIdProduct = "";
+            $lastIdProduct = 0;
 
             if ($sku != null) {
                 $parts = explode('C', $sku);
