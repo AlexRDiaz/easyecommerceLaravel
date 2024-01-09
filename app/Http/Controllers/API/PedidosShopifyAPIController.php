@@ -1585,8 +1585,12 @@ class PedidosShopifyAPIController extends Controller
             //         $lastIdProduct = $id_product;
             //     }
             // }
+           $variants= implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
+
             error_log("******************proceso 2 terminado************************\n");
             error_log("******************numero de orden: . $order_number. ************************\n");
+            error_log("******************variantes: . $variants. ************************\n");
+
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
                 'tienda_temporal' =>$productos[0]['vendor'],
