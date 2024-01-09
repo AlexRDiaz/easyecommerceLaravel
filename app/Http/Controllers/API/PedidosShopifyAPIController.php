@@ -1578,13 +1578,13 @@ class PedidosShopifyAPIController extends Controller
             $sku = $productos[0]['sku'];
             $lastIdProduct = 0;
 
-            if ($sku != null) {
-                $parts = explode('C', $sku);
-                $id_product = end($parts);
-                if (is_numeric($id_product)) {
-                    $lastIdProduct = $id_product;
-                }
-            }
+            // if ($sku != null) {
+            //     $parts = explode('C', $sku);
+            //     $id_product = end($parts);
+            //     if (is_numeric($id_product)) {
+            //         $lastIdProduct = $id_product;
+            //     }
+            // }
             error_log("******************proceso 2 terminado************************\n");
 
             $createOrder = new PedidosShopify([
@@ -1597,8 +1597,9 @@ class PedidosShopifyAPIController extends Controller
                 'precio_total' => $formattedPrice,
                 'observacion' => "variants: " . implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title')),
                 'ciudad_shipping' => $city,
-                'sku' => $sku,
-                'id_product' => $lastIdProduct,
+                'sku' =>"",
+                // $sku,
+                'id_product' => 0,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
