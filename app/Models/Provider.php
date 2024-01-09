@@ -15,14 +15,18 @@ class Provider extends Model
         'description',
         'saldo',
         'provider_order',
-        'up_user_order'
+        'up_user_order',        
+        'approved',
+        'active',
     ];
 
     protected $casts = [
         'name' => 'string',
         'phone' => 'string',
         'description' => 'string',
-        'saldo' => 'string'
+        'saldo' => 'string',
+        'approved' => 'int',
+        'active' => 'int',
     ];
 
     public static array $rules = [
@@ -42,6 +46,6 @@ class Provider extends Model
 
     public function warehouses(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
-        return $this->hasMany(\App\Models\Warehouse::class, 'warehouse_id');
+        return $this->hasMany(\App\Models\Warehouse::class, 'provider_id');
     }
 }

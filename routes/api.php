@@ -395,7 +395,9 @@ Route::prefix('subrutas')->group(function () {
     Route::prefix('providers')->group(function () {
 
         Route::get('/all/{search?}', [ProviderAPIController::class, 'getProviders']);
-        Route::get('/all', [ProviderAPIController::class, 'index']);
+        Route::get('/nofilter', [ProviderAPIController::class, 'index']);
+        Route::put('/update/{id}', [ProviderAPIController::class, 'updateRequest']);
+
     });
 
     // *
@@ -445,6 +447,8 @@ Route::prefix('products')->group(function () {
     Route::post('/', [ProductAPIController::class, 'store']);
     Route::put('/{id}', [ProductAPIController::class, 'update']);
     Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
+    Route::put('update/{id}', [ProductAPIController::class, 'updateRequest']);
+    
 });
 
 Route::prefix('stockhistory')->group(function () {

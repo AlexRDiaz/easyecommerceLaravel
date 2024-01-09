@@ -10,6 +10,8 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use App\Http\Controllers\API\ReserveAPIController;
+use App\Models\Warehouse;
+use Illuminate\Support\Facades\Mail;
 
 class ProductAPIController extends Controller
 {
@@ -458,32 +460,50 @@ class ProductAPIController extends Controller
     public function store(Request $request)
     {
         //
-        $data = $request->json()->all();
-        // return response()->json($data, 200);
+        try {
+            $data = $request->json()->all();
+            // return response()->json($data, 200);
 
-        $product_name = $data['product_name'];
-        $stock = $data['stock'];
-        $price = $data['price'];
-        $url_img = $data['url_img'];
-        $isvariable = $data['isvariable'];
-        // $features = json_encode($data['features']);
-        $features = $data['features'];
-        $warehouse_id = $data['warehouse_id'];
+            $product_name = $data['product_name'];
+            $stock = $data['stock'];
+            $price = $data['price'];
+            $url_img = $data['url_img'];
+            $isvariable = $data['isvariable'];
+            // $features = json_encode($data['features']);
+            $features = $data['features'];
+            $warehouse_id = $data['warehouse_id'];
 
-        $newProduct = new Product();
-        $newProduct->product_name = $product_name;
-        $newProduct->stock = $stock;
-        $newProduct->price = $price;
-        $newProduct->url_img = $url_img;
-        $newProduct->isvariable = $isvariable;
-        $newProduct->features = $features;
-        $newProduct->warehouse_id = $warehouse_id;
-        // $newProduct->approved = 2;//Pendiente
+            $warehouse = Warehouse::find($warehouse_id); // Encuentra al usuario por su ID
+
+            $newProduct = new Product();
+            $newProduct->product_name = $product_name;
+            $newProduct->stock = $stock;
+            $newProduct->price = $price;
+            $newProduct->url_img = $url_img;
+            $newProduct->isvariable = $isvariable;
+            $newProduct->features = $features;
+            $newProduct->warehouse_id = $warehouse_id;
+            // $newProduct->approved = 2;//Pendiente
 
 
-        $newProduct->save();
+            $newProduct->save();
 
-        return response()->json($newProduct, 200);
+
+            if ($newProduct) {
+                $to = 'easyecommercetest@gmail.com';
+                $subject = 'Aprobación de un nuevo producto';
+                $message = 'La bodega "' . $warehouse->branch_name . '" ha agregado un nuevo producto "' . $newProduct->product_name . '" con el id "' . $newProduct->product_id . '" para la respectiva aprobación.';
+                Mail::raw($message, function ($mail) use ($to, $subject) {
+                    $mail->to($to)->subject($subject);
+                });
+
+                return response()->json($newProduct, 200);
+            } else {
+                return response()->json(['message' => 'Error al crear producto'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -526,7 +546,6 @@ class ProductAPIController extends Controller
         } else {
             return response()->json(['message' => 'Producto no encontrado'], 404);
         }
-
     }
 
     /**
@@ -537,6 +556,19 @@ class ProductAPIController extends Controller
         //
         Product::where('product_id', $id)
             ->update(['active' => 0]);
+    }
+
+    public function updateRequest(Request $request, $id)
+    {
+        $data = $request->all();
+
+        $provider = Product::findOrFail($id);
+
+        $provider->fill($data);
+        $provider->save();
+
+        // Respuesta de éxito
+        return response()->json(['message' => 'Registro actualizado con éxito', "res" => $provider], 200);
     }
 
 
@@ -582,21 +614,19 @@ class ProductAPIController extends Controller
             $currentDateTime = date('Y-m-d H:i:s');
 
             $createHistory = new StockHistory();
-                $createHistory->product_id =  $productIdFromSKU;
-                $createHistory->variant_sku = $onlySku;
-                $createHistory->type = $type;
-                $createHistory->date = $currentDateTime;
-                $createHistory->units = $quantity;
-                $createHistory->last_stock = $product->stock-$quantity;
-                $createHistory->current_stock = $product->stock;
-                $createHistory->description = "Incremento de stock General Pedido EN BODEGA";
-                
-                $createHistory->save();
+            $createHistory->product_id =  $productIdFromSKU;
+            $createHistory->variant_sku = $onlySku;
+            $createHistory->type = $type;
+            $createHistory->date = $currentDateTime;
+            $createHistory->units = $quantity;
+            $createHistory->last_stock = $product->stock - $quantity;
+            $createHistory->current_stock = $product->stock;
+            $createHistory->description = "Incremento de stock General Pedido EN BODEGA";
 
+            $createHistory->save();
         } else {
             return response()->json(['message' => 'Product not found'], 404);
         }
-
     }
     // ! ↓ FUNCIONAL ↓ 
     public function updateProductVariantStock(Request $request)
@@ -644,7 +674,7 @@ class ProductAPIController extends Controller
             $product = Product::find($productIdFromSKU);
 
             if ($product === null) {
-                return null; 
+                return null;
             }
 
             if ($product) {
@@ -660,14 +690,11 @@ class ProductAPIController extends Controller
                 $createHistory->last_stock = $product->stock + $quantity;
                 $createHistory->current_stock = $product->stock;
                 $createHistory->description = "Reducción de stock General Pedido ENVIADO";
-                
-                $createHistory->save();
 
+                $createHistory->save();
             } else {
                 return response()->json(['message' => 'Product not found'], 404);
             }
         }
-
     }
-
 }

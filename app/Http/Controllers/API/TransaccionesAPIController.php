@@ -337,7 +337,7 @@ class TransaccionesAPIController extends Controller
             $startDateFormatted = new DateTime();
 
             // $pedido = PedidosShopify::findOrFail($data['id_origen']);
-            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore'])->findOrFail($data['id_origen']);
+            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore','transactionTransportadora'])->findOrFail($data['id_origen']);
 
             $pedido->status = "ENTREGADO";
             $pedido->fecha_entrega = now()->format('j/n/Y');
@@ -349,6 +349,8 @@ class TransaccionesAPIController extends Controller
             if ($data["archivo"] != "") {
                 $pedido->archivo = $data["archivo"];
             }
+            $costoTransportadora = $pedido['transportadora'][0]['costo_transportadora'];
+            $pedido->costo_transportadora = $costoTransportadora;
             $pedido->save();
             $SellerCreditFinalValue = $this->updateProductAndProviderBalance(
                 // "TEST2C1003",
@@ -509,6 +511,8 @@ class TransaccionesAPIController extends Controller
                 $request->merge(['monto' => $data['monto_debit']]);
                 $this->Debit($request);
             }
+            $costoTransportadora = $pedido['transportadora'][0]['costo_transportadora'];
+            $pedido->costo_transportadora = $costoTransportadora;
             $pedido->save();
 
             // error_log("NO ENTREGADO aqui deberia hacer la inserciion en tpt");

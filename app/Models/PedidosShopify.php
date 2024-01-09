@@ -282,4 +282,9 @@ class PedidosShopify extends Model
         return $this->belongsTo(\App\Models\Product::class, 'id_product');
     }
 
+	public function transactionTransportadora()
+	{
+		return $this->belongsTo(TransaccionPedidoTransportadora::class, 'id', 'id_pedido');
+	}
+
 }
