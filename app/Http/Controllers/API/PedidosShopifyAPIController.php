@@ -1668,8 +1668,8 @@ class PedidosShopifyAPIController extends Controller
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
                 'search' => 'MANDE',
-                'and' => [],
-                'id_product' => $id_product
+               // 'and' => [],
+              //  'id_product' => $id_product
             ], 200);
         } else {
             return response()->json([
