@@ -1687,10 +1687,6 @@ class PedidosShopifyAPIController extends Controller
             ], 200);
         }
     }
-
-
-
-
     public function sendToAutome($url, $data)
     {
         $client = new Client();
