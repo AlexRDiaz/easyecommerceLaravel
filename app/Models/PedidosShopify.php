@@ -116,6 +116,7 @@ class PedidosShopify extends Model
 		'id_comercial',
 		'producto_p',
 		'producto_extra',
+		'variant_details',
 		'cantidad_total',
 		'status',
 		'estado_logistico',
@@ -158,8 +159,7 @@ class PedidosShopify extends Model
 		'confirmed_by',
 		'confirmed_at',
 		'sku',
-		'id_product',
-		'variant_details'
+		'id_product'
 	];
 
 	public function admin_user()
