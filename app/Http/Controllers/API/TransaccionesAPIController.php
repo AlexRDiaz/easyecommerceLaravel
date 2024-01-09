@@ -278,7 +278,7 @@ class TransaccionesAPIController extends Controller
 
             // Log::info('sku', [$firstPart]);
 
-            // Buscar el producto por ID    
+            // Buscar el producto por ID
             $product = Product::with('warehouse')->find($productId);
 
             if ($product === null) {
@@ -337,7 +337,7 @@ class TransaccionesAPIController extends Controller
             $startDateFormatted = new DateTime();
 
             // $pedido = PedidosShopify::findOrFail($data['id_origen']);
-            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore','transactionTransportadora'])->findOrFail($data['id_origen']);
+            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore', 'transactionTransportadora'])->findOrFail($data['id_origen']);
 
             $pedido->status = "ENTREGADO";
             $pedido->fecha_entrega = now()->format('j/n/Y');
@@ -367,7 +367,6 @@ class TransaccionesAPIController extends Controller
 
             if ($SellerCreditFinalValue['total'] != null) {
                 $request->merge(['monto' => $SellerCreditFinalValue['total']]);
-
             }
 
             $this->Credit($request);
@@ -375,7 +374,7 @@ class TransaccionesAPIController extends Controller
 
             // !*********
             if ($SellerCreditFinalValue['valor_producto'] != null) {
-            
+
                 $request->merge(['comentario' => 'Costo de de valor de Producto en Bodega ' . $pedido->status]);
                 $request->merge(['origen' => 'valor producto bodega']);
                 $request->merge(['monto' => $SellerCreditFinalValue['valor_producto']]);
@@ -425,34 +424,24 @@ class TransaccionesAPIController extends Controller
                 $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
             }
 
-            // error_log("aqui deberia hacer la inserciion en tpt");
+            // error_log("add en tpt");
 
             $idTransportadora = $pedido['transportadora'][0]['id'];
             $fechaEntrega = now()->format('j/n/Y');
 
             $precioTotal = $pedido['precio_total'];
-            $costoTransportadora = $pedido['transportadora'][0]['costo_transportadora'];
             $idOper = null;
             if ($pedido['operadore']->isEmpty()) {
-                // error_log("operadore vacio");
+                error_log("operadore vacio");
                 // error_log("idO: " . $idOper);
             } else {
-                // error_log("operadore NO vacio");
+                error_log("operadore NO vacio");
                 $idOper = $pedido['operadore'][0]['id'];
-                // error_log("idO: " . $idOper);
+                error_log("idO: " . $idOper);
             }
-            // return response()->json($pedido);
-            // return response()->json(["idPedido" => $data['id_origen'], "idTransportadora" => $idTransportadora, "fechaEntrega" => $fechaEntrega, "idOper" => $idOper], 200);
 
-
-            $transaccion = TransaccionPedidoTransportadora::where('id_pedido',  $data['id_origen'])
-                ->where('id_transportadora', $idTransportadora)
-                ->where('fecha_entrega', $fechaEntrega)
-                ->get();
-
-            if ($transaccion->isEmpty()) {
+            if ($pedido['transactionTransportadora'] == null) {
                 // error_log("new tpt");
-                //
                 $transaccionNew = new TransaccionPedidoTransportadora();
                 $transaccionNew->status = "ENTREGADO";
                 $transaccionNew->fecha_entrega = $fechaEntrega;
@@ -463,15 +452,12 @@ class TransaccionesAPIController extends Controller
                 $transaccionNew->id_operador = $idOper;
 
                 $transaccionNew->save();
-                // error_log("new saved");
             } else {
-                //upt
                 // error_log("upt tpt");
-                $transaccionToUpdate = $transaccion->first();
-                $transaccionToUpdate->status = "ENTREGADO";
-                $transaccionToUpdate->costo_transportadora = $costoTransportadora;
-                $transaccionToUpdate->save();
-                // error_log("updated");
+                TransaccionPedidoTransportadora::where('id', $pedido['transactionTransportadora']['id'])->update([
+                    'status' => 'ENTREGADO',
+                    'costo_transportadora' => $costoTransportadora,
+                ]);
             }
 
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
@@ -495,7 +481,7 @@ class TransaccionesAPIController extends Controller
         try {
             $data = $request->json()->all();
             // $pedido = PedidosShopify::findOrFail($data['id_origen']);
-            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore'])->findOrFail($data['id_origen']);
+            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore', 'transactionTransportadora'])->findOrFail($data['id_origen']);
 
             $pedido->status = "NO ENTREGADO";
             $pedido->fecha_entrega = now()->format('j/n/Y');
@@ -515,13 +501,12 @@ class TransaccionesAPIController extends Controller
             $pedido->costo_transportadora = $costoTransportadora;
             $pedido->save();
 
-            // error_log("NO ENTREGADO aqui deberia hacer la inserciion en tpt");
+            // error_log("NO ENTREGADO add en tpt");
 
             $idTransportadora = $pedido['transportadora'][0]['id'];
             $fechaEntrega = now()->format('j/n/Y');
 
             $precioTotal = $pedido['precio_total'];
-            $costoTransportadora = $pedido['transportadora'][0]['costo_transportadora'];
             $idOper = null;
             if ($pedido['operadore']->isEmpty()) {
                 // error_log("operadore vacio");
@@ -531,18 +516,9 @@ class TransaccionesAPIController extends Controller
                 $idOper = $pedido['operadore'][0]['id'];
                 // error_log("idO: " . $idOper);
             }
-            // return response()->json($pedido);
-            // return response()->json(["idPedido" => $data['id_origen'], "idTransportadora" => $idTransportadora, "fechaEntrega" => $fechaEntrega, "idOper" => $idOper], 200);
 
-
-            $transaccion = TransaccionPedidoTransportadora::where('id_pedido',  $data['id_origen'])
-                ->where('id_transportadora', $idTransportadora)
-                ->where('fecha_entrega', $fechaEntrega)
-                ->get();
-
-            if ($transaccion->isEmpty()) {
+            if ($pedido['transactionTransportadora'] == null) {
                 // error_log("new tpt");
-                //
                 $transaccionNew = new TransaccionPedidoTransportadora();
                 $transaccionNew->status = "NO ENTREGADO";
                 $transaccionNew->fecha_entrega = $fechaEntrega;
@@ -553,18 +529,15 @@ class TransaccionesAPIController extends Controller
                 $transaccionNew->id_operador = $idOper;
 
                 $transaccionNew->save();
-                // error_log("new saved");
             } else {
-                //upt
                 // error_log("upt tpt");
-                $transaccionToUpdate = $transaccion->first();
-                $transaccionToUpdate->status = "NO ENTREGADO";
-                $transaccionToUpdate->costo_transportadora = $costoTransportadora;
-                $transaccionToUpdate->save();
-                // error_log("updated");
+                TransaccionPedidoTransportadora::where('id', $pedido['transactionTransportadora']['id'])->update([
+                    'status' => 'NO ENTREGADO',
+                    'costo_transportadora' => $costoTransportadora,
+                ]);
             }
 
-            DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+            DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
             return response()->json([
                 "res" => "transaccion exitosa"
             ]);
