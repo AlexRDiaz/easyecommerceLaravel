@@ -1625,7 +1625,7 @@ class PedidosShopifyAPIController extends Controller
                 'sku' =>"",
                 'id_product' => 0,
                 'id_comercial' =>$id,
-                'producto_p' => "",
+                'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' =>"",
                 //implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
                 'cantidad_total' => "",
