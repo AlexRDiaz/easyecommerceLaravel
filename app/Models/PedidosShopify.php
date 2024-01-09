@@ -158,7 +158,8 @@ class PedidosShopify extends Model
 		'confirmed_by',
 		'confirmed_at',
 		'sku',
-		'id_product'
+		'id_product',
+		'variant_details'
 	];
 
 	public function admin_user()
