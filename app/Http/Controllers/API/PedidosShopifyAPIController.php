@@ -1607,7 +1607,7 @@ class PedidosShopifyAPIController extends Controller
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
-                'variant_details'=> implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title')),
+                'variant_details'=> $variants,
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
