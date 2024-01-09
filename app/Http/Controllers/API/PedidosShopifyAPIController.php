@@ -1589,8 +1589,7 @@ class PedidosShopifyAPIController extends Controller
             error_log("******************numero de orden: . $order_number. ************************\n");
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
-                'tienda_temporal' => "",
-                //$productos[0]['vendor'],
+                'tienda_temporal' =>$productos[0]['vendor'],
                 'numero_orden' => $order_number,
                 'direccion_shipping' => $address1,
                 'nombre_shipping' => $name,
