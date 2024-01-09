@@ -1623,8 +1623,7 @@ class PedidosShopifyAPIController extends Controller
                 'observacion' => "",
                 //implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title')),
                 'ciudad_shipping' =>"",
-                'sku' =>
-                "",
+                'sku' =>"",
                 'id_product' => 0,
                 'id_comercial' =>"",
                 'producto_p' => "",
