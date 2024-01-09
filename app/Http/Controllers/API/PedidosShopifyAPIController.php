@@ -1526,7 +1526,9 @@ class PedidosShopifyAPIController extends Controller
                 'quantity' => $element['quantity'],
                 'price' => $element['price'],
                 'title' => $element['title'],
-                'variant_title'=> $element['variant_title']
+                'variant_title'=> $element['variant_title'],
+                'sku'=> $element['sku']
+
             ];
         }
 
@@ -1572,6 +1574,7 @@ class PedidosShopifyAPIController extends Controller
             // Crear una nueva orden
             $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
 
+            
             $sku = $productos[0]['sku'];
             $parts = explode('C', $sku);
             $lastIdProduct = "";
@@ -1612,6 +1615,7 @@ class PedidosShopifyAPIController extends Controller
         
             // ]);
             
+            
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
                 'tienda_temporal' =>$productos[0]['vendor'],
@@ -1620,9 +1624,9 @@ class PedidosShopifyAPIController extends Controller
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion' => implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title')),
+                'observacion' =>"variants: ". implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'))  ,
                 'ciudad_shipping' =>$city,
-                'sku' =>"",
+                'sku' => $sku,
                 'id_product' => 0,
                 'id_comercial' =>$id,
                 'producto_p' => $listOfProducts[0]['title'],
