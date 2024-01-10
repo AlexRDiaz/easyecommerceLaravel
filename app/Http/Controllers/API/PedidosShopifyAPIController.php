@@ -13,6 +13,7 @@ use App\Models\PedidosShopifiesTransportadoraLink;
 use App\Models\PedidosShopify;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
 use App\Models\Ruta;
+use App\Models\TransaccionPedidoTransportadora;
 use App\Models\TransportStats;
 use App\Models\UpUser;
 use App\Models\UpUsersPedidosShopifiesLink;
@@ -548,7 +549,7 @@ class PedidosShopifyAPIController extends Controller
         $not = $data['not'];
         // ! *************************************
 
-        $pedidos = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta', 'printedBy', 'sentBy'])
+        $pedidos = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta', 'printedBy', 'sentBy', 'product.warehouse.provider'])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -1496,7 +1497,6 @@ class PedidosShopifyAPIController extends Controller
     public function shopifyPedidos(Request $request, $id)
     {
         //GENERATE DATE
-        date_default_timezone_set('Etc/GMT+5');
         $currentDate = now();
         $fechaActual = $currentDate->format('d/m/Y');
 
@@ -1506,7 +1506,6 @@ class PedidosShopifyAPIController extends Controller
         //VARIABLES FOR ENTITY
         $listOfProducts = [];
         $order_number = $request->input('order_number');
-        error_log("order number: " . $order_number);
 
         $name = $request->input('shipping_address.name');
         $address1 = $request->input('shipping_address.address1');
@@ -1515,27 +1514,21 @@ class PedidosShopifyAPIController extends Controller
         $customer_note = $request->input('customer_note');
         $city = $request->input('shipping_address.city');
         $productos = $request->input('line_items');
-        error_log("Respuesta rand: " . "hola mundo");
 
         //ADD PRODUCT TO LIST FOR NEW OBJECT
+
+        error_log("******************proceso 1 terminado************************\n");
         foreach ($productos as $element) {
-            error_log("identificador2: " . $element['id']);
-            error_log("product id: " . $element['product_id']);
-
-
-
-            $atributos = array_keys($element);
-
-            // Registra los atributos presentes en $element
-            error_log("Atributos en \$element: " . implode(', ', $atributos));
-
 
             $listOfProducts[] = [
                 'id' => $element['id'],
                 'name' => $element['product_id'],
                 'quantity' => $element['quantity'],
                 'price' => $element['price'],
-                'title' => $element['title']
+                'title' => $element['title'],
+                'variant_title' => $element['variant_title'],
+                'sku' => $element['sku']
+
             ];
         }
 
@@ -1580,20 +1573,41 @@ class PedidosShopifyAPIController extends Controller
 
             // Crear una nueva orden
             $formattedPrice = str_replace(["$", ",", " "], "", $total_price);
+
+
+            $sku = $productos[0]['sku'];
+            $lastIdProduct = 0;
+
+            // if ($sku != null) {
+            //     $parts = explode('C', $sku);
+            //     $id_product = end($parts);
+            //     if (is_numeric($id_product)) {
+            //         $lastIdProduct = $id_product;
+            //     }
+            // }
+           $variants= implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
+
+            error_log("******************proceso 2 terminado************************\n");
+            error_log("******************numero de orden: . $order_number. ************************\n");
+            error_log("******************variantes: . $variants. ************************\n");
+
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
-                'tienda_temporal' => $productos[0]['vendor'],
+                'tienda_temporal' =>$productos[0]['vendor'],
                 'numero_orden' => $order_number,
                 'direccion_shipping' => $address1,
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion' => $customer_note ?? "",
+                'observacion'=>isset($request->customer_note) ? strval($request->customer_note) : "",
                 'ciudad_shipping' => $city,
-                'sku' => $productos[0]['sku'],
+                'sku' =>"",
+                // $sku,
+                'id_product' => 0,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
-                'producto_extra' => implode(', ', array_slice($listOfProducts, 1)),
+                'producto_extra' => implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
+                'variant_details'=> $variants,
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
@@ -1604,9 +1618,12 @@ class PedidosShopifyAPIController extends Controller
                 'do' => 'PENDIENTE',
                 'dt' => 'PENDIENTE',
                 'dl' => 'PENDIENTE'
+
             ]);
 
             $createOrder->save();
+            error_log("******************proceso 3 terminado************************\n");
+
 
             $createPedidoFecha = new PedidosShopifiesPedidoFechaLink();
             $createPedidoFecha->pedidos_shopify_id = $createOrder->id;
@@ -1620,6 +1637,7 @@ class PedidosShopifyAPIController extends Controller
             $user = UpUser::with([
                 'vendedores',
             ])->find($id);
+            error_log("******************proceso 4 terminado************************\n");
 
             if ($user->enable_autome) {
                 if ($user->webhook_autome != null) {
@@ -1649,30 +1667,14 @@ class PedidosShopifyAPIController extends Controller
                     ]);
                 }
             }
-
-
-            // "id" =>  $createOrder->id,
-            // "marca_t_i" => $createOrder->marca_t_i,
-            // "tienda_temporal" => $createOrder->tienda_temporal,
-            // "numero_orden" => $createOrder->numero_orden,
-            // "direccion_shipping" => $createOrder->direccion_shipping,
-            // "nombre_shipping" => $createOrder->nombre_shipping,
-            // "telefono_shipping" => $createOrder->telefono_shipping,
-            // "precio_total" => $createOrder->precio_total,
-            // "observacion" => $createOrder->observacion,
-            // "ciudad_shipping" => $createOrder->ciudad_shipping,
-            // "id_comercial" => $createOrder->id_comercial,
-            // "producto_p" => $createOrder->id_comercial,
-            // "producto_extra" => $createOrder->id_comercial,
-            // "cantidad_total" => $createOrder->id_comercial,
-            // "status" => $createOrder->id_comercial,
+            error_log("******************proceso 5 terminado************************\n");
 
             return response()->json([
-                // 'autome_response' => json_decode($response->getBody()->getContents()),
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
                 'search' => 'MANDE',
-                'and' => []
+               // 'and' => [],
+              //  'id_product' => $id_product
             ], 200);
         } else {
             return response()->json([
@@ -1688,10 +1690,9 @@ class PedidosShopifyAPIController extends Controller
                     'producto' => $listOfProducts
                 ],
                 'orden_existente' => $search,
-            ], 401);
+            ], 200);
         }
     }
-
     public function sendToAutome($url, $data)
     {
         $client = new Client();
@@ -2357,7 +2358,9 @@ class PedidosShopifyAPIController extends Controller
             if ($value != "NOVEDAD_date") {
                 $pedido->status = $value;
             }
+
             $pedido->fill($datarequest);
+
             if ($value == "ENTREGADO" || $value == "NO ENTREGADO") {
                 $pedido->fecha_entrega = $date;
             }
@@ -2367,6 +2370,25 @@ class PedidosShopifyAPIController extends Controller
             }
             $pedido->status_last_modified_at = $currentDateTime;
             $pedido->status_last_modified_by = $idUser;
+
+            // // * if it exists, delete from transaccion_pedidos_transportadora
+            // error_log("delete from tpt");
+
+            $idTransportadora = $pedido['transportadora'][0]['id'];
+            $fechaEntrega = now()->format('j/n/Y');
+
+            $transaccion = TransaccionPedidoTransportadora::where('id_pedido', $id)
+                ->where('id_transportadora', $idTransportadora)
+                ->where('fecha_entrega', $fechaEntrega)
+                ->get();
+
+            $transaccionFound = $transaccion->first();
+
+            if ($transaccionFound !== null) {
+                // error_log($transaccionFound->id);
+                $transaccionFound->delete();
+                // error_log("deleted");
+            }
         }
 
         //v0

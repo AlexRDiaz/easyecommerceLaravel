@@ -20,6 +20,7 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
+use Ramsey\Uuid\Uuid;
 use Tymon\JWTAuth\Exceptions\JWTException;
 use Tymon\JWTAuth\Facades\JWTAuth;
 
@@ -90,8 +91,7 @@ class UpUserAPIController extends Controller
         $user->permisos = $permisosCadena;
         $user->blocked = false;
         $user->save();
-        $user->vendedores()->attach($request->input('vendedores'), [
-        ]);
+        $user->vendedores()->attach($request->input('vendedores'), []);
 
         $newUpUsersRoleLink = new UpUsersRoleLink();
         $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
@@ -110,7 +110,6 @@ class UpUserAPIController extends Controller
 
 
         return response()->json(['message' => 'Usuario interno creado con éxito', 'user_id' => $user->id, 'user_id'], 201);
-
     }
 
 
@@ -145,8 +144,7 @@ class UpUserAPIController extends Controller
         $user->permisos = $permisosCadena;
         $user->blocked = false;
         $user->save();
-        $user->providers()->attach($request->input('providers'), [
-        ]);
+        $user->providers()->attach($request->input('providers'), []);
 
         $newUpUsersRoleLink = new UpUsersRoleLink();
         $newUpUsersRoleLink->user_id = $user->id; // Asigna el ID del usuario existente
@@ -165,7 +163,6 @@ class UpUserAPIController extends Controller
 
 
         return response()->json(['message' => 'Subproveedor creado con éxito', 'user_id' => $user->id, 'user_id'], 201);
-
     }
 
     public function editAutome(Request $request, $id)
@@ -256,6 +253,7 @@ class UpUserAPIController extends Controller
         $newUpUsersRoleLink->save();
 
 
+
         $userRoleFront = new UpUsersRolesFrontLink();
         $userRoleFront->user_id = $user->id;
         $userRoleFront->roles_front_id = 5;
@@ -269,14 +267,12 @@ class UpUserAPIController extends Controller
         $provider->user_id = $user->id;
 
         $provider->save();
-        $user->providers()->attach($provider->id, [
-        ]);
+        $user->providers()->attach($provider->id, []);
 
         // Mail::to($user->email)->send(new UserValidation($resultCode));
 
 
         return response()->json(['message' => 'Vendedor creado con éxito'], 200);
-
     }
 
 
@@ -314,8 +310,7 @@ class UpUserAPIController extends Controller
         $user->permisos = $permisosCadena;
         $user->blocked = false;
         $user->save();
-        $user->vendedores()->attach($request->input('vendedores'), [
-        ]);
+        $user->vendedores()->attach($request->input('vendedores'), []);
 
 
 
@@ -343,15 +338,13 @@ class UpUserAPIController extends Controller
         $seller->referer = $request->input('referer');
         $seller->save();
 
-        $user->vendedores()->attach($seller->id, [
-        ]);
+        $user->vendedores()->attach($seller->id, []);
 
 
         Mail::to($user->email)->send(new UserValidation($resultCode));
 
 
         return response()->json(['message' => 'Vendedor creado con éxito'], 200);
-
     }
 
 
@@ -399,7 +392,6 @@ class UpUserAPIController extends Controller
         }
 
         return response()->json($vendedores[0], Response::HTTP_OK);
-
     }
 
     /**
@@ -422,7 +414,6 @@ class UpUserAPIController extends Controller
             $upUser->password = bcrypt($newPassword);
             $upUser->save();
             return response()->json(['message' => 'Contraseña actualizada con éxito', 'user' => $upUser], Response::HTTP_OK);
-
         } else {
             $upUser->fill($request->all());
             $upUser->save();
@@ -499,6 +490,7 @@ class UpUserAPIController extends Controller
 
             $integration = Integration::where("name", $data["name"])->first();
 
+
             if (!empty($integration)) {
                 return response()->json([
                     'integration' => $integration,
@@ -513,7 +505,6 @@ class UpUserAPIController extends Controller
             $newIntegration->user_id = $data["user_id"];
             $newIntegration->save();
             return response()->json(['integration' => $newIntegration], Response::HTTP_OK);
-
         } catch (\Exception $e) {
             return response()->json(['error' => 'Error al generar el token', "e" => $e], Response::HTTP_INTERNAL_SERVER_ERROR);
         }
@@ -551,6 +542,93 @@ class UpUserAPIController extends Controller
         }
 
         return response()->json(['user' => $upUser], Response::HTTP_OK);
+    }
+
+    public function updatePaymentInformation(Request $request, $id)
+    {
+        try {
+            $data = $request->json()->all();
+            $myuuid = Uuid::uuid4();
+            $data["id"]= $myuuid;
+            $user = UpUser::find($id);
+
+            if ($user->payment_information == null ||$user->payment_information == "" ) {
+            
+                $jsonData = json_encode([$data]);
+                $encryptedData = encrypt($jsonData);
+                $user->payment_information = $encryptedData;
+
+
+            } else {
+                $currentPaymentInformation =  $this->getPaymentInformationLocal($id);
+                  array_push($currentPaymentInformation, $data);
+               $jsonData2 = json_encode($currentPaymentInformation);
+                  $encryptedData2 = encrypt($jsonData2);
+              $user->payment_information = $encryptedData2;
+
+            }
+
+            $user->save();
+
+            return response()->json(['message' => 'User modified successfully', $currentPaymentInformation], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'User modify failed', $e], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+     public function modifyAccount(Request $request, $id)
+    {
+        try {
+
+            $data = $request->json()->all();
+             $user = UpUser::find($id);
+            // $myuuid = Uuid::uuid4();
+            // $data["account_data"]["id"]= $myuuid;
+
+                $jsonData = json_encode($data["account_data"]);
+                $encryptedData = encrypt($jsonData);
+                $user->payment_information = $encryptedData;
+
+
+            $user->save();
+
+            return response()->json(['message' => 'User modified successfully'], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'User modify failed', $e], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+
+    public function getPaymentInformation($id)
+    {
+        try {
+
+
+            $user = UpUser::find($id);
+            if($user->payment_information!=null){
+            $decriptedData = decrypt($user->payment_information);
+            
+            return response()->json(['message' => 'Get successfully', 'data' => json_decode($decriptedData)], Response::HTTP_OK);
+            }else{
+                return response()->json(['message' => 'Empty', 'data' => []], Response::HTTP_OK);
+
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => 'Get failed', $e], Response::HTTP_BAD_REQUEST);
+        }
+    }
+    public function getPaymentInformationLocal($id)
+    {
+        try {
+
+
+            $user = UpUser::find($id);
+            $decriptedData = decrypt($user->payment_information);
+
+            return json_decode($decriptedData);
+        } catch (\Exception $e) {
+            return $e;
+        }
     }
 
     public function managePermission(Request $request)
@@ -639,7 +717,6 @@ class UpUserAPIController extends Controller
 
         $resp = $upUser->get();
         return response()->json(['consulta' => $search, 'users' => $resp], Response::HTTP_OK);
-
     }
 
     public function getSubProviders($id, $search = null)
@@ -661,7 +738,6 @@ class UpUserAPIController extends Controller
 
         $resp = $upUser->get();
         return response()->json(['consulta' => $search, 'users' => $resp], Response::HTTP_OK);
-
     }
 
     public function verifyTerms($id)
@@ -1014,8 +1090,8 @@ class UpUserAPIController extends Controller
             }
         }
         return response()->json(['message' => 'Permisos eliminados en roles y en cada usuario con éxito'], 200);
-
     }
+
     public function handleCallback(Request $request)
     {
         $code = $request->input('code'); // Captura el código de autorización
@@ -1104,3 +1180,28 @@ class UpUserAPIController extends Controller
     }
 
 }
+    public function userByEmail(Request $request)
+    {
+        $data = $request->json()->all();
+
+        $email = $data['email'];
+
+        // Utiliza first() para obtener un solo resultado
+        $upUser = UpUser::with([
+            'roles_fronts',
+            'vendedores',
+            'transportadora',
+            'operadores',
+            'providers',
+        ])->where('email', 'like', '%' . $email . '%')->first();
+
+        // Verifica si el usuario no se encuentra
+        if (!$upUser) {
+            return response()->json(['error' => 'Usuario no encontrado'], Response::HTTP_NOT_FOUND);
+        }
+
+        // Utiliza compact() para enviar la respuesta
+        return response()->json(['user' => $upUser], Response::HTTP_OK);
+    }
+}
+

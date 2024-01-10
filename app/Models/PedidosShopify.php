@@ -116,6 +116,7 @@ class PedidosShopify extends Model
 		'id_comercial',
 		'producto_p',
 		'producto_extra',
+		'variant_details',
 		'cantidad_total',
 		'status',
 		'estado_logistico',
@@ -157,7 +158,8 @@ class PedidosShopify extends Model
 		'status_last_modified_by',
 		'confirmed_by',
 		'confirmed_at',
-		'sku'
+		'sku',
+		'id_product'
 	];
 
 	public function admin_user()
@@ -275,4 +277,15 @@ class PedidosShopify extends Model
 	{
 		return $this->belongsTo(UpUser::class, 'status_last_modified_by', 'id');
 	}
+	
+	public function product(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(\App\Models\Product::class, 'id_product');
+    }
+
+	public function transactionTransportadora()
+	{
+		return $this->belongsTo(TransaccionPedidoTransportadora::class, 'id', 'id_pedido');
+	}
+
 }

@@ -4,9 +4,14 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\Reserve;
+use App\Models\StockHistory;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
+use App\Http\Controllers\API\ReserveAPIController;
+use App\Models\Warehouse;
+use Illuminate\Support\Facades\Mail;
 
 class ProductAPIController extends Controller
 {
@@ -197,7 +202,8 @@ class ProductAPIController extends Controller
             ->when(count($categoryFilters) > 0, function ($query) use ($categoryFilters) {
                 $query->where(function ($query) use ($categoryFilters) {
                     foreach ($categoryFilters as $category) {
-                        $query->orWhereRaw("JSON_CONTAINS(JSON_EXTRACT(features, '$.categories'), '\"$category\"')");
+                        // $query->orWhereRaw("JSON_CONTAINS(JSON_EXTRACT(features, '$.categories'), '\"$category\"')");
+                        $query->orWhereRaw("JSON_CONTAINS(JSON_EXTRACT(features, '$.categories[*].name'), '\"$category\"')");
                     }
                 });
             });
@@ -454,32 +460,50 @@ class ProductAPIController extends Controller
     public function store(Request $request)
     {
         //
-        $data = $request->json()->all();
-        // return response()->json($data, 200);
+        try {
+            $data = $request->json()->all();
+            // return response()->json($data, 200);
 
-        $product_name = $data['product_name'];
-        $stock = $data['stock'];
-        $price = $data['price'];
-        $url_img = $data['url_img'];
-        $isvariable = $data['isvariable'];
-        // $features = json_encode($data['features']);
-        $features = $data['features'];
-        $warehouse_id = $data['warehouse_id'];
+            $product_name = $data['product_name'];
+            $stock = $data['stock'];
+            $price = $data['price'];
+            $url_img = $data['url_img'];
+            $isvariable = $data['isvariable'];
+            // $features = json_encode($data['features']);
+            $features = $data['features'];
+            $warehouse_id = $data['warehouse_id'];
 
-        $newProduct = new Product();
-        $newProduct->product_name = $product_name;
-        $newProduct->stock = $stock;
-        $newProduct->price = $price;
-        $newProduct->url_img = $url_img;
-        $newProduct->isvariable = $isvariable;
-        $newProduct->features = $features;
-        $newProduct->warehouse_id = $warehouse_id;
-        // $newProduct->approved = 2;//Pendiente
+            $warehouse = Warehouse::find($warehouse_id); // Encuentra al usuario por su ID
+
+            $newProduct = new Product();
+            $newProduct->product_name = $product_name;
+            $newProduct->stock = $stock;
+            $newProduct->price = $price;
+            $newProduct->url_img = $url_img;
+            $newProduct->isvariable = $isvariable;
+            $newProduct->features = $features;
+            $newProduct->warehouse_id = $warehouse_id;
+            // $newProduct->approved = 2;//Pendiente
 
 
-        $newProduct->save();
+            $newProduct->save();
 
-        return response()->json($newProduct, 200);
+
+            if ($newProduct) {
+                $to = 'easyecommercetest@gmail.com';
+                $subject = 'Aprobación de un nuevo producto';
+                $message = 'La bodega "' . $warehouse->branch_name . '" ha agregado un nuevo producto "' . $newProduct->product_name . '" con el id "' . $newProduct->product_id . '" para la respectiva aprobación.';
+                Mail::raw($message, function ($mail) use ($to, $subject) {
+                    $mail->to($to)->subject($subject);
+                });
+
+                return response()->json($newProduct, 200);
+            } else {
+                return response()->json(['message' => 'Error al crear producto'], 404);
+            }
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
+        }
     }
 
     /**
@@ -515,14 +539,13 @@ class ProductAPIController extends Controller
     {
         //
         $product = Product::find($id); // Encuentra al usuario por su ID
-    
+
         if ($product) {
-        $product->update($request->all());
-        return response()->json(['message' => 'Producto actualizado con éxito',"producto"=>$product], 200);
-        }else{
+            $product->update($request->all());
+            return response()->json(['message' => 'Producto actualizado con éxito', "producto" => $product], 200);
+        } else {
             return response()->json(['message' => 'Producto no encontrado'], 404);
         }
-        
     }
 
     /**
@@ -534,47 +557,144 @@ class ProductAPIController extends Controller
         Product::where('product_id', $id)
             ->update(['active' => 0]);
     }
-    public function updateProductVariantStock(Request $request)
+
+    public function updateRequest(Request $request, $id)
     {
-        $data = $request->json()->all();
-    
-        $skuProduct = $data['sku_product']; // Esto tendrá un valor como "test2"
-        $quantity = $data['quantity'];
-    
+        $data = $request->all();
+
+        $provider = Product::findOrFail($id);
+
+        $provider->fill($data);
+        $provider->save();
+
+        // Respuesta de éxito
+        return response()->json(['message' => 'Registro actualizado con éxito', "res" => $provider], 200);
+    }
+
+
+    public function splitSku($skuProduct)
+    {
+        // Verificar si el SKU es nulo y asignar un valor predeterminado
+        if ($skuProduct == null) {
+            $skuProduct = "UNKNOWNPC0";
+        }
+
+        // Encontrar la última posición de 'C' en el SKU
         $lastCPosition = strrpos($skuProduct, 'C');
 
-        if($skuProduct==null){
-            $skuProduct="UKNOWNPC0";
-        }
-        
-		$onlySku = substr($skuProduct, 0, $lastCPosition);
-		$productIdFromSKU = substr($skuProduct, $lastCPosition + 1);    
+        // Extraer la parte del SKU y el ID del producto del SKU
+        $onlySku = substr($skuProduct, 0, $lastCPosition);
+        $productIdFromSKU = substr($skuProduct, $lastCPosition + 1);
+
+        // Convertir el ID del producto a entero
+        $productIdFromSKU = intval($productIdFromSKU);
+
+        // Devolver un arreglo con el SKU y el ID del producto
+        return ['sku' => $onlySku, 'id' => $productIdFromSKU];
+    }
+
+    public function updateProductVariantStockInternal($quantity, $skuProduct, $type, $idComercial)
+    {
+        $result = $this->splitSku($skuProduct);
+
+        $onlySku = $result['sku'];
+        $productIdFromSKU = $result['id'];
 
 
-		// Convierte el ID del producto a entero para la comparación.
-		$productIdFromSKU = intval($productIdFromSKU);
-
-        // Encuentra el producto por su SKU.
         $product = Product::find($productIdFromSKU);
-        
+
         if ($product === null) {
             return null; // Retorna null si no se encuentra el producto
         }
-    
+
         if ($product) {
-            $result = $product->changeStock($skuProduct, $quantity);
-            if ($result === true) {
-                return response()->json(['message' => 'Stock updated successfully'], 200);
-            } elseif ($result === 'insufficient_stock_variant') {
-                return response()->json(['message' => 'Imposible realizar la confirmación. El stock de la variante es insuficiente'], 400);
-            } else {
-                return response()->json(['message' => 'Stock update failed'], 400);
-            }
+
+            $result = $product->changeStockGen($productIdFromSKU, $onlySku, $quantity, $type);
+
+            $currentDateTime = date('Y-m-d H:i:s');
+
+            $createHistory = new StockHistory();
+            $createHistory->product_id =  $productIdFromSKU;
+            $createHistory->variant_sku = $onlySku;
+            $createHistory->type = $type;
+            $createHistory->date = $currentDateTime;
+            $createHistory->units = $quantity;
+            $createHistory->last_stock = $product->stock - $quantity;
+            $createHistory->current_stock = $product->stock;
+            $createHistory->description = "Incremento de stock General Pedido EN BODEGA";
+
+            $createHistory->save();
         } else {
             return response()->json(['message' => 'Product not found'], 404);
         }
     }
-    
+    // ! ↓ FUNCIONAL ↓ 
+    public function updateProductVariantStock(Request $request)
+    {
+        $reserveController = new ReserveAPIController();
+        $data = $request->json()->all();
 
+        $quantity = $data['quantity'];
+        $skuProduct = $data['sku_product']; // Esto tendrá un valor como "test2"
+        $type = $data['type'];
+        $idComercial = $data['id_comercial'];
 
+        $result = $this->splitSku($skuProduct);
+
+        $onlySku = $result['sku'];
+        $productIdFromSKU = $result['id'];
+
+        $response = $reserveController->findByProductAndSku($productIdFromSKU, $onlySku, $idComercial);
+
+        // Decode the JSON response to get the data
+        $searchResult = json_decode($response->getContent());
+
+        if ($searchResult && $searchResult->response) {
+            $reserve = $searchResult->reserve;
+
+            if ($type == 0 && $quantity > $reserve->stock) {
+                // No se puede restar más de lo que hay en stock
+                return response()->json(['message' => 'No Dispone de Stock en la Reserva'], 400);
+            }
+
+            // Actualizar el stock
+            $reserve->stock += ($type == 1) ? $quantity : -$quantity;
+
+            // Assuming you have a 'Reserve' model that you want to save after updating
+            $reserveModel = Reserve::find($reserve->id);
+            if ($reserveModel) {
+                $reserveModel->stock = $reserve->stock;
+                $reserveModel->save();
+            }
+
+            // Devolver la respuesta
+            return response()->json(['message' => 'Stock actualizado con éxito', 'reserve' => $reserveModel]);
+        } else {
+            // Encuentra el producto por su SKU.
+            $product = Product::find($productIdFromSKU);
+
+            if ($product === null) {
+                return null;
+            }
+
+            if ($product) {
+                $result = $product->changeStockGen($productIdFromSKU, $onlySku, $quantity, $type);
+                $currentDateTime = date('Y-m-d H:i:s');
+
+                $createHistory = new StockHistory();
+                $createHistory->product_id =  $productIdFromSKU;
+                $createHistory->variant_sku = $onlySku;
+                $createHistory->type = $type;
+                $createHistory->date = $currentDateTime;
+                $createHistory->units = $quantity;
+                $createHistory->last_stock = $product->stock + $quantity;
+                $createHistory->current_stock = $product->stock;
+                $createHistory->description = "Reducción de stock General Pedido ENVIADO";
+
+                $createHistory->save();
+            } else {
+                return response()->json(['message' => 'Product not found'], 404);
+            }
+        }
+    }
 }
