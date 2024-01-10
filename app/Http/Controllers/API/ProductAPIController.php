@@ -386,6 +386,13 @@ class ProductAPIController extends Controller
             // })
             ->where('active', 1); //los No delete
 
+        $to = $data['to'];
+        if ($to == "approve") {
+            $products->whereHas('warehouse', function ($warehouse) {
+                    $warehouse->where('approved', 1);
+                });
+        }
+
         // ! sort
         $orderByText = null;
         $orderByDate = null;
