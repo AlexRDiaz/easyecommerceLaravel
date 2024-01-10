@@ -1179,7 +1179,7 @@ class UpUserAPIController extends Controller
         }
     }
 
-}
+
     public function userByEmail(Request $request)
     {
         $data = $request->json()->all();
