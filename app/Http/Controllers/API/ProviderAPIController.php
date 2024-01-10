@@ -58,13 +58,9 @@ class ProviderAPIController extends Controller
 
     public function updateRequest(Request $request, $id)
     {
-        // Recuperar los datos del formulario
         $data = $request->all();
-
-        // Encuentra el registro en base al ID
         $provider = Provider::findOrFail($id);
 
-        // Actualiza los campos específicos en base a los datos del formulario
         $provider->fill($data);
         $provider->save();
 
