@@ -12,6 +12,7 @@ use App\Http\Controllers\API\ReserveAPIController;
 use App\Http\Controllers\API\RutaAPIController;
 use App\Http\Controllers\API\StockHistoryAPIController;
 use App\Http\Controllers\API\SubRutaAPIController;
+use App\Http\Controllers\API\OperadoreAPIController;
 use App\Http\Controllers\API\TransaccionPedidoTransportadoraAPIController;
 use App\Http\Controllers\API\TransportadorasShippingCostAPIController;
 use App\Http\Controllers\API\UpUserAPIController;
@@ -57,6 +58,8 @@ Route::middleware(['cors'])->group(function () {
     Route::resource('orden_retiro', App\Http\Controllers\API\OrdenesRetiroAPIController::class)
         ->except(['create', 'edit']);
     //  ************************* LOGISTIC **************************
+
+
 
     // ! esta es solo para ver lo que tiene registrado en cada usuario en los permisos
     Route::get('permisos', [App\Http\Controllers\API\UpUserAPIController::class, 'getPermisos']);
@@ -144,22 +147,24 @@ Route::middleware(['cors'])->group(function () {
 
         
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);
+        Route::put('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
  
 
-        
+
         Route::resource('integrations', IntegrationAPIController::class)
             ->except(['create', 'edit']);
 
 
 
 
-       Route::resource('reserves', App\Http\Controllers\API\ReserveAPIController::class)
+        Route::resource('reserves', App\Http\Controllers\API\ReserveAPIController::class)
             ->except(['create', 'edit']);
 
 
-     Route::prefix('reserves')->group(function () {
-                Route::get('/', [ReserveAPIController::class, 'index']);
-               // Route::post('/find-by-product-and-sku', [ReserveAPIController::class, 'findByProductAndSku']);
+        Route::prefix('reserves')->group(function () {
+            Route::get('/', [ReserveAPIController::class, 'index']);
+            // Route::post('/find-by-product-and-sku', [ReserveAPIController::class, 'findByProductAndSku']);
+
 
                 Route::put('/{id}', [OrdenesRetiroAPIController::class, 'update']);
                 Route::post('/', [OrdenesRetiroAPIController::class, 'store']);
@@ -174,6 +179,7 @@ Route::middleware(['cors'])->group(function () {
     //  ! MIA TRANSPORTADORAS
 
     Route::get('transportadoras', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getTransportadoras']);
+    Route::get('active/transportadoras', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getActiveTransportadoras']);
 
     // ! MIA OPERATORESBYTRANSPORT
 
@@ -318,7 +324,7 @@ Route::middleware(['cors'])->group(function () {
     });
 
 
-    
+
 
     Route::prefix('generate-reports')->group(function () {
         Route::get('/', [GenerateReportAPIController::class, 'index']);
@@ -330,18 +336,26 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/seller/{id}', [GenerateReportAPIController::class, 'getBySeller']);
     });
 
- // *
- Route::prefix('rutas')->group(function () {
-    Route::get('/', [RutaAPIController::class, 'index']);
-    Route::get('/active', [RutaAPIController::class, 'activeRoutes']);
-    Route::get('/{id}', [RutaAPIController::class, 'show']);
-    Route::post('/subroutesofroute/{id}', [RutaAPIController::class, 'getSubRutasByRuta']);
-});
+    // *
+    Route::prefix('rutas')->group(function () {
+        Route::get('/', [RutaAPIController::class, 'index']);
+        Route::get('/active', [RutaAPIController::class, 'activeRoutes']);
+        Route::get('/{id}', [RutaAPIController::class, 'show']);
+        Route::post('/subroutesofroute/{id}', [RutaAPIController::class, 'getTransportadorasConRutasYSubRutas']);
+    });
 
 
-Route::prefix('subrutas')->group(function () {
-    Route::post('operadores/{id}', [SubRutaAPIController::class, 'getOperatorsbySubrouteAndTransportadora']);
-});
+    Route::prefix('subrutas')->group(function () {
+        Route::get('/', [SubRutaAPIController::class, 'index']);
+        Route::get('/withid', [SubRutaAPIController::class, 'getSubrutas']);
+        Route::get('bytransport/{id}', [SubRutaAPIController::class, 'getSubroutesByTransportadoraId']);
+        Route::post('operadores/{id}', [SubRutaAPIController::class, 'getOperatorsbySubrouteAndTransportadora']);
+    });
+
+    Route::prefix('operators')->group(function () {
+        Route::get('/', [OperadoreAPIController::class, 'getOperators']);
+    });
+
 
 
     // upUsersPedidos
@@ -457,6 +471,10 @@ Route::prefix('stockhistory')->group(function () {
     Route::get('byproduct/{id}', [StockHistoryAPIController::class, 'showByProduct']);
 
 });
+
+
+
+Route::post('operadoresoftransport', [App\Http\Controllers\API\UpUserAPIController::class, 'getOperatorsTransportLaravel']);
 
 
 

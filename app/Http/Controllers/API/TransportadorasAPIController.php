@@ -41,6 +41,17 @@ class TransportadorasAPIController extends Controller
 
         return response()->json(['transportadoras' => $transportadoras]);
     }
+    public function getActiveTransportadoras(Request $request)
+    {
+        $transportadoras = Transportadora::where('active', 1)->get();
+    
+        $formattedTransportadoras = $transportadoras->map(function ($transportadora) {
+            return $transportadora->nombre . ' - ' . $transportadora->id;
+        })->toArray();
+    
+        return response()->json( $formattedTransportadoras);
+    }
+
     public function getRutasOfTransport($transportadoraId)
     {
         // Obtener la transportadora con sus rutas relacionadas

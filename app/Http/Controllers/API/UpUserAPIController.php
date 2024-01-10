@@ -253,6 +253,7 @@ class UpUserAPIController extends Controller
         $newUpUsersRoleLink->save();
 
 
+
         $userRoleFront = new UpUsersRolesFrontLink();
         $userRoleFront->user_id = $user->id;
         $userRoleFront->roles_front_id = 5;
@@ -488,6 +489,7 @@ class UpUserAPIController extends Controller
 
 
             $integration = Integration::where("name", $data["name"])->first();
+
 
             if (!empty($integration)) {
                 return response()->json([
@@ -1100,6 +1102,84 @@ class UpUserAPIController extends Controller
         return response()->json(['codigo' => $code], 200);
     }
 
+    public function getOperatorsTransportLaravel(Request $request)
+    {
+        $data = $request->json()->all();
+        $filtersOr = $data['or'];
+        $Map = $data['and'];
+        $searchValue = $data['searchValue'];
+    
+        $users = UpUser::with(['operadores.sub_rutas.rutas', 'rolesFronts', 'operadores.transportadoras'])
+            ->whereHas('rolesFronts', function ($query) {
+                $query->where('titulo', 'OPERADOR');
+            })
+            ->whereHas('operadores.sub_rutas.rutas', function ($query) {
+                $query->where('active', 1);
+            })
+            ->whereHas('operadores.transportadoras', function ($query) {
+                $query->where('active', 1);
+            })
+            ->where(function ($users) use ($searchValue, $filtersOr) {
+                foreach ($filtersOr as $field) {
+                    if (strpos($field, '.') !== false) {
+                        // Si es un campo anidado
+                        $relations = explode('.', $field);
+                        $property = array_pop($relations);
+            
+                        $users->orWhereHas(implode('.', $relations), function ($q) use ($property, $searchValue) {
+                            $q->where($property, 'LIKE', '%' . $searchValue . '%');
+                        });
+                    } else {
+                        // Si no es un campo anidado
+                        $users->orWhere($field, 'LIKE', '%' . $searchValue . '%');
+                    }
+                }
+            })
+            
+            ->where((function ($users) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($users, $relacion, $propiedad, $valor);
+                        } else {
+                            $users->where($key, '=', $valor);
+                        }
+                    }
+                }
+            }));
+        
+    
+        $users = $users->get();
+    
+        return response()->json([
+            'data' => $users,
+            'total' => $users->count()
+        ], 200);
+    }
+    
+    private function recursiveWhereHas($query, $relation, $property, $searchTerm)
+    {
+        if ($searchTerm == "null") {
+            $searchTerm = null;
+        }
+        if (strpos($property, '.') !== false) {
+
+            $nestedRelation = substr($property, 0, strpos($property, '.'));
+            $nestedProperty = substr($property, strpos($property, '.') + 1);
+
+            $query->whereHas($relation, function ($q) use ($nestedRelation, $nestedProperty, $searchTerm) {
+                $this->recursiveWhereHas($q, $nestedRelation, $nestedProperty, $searchTerm);
+            });
+        } else {
+            $query->whereHas($relation, function ($q) use ($property, $searchTerm) {
+                $q->where($property, '=', $searchTerm);
+            });
+        }
+    }
+
+}
     public function userByEmail(Request $request)
     {
         $data = $request->json()->all();
@@ -1124,3 +1204,4 @@ class UpUserAPIController extends Controller
         return response()->json(['user' => $upUser], Response::HTTP_OK);
     }
 }
+
