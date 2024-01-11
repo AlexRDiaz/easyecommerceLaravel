@@ -185,23 +185,19 @@ class TransaccionesAPIController extends Controller
         return response()->json("Monto acreditado");
     }
 
-    public function DebitLocal($vendedorId, $tipo,$monto, $idOrigen,$codigo,$origen,$comentario,$generated_by)
+    public function DebitLocal($vendedorId,$monto, $idOrigen,$codigo,$origen,$comentario,$generated_by)
     {
         $startDateFormatted = new DateTime();
-        // $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i', $startDate)->format('Y-m-d H:i');
-
-
-
         $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
         $vendedor = $user['vendedores'][0];
         $saldo = $vendedor->saldo;
-        $nuevoSaldo = $saldo + $monto;
+        $nuevoSaldo = $saldo - $monto;
         $vendedor->saldo = $nuevoSaldo;
 
 
         $newTrans = new Transaccion();
 
-        $newTrans->tipo = "Debit";
+        $newTrans->tipo = "debit";
         $newTrans->monto = $monto;
         $newTrans->valor_anterior = $saldo;
 
@@ -1156,7 +1152,7 @@ class TransaccionesAPIController extends Controller
         }
     }
 
-    public function debitWithdrawall(Request $request,$id){
+    public function debitWithdrawal(Request $request,$id){
         // "data": {
         //     "Estado": "REALIZADO",
         //     "Comprobante": comprobante,
@@ -1172,17 +1168,20 @@ class TransaccionesAPIController extends Controller
           try {
               $data = $request->json()->all();
               // $pedido = PedidosShopify::findOrFail($data['id_origen']);
-              $orden = OrdenesRetiro::findOrFail($data[$id]);
+              $orden = OrdenesRetiro::findOrFail($id);
   
               $orden->estado = "REALIZADO";
               $orden->comprobante = $data['comprobante'];
               $orden->fecha_transferencia=$data['fecha_transferencia'];
               $orden->save();
-              $this->DebitLocal($data['vendedor_id'],'debit', $data['monto'], $orden->id,"retiro-".$orden->id,'retiro','orden de retiro pagada',$data['generated_by']);
+              $orden->monto = str_replace(',', '.', $orden->monto);
+
+              $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id,"retiro-".$orden->id,'retiro','orden de retiro pagada',$data['generated_by']);
         
               DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
               return response()->json([
-                  "res" => "transaccion exitosa"
+                  "res" => "transaccion exitosa",
+                  "orden"=>$orden
               ]);
           } catch (\Exception $e) {
               DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
