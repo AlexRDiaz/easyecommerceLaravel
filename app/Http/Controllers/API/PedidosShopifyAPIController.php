@@ -2412,9 +2412,7 @@ class PedidosShopifyAPIController extends Controller
         $pedidos = PedidosShopify::with(['operadore.up_users'])
             ->with('transportadora')
             ->with('users.vendedores')
-            ->with('novedades')
             ->with('ruta')
-            ->with('confirmedBy')
             ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
@@ -2446,15 +2444,17 @@ class PedidosShopifyAPIController extends Controller
             return isset($condition['equals/transportadora.transportadora_id']);
         });
 
-        // Filtrar por estado "Entregado", "No Entregado" y "En Novedad"
         $estadoPedidos = $pedidos
             ->groupBy('status')
-            ->map(function ($group) {
+            ->map(function ($group, $key) {
+                if ($key === 'NOVEDAD') {
+                    $group = $group->where('estado_devolucion', '!=', 'PENDIENTE');
+                }
+
                 return $group->count();
             });
 
-        // Ensure that all status keys are present with default values of 0
-        $defaultStatuses = ['ENTREGADO', 'NO ENTREGADO', 'EN NOVEDAD'];
+        $defaultStatuses = ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'];
 
         foreach ($defaultStatuses as $status) {
             if (!isset($estadoPedidos[$status])) {
@@ -2462,9 +2462,15 @@ class PedidosShopifyAPIController extends Controller
             }
         }
 
+
         $sumatoriaCostoTransportadora = $isIdTransportPresent
             ? $pedidos->sum('costo_transportadora')
-            : 0.0;
+            : null;
+
+        if ($sumatoriaCostoTransportadora === null) {
+            // Manejar el caso cuando el valor es null
+            $sumatoriaCostoTransportadora = 0.0;
+        }
 
         $sumatoriaCostoEntrega = $isIdComercialPresent
             ? $pedidos->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])->sum('costo_envio')
@@ -2491,7 +2497,6 @@ class PedidosShopifyAPIController extends Controller
             'Costo_Entrega' => $sumatoriaCostoEntrega,
             'Costo_Devolución' => $sumatoriaCostoDevolucion,
             'Filtro_Existente' => $presentVendedor,
-            // 'Transporte' => $presentTransportador,
             'Estado_Pedidos' => $estadoPedidos,
             'Cantidad_Total_Pedidos' => $pedidos->count()
         ]);
