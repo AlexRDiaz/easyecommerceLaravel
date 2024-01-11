@@ -1599,7 +1599,7 @@ class PedidosShopifyAPIController extends Controller
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion'=>$variants,
+                'observacion'=>json_encode($listOfProducts),
                 'ciudad_shipping' => $city,
                 'sku' =>$sku,
                 'id_product' => $lastIdProduct,
