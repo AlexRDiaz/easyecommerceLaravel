@@ -1585,7 +1585,7 @@ class PedidosShopifyAPIController extends Controller
                     $lastIdProduct = $id_product;
                 }
             }
-           $variants= implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
+            $variants = implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
 
             error_log("******************proceso 2 terminado************************\n");
             error_log("******************numero de orden: . $order_number. ************************\n");
@@ -1599,14 +1599,14 @@ class PedidosShopifyAPIController extends Controller
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion'=>$variants,
+                'observacion' => $variants,
                 'ciudad_shipping' => $city,
-                'sku' =>$sku,
+                'sku' => $sku,
                 'id_product' => $lastIdProduct,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
-                'variant_details'=> json_encode($listOfProducts),
+                'variant_details' => json_encode($listOfProducts),
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
@@ -2447,9 +2447,20 @@ class PedidosShopifyAPIController extends Controller
         });
 
         // Filtrar por estado "Entregado", "No Entregado" y "En Novedad"
-        $estadoPedidos = $pedidos->groupBy('status')->map(function ($group) {
-            return $group->count();
-        });
+        $estadoPedidos = $pedidos
+            ->groupBy('status')
+            ->map(function ($group) {
+                return $group->count();
+            });
+
+        // Ensure that all status keys are present with default values of 0
+        $defaultStatuses = ['ENTREGADO', 'NO ENTREGADO', 'EN NOVEDAD'];
+
+        foreach ($defaultStatuses as $status) {
+            if (!isset($estadoPedidos[$status])) {
+                $estadoPedidos[$status] = 0;
+            }
+        }
 
         $sumatoriaCostoTransportadora = $isIdTransportPresent
             ? $pedidos->sum('costo_transportadora')
@@ -2467,9 +2478,11 @@ class PedidosShopifyAPIController extends Controller
 
         if ($isIdComercialPresent) {
             $presentVendedor = 1;
-        } if ($isIdTransportPresent) {
+        }
+        if ($isIdTransportPresent) {
             $presentVendedor = 2;
-        }if($isIdTransportPresent&&$isIdComercialPresent){
+        }
+        if ($isIdTransportPresent && $isIdComercialPresent) {
             $presentVendedor = 0;
         }
 
