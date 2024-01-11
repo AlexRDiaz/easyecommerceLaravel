@@ -213,6 +213,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post("transacciones/payment-order-with-novelty/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderWithNovelty']);
     Route::post("transacciones/payment-order-operator-in-office/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderOperatorInOffice']);
     Route::post("transacciones/payment-logistic-in-warehouse/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentLogisticInWarehouse']);
+    Route::post("transacciones/debit_withdrawal/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'debitWithdrawal']);
 
     Route::post("transacciones/payment-transport-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentTransportByReturnStatus']);
     Route::post("transacciones/payment-logistic-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentLogisticByReturnStatus']);

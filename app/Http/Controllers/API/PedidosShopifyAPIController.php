@@ -1578,14 +1578,14 @@ class PedidosShopifyAPIController extends Controller
             $sku = $productos[0]['sku'];
             $lastIdProduct = 0;
 
-            // if ($sku != null) {
-            //     $parts = explode('C', $sku);
-            //     $id_product = end($parts);
-            //     if (is_numeric($id_product)) {
-            //         $lastIdProduct = $id_product;
-            //     }
-            // }
-            $variants = implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
+            if ($sku != null) {
+                $parts = explode('C', $sku);
+                $id_product = end($parts);
+                if (is_numeric($id_product)) {
+                    $lastIdProduct = $id_product;
+                }
+            }
+           $variants= implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
 
             error_log("******************proceso 2 terminado************************\n");
             error_log("******************numero de orden: . $order_number. ************************\n");
@@ -1599,15 +1599,14 @@ class PedidosShopifyAPIController extends Controller
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion' => isset($request->customer_note) ? strval($request->customer_note) : "",
+                'observacion'=>$variants,
                 'ciudad_shipping' => $city,
-                'sku' => "",
-                // $sku,
-                'id_product' => 0,
+                'sku' =>$sku,
+                'id_product' => $lastIdProduct,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
-                'variant_details' => $variants,
+                'variant_details'=> json_encode($listOfProducts),
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
