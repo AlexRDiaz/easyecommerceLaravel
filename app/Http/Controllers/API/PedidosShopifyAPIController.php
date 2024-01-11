@@ -1519,6 +1519,7 @@ class PedidosShopifyAPIController extends Controller
 
         error_log("******************proceso 1 terminado************************\n");
         foreach ($productos as $element) {
+            error_log("******************sku por variante : " . $element['sku'] . " ************************\n");
 
             $listOfProducts[] = [
                 'id' => $element['id'],
@@ -1528,6 +1529,7 @@ class PedidosShopifyAPIController extends Controller
                 'title' => $element['title'],
                 'variant_title' => $element['variant_title'],
                 'sku' => $element['sku']
+                
 
             ];
         }
