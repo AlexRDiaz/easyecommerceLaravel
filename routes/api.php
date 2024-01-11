@@ -112,6 +112,8 @@ Route::middleware(['cors'])->group(function () {
 
 
     // ********************************************************
+    // ! PARA AUDIT VALUES
+    Route::post('logistic/values/getByDateRangeValuesAudit', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRangeValuesAudit']);
     // ! ↓ REGISTRO DE PEDIDOS
     Route::post('pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'postOrdersPricipalOrders']);
 

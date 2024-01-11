@@ -1305,7 +1305,7 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }
-            ))->get();
+                ))->get();
 
 
 
@@ -1585,7 +1585,7 @@ class PedidosShopifyAPIController extends Controller
             //         $lastIdProduct = $id_product;
             //     }
             // }
-           $variants= implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
+            $variants = implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
 
             error_log("******************proceso 2 terminado************************\n");
             error_log("******************numero de orden: . $order_number. ************************\n");
@@ -1593,21 +1593,21 @@ class PedidosShopifyAPIController extends Controller
 
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
-                'tienda_temporal' =>$productos[0]['vendor'],
+                'tienda_temporal' => $productos[0]['vendor'],
                 'numero_orden' => $order_number,
                 'direccion_shipping' => $address1,
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion'=>isset($request->customer_note) ? strval($request->customer_note) : "",
+                'observacion' => isset($request->customer_note) ? strval($request->customer_note) : "",
                 'ciudad_shipping' => $city,
-                'sku' =>"",
+                'sku' => "",
                 // $sku,
                 'id_product' => 0,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
-                'variant_details'=> $variants,
+                'variant_details' => $variants,
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
@@ -1673,8 +1673,8 @@ class PedidosShopifyAPIController extends Controller
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
                 'search' => 'MANDE',
-               // 'and' => [],
-              //  'id_product' => $id_product
+                // 'and' => [],
+                //  'id_product' => $id_product
             ], 200);
         } else {
             return response()->json([
@@ -2400,4 +2400,90 @@ class PedidosShopifyAPIController extends Controller
         $pedido->save();
         return response()->json([$pedido], 200);
     }
+
+    public function getByDateRangeValuesAudit(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = $data['start'];
+        $endDate = $data['end'];
+        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+        $Map = $data['and'];
+
+        $pedidos = PedidosShopify::with(['operadore.up_users'])
+            ->with('transportadora')
+            ->with('users.vendedores')
+            ->with('novedades')
+            ->with('ruta')
+            ->with('confirmedBy')
+            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        $parts = explode("/", $key);
+                        $type = $parts[0];
+                        $filter = $parts[1];
+
+                        if (strpos($filter, '.') !== false) {
+                            $relacion = substr($filter, 0, strpos($filter, '.'));
+                            $propiedad = substr($filter, strpos($filter, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            if ($type == "equals") {
+                                $pedidos->where($filter, '=', $valor);
+                            } else {
+                                $pedidos->where($filter, 'LIKE', '%' . $valor . '%');
+                            }
+                        }
+                    }
+                }
+            }))->get();
+
+        $isIdComercialPresent = collect($Map)->contains(function ($condition) {
+            return isset($condition['equals/id_comercial']);
+        });
+
+        $isIdTransportPresent = collect($Map)->contains(function ($condition) {
+            return isset($condition['equals/transportadora.transportadora_id']);
+        });
+
+        // Filtrar por estado "Entregado", "No Entregado" y "En Novedad"
+        $estadoPedidos = $pedidos->groupBy('status')->map(function ($group) {
+            return $group->count();
+        });
+
+        $sumatoriaCostoTransportadora = $isIdTransportPresent
+            ? $pedidos->sum('costo_transportadora')
+            : 0.0;
+
+        $sumatoriaCostoEntrega = $isIdComercialPresent
+            ? $pedidos->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])->sum('costo_envio')
+            : 0.0;
+
+        $sumatoriaCostoDevolucion = $isIdComercialPresent
+            ? $pedidos->sum('costo_devolucion')
+            : 0.0;
+
+        $presentVendedor = 0;
+
+        if ($isIdComercialPresent) {
+            $presentVendedor = 1;
+        } if ($isIdTransportPresent) {
+            $presentVendedor = 2;
+        }if($isIdTransportPresent&&$isIdComercialPresent){
+            $presentVendedor = 0;
+        }
+
+        return response()->json([
+            'Costo_Transporte' => $sumatoriaCostoTransportadora,
+            'Costo_Entrega' => $sumatoriaCostoEntrega,
+            'Costo_Devolución' => $sumatoriaCostoDevolucion,
+            'Filtro_Existente' => $presentVendedor,
+            // 'Transporte' => $presentTransportador,
+            'Estado_Pedidos' => $estadoPedidos,
+            'Cantidad_Total_Pedidos' => $pedidos->count()
+        ]);
+    }
+
+
 }
