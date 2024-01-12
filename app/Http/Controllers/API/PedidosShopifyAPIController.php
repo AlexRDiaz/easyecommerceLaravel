@@ -22,8 +22,8 @@ use DateTime;
 use GuzzleHttp\Client;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\DB;
 
 class PedidosShopifyAPIController extends Controller
 {
@@ -2402,104 +2402,109 @@ class PedidosShopifyAPIController extends Controller
 
     public function getByDateRangeValuesAudit(Request $request)
     {
-        $data = $request->json()->all();
-        $startDate = $data['start'];
-        $endDate = $data['end'];
-        $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
-        $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
-        $Map = $data['and'];
-
-        $pedidos = PedidosShopify::with(['operadore.up_users'])
-            ->with('transportadora')
-            ->with('users.vendedores')
-            ->with('ruta')
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
-            ->where((function ($pedidos) use ($Map) {
-                foreach ($Map as $condition) {
-                    foreach ($condition as $key => $valor) {
-                        $parts = explode("/", $key);
-                        $type = $parts[0];
-                        $filter = $parts[1];
-
-                        if (strpos($filter, '.') !== false) {
-                            $relacion = substr($filter, 0, strpos($filter, '.'));
-                            $propiedad = substr($filter, strpos($filter, '.') + 1);
-                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
-                        } else {
-                            if ($type == "equals") {
-                                $pedidos->where($filter, '=', $valor);
+        try {
+            ini_set('memory_limit', '256M');
+    
+            $data = $request->json()->all();
+            $startDate = $data['start'];
+            $endDate = $data['end'];
+            $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+            $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
+            $Map = $data['and'];
+    
+            $pedidos = PedidosShopify::select('id','numero_orden','nombre_shipping','id_comercial','status','observacion','comentario','estado_interno','estado_logistico','estado_devolucion',
+            'costo_devolucion','costo_transportadora','costo_envio')
+                ->with(['operadore.up_users','transportadora','users.vendedores','ruta'])
+                ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+                ->where((function ($pedidos) use ($Map) {
+                    foreach ($Map as $condition) {
+                        foreach ($condition as $key => $valor) {
+                            $parts = explode("/", $key);
+                            $type = $parts[0];
+                            $filter = $parts[1];
+    
+                            if (strpos($filter, '.') !== false) {
+                                $relacion = substr($filter, 0, strpos($filter, '.'));
+                                $propiedad = substr($filter, strpos($filter, '.') + 1);
+                                $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
                             } else {
-                                $pedidos->where($filter, 'LIKE', '%' . $valor . '%');
+                                if ($type == "equals") {
+                                    $pedidos->where($filter, '=', $valor);
+                                } else {
+                                    $pedidos->where($filter, 'LIKE', '%' . $valor . '%');
+                                }
                             }
                         }
                     }
-                }
-            }))->get();
-
-        $isIdComercialPresent = collect($Map)->contains(function ($condition) {
-            return isset($condition['equals/id_comercial']);
-        });
-
-        $isIdTransportPresent = collect($Map)->contains(function ($condition) {
-            return isset($condition['equals/transportadora.transportadora_id']);
-        });
-
-        $estadoPedidos = $pedidos
+                }))->get();
+    
+            $isIdComercialPresent = collect($Map)->contains(function ($condition) {
+                return isset($condition['equals/id_comercial']);
+            });
+    
+            $isIdTransportPresent = collect($Map)->contains(function ($condition) {
+                return isset($condition['equals/transportadora.transportadora_id']);
+            });
+    
+            $estadoPedidos = $pedidos
+            ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'])
             ->groupBy('status')
             ->map(function ($group, $key) {
                 if ($key === 'NOVEDAD') {
                     $group = $group->where('estado_devolucion', '!=', 'PENDIENTE');
                 }
-
+        
                 return $group->count();
             });
-
+        
         $defaultStatuses = ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'];
-
+        
         foreach ($defaultStatuses as $status) {
             if (!isset($estadoPedidos[$status])) {
                 $estadoPedidos[$status] = 0;
             }
         }
-
-
-        $sumatoriaCostoTransportadora = $isIdTransportPresent
-            ? $pedidos->sum('costo_transportadora')
-            : null;
-
-        if ($sumatoriaCostoTransportadora === null) {
-            // Manejar el caso cuando el valor es null
-            $sumatoriaCostoTransportadora = 0.0;
-        }
-
-        $sumatoriaCostoEntrega = $isIdComercialPresent
-            ? $pedidos->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])->sum('costo_envio')
-            : 0.0;
-
-        $sumatoriaCostoDevolucion = $isIdComercialPresent
-            ? $pedidos->sum('costo_devolucion')
-            : 0.0;
-
-        $presentVendedor = 0;
-
-        if ($isIdComercialPresent) {
-            $presentVendedor = 1;
-        }
-        if ($isIdTransportPresent) {
-            $presentVendedor = 2;
-        }
-        if ($isIdTransportPresent && $isIdComercialPresent) {
+    
+            $sumatoriaCostoTransportadora = $isIdTransportPresent
+                ? $pedidos->sum('costo_transportadora')
+                : null;
+    
+            if ($sumatoriaCostoTransportadora === null) {
+                // Manejar el caso cuando el valor es null
+                $sumatoriaCostoTransportadora = 0.0;
+            }
+    
+            $sumatoriaCostoEntrega = $isIdComercialPresent
+                ? $pedidos->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])->sum('costo_envio')
+                : 0.0;
+    
+            $sumatoriaCostoDevolucion = $isIdComercialPresent
+                ? $pedidos->sum('costo_devolucion')
+                : 0.0;
+    
             $presentVendedor = 0;
+    
+            if ($isIdComercialPresent) {
+                $presentVendedor = 1;
+            }
+            if ($isIdTransportPresent) {
+                $presentVendedor = 2;
+            }
+            if ($isIdTransportPresent && $isIdComercialPresent) {
+                $presentVendedor = 0;
+            }
+    
+            return response()->json([
+                'Costo_Transporte' => $sumatoriaCostoTransportadora,
+                'Costo_Entrega' => $sumatoriaCostoEntrega,
+                'Costo_Devolución' => $sumatoriaCostoDevolucion,
+                'Filtro_Existente' => $presentVendedor,
+                'Estado_Pedidos' => $estadoPedidos,
+                // 'Cantidad_Total_Pedidos' => $pedidos->count()
+            ]);
+        } catch (\Exception $e) {
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        return response()->json([
-            'Costo_Transporte' => $sumatoriaCostoTransportadora,
-            'Costo_Entrega' => $sumatoriaCostoEntrega,
-            'Costo_Devolución' => $sumatoriaCostoDevolucion,
-            'Filtro_Existente' => $presentVendedor,
-            'Estado_Pedidos' => $estadoPedidos,
-            'Cantidad_Total_Pedidos' => $pedidos->count()
-        ]);
     }
 
 
