@@ -2405,8 +2405,8 @@ class PedidosShopifyAPIController extends Controller
     public function getByDateRangeValuesAudit(Request $request)
     {
         try {
-            ini_set('memory_limit', '256M');
-    
+            ini_set('memory_limit', '512M');
+
             $data = $request->json()->all();
             $startDate = $data['start'];
             $endDate = $data['end'];
@@ -2501,11 +2501,22 @@ class PedidosShopifyAPIController extends Controller
                 'Costo_Entrega' => $sumatoriaCostoEntrega,
                 'Costo_Devolución' => $sumatoriaCostoDevolucion,
                 'Filtro_Existente' => $presentVendedor,
-                'Estado_Pedidos' => $estadoPedidos,
+                'Estado_Pedidos' =>   $estadoPedidos,
                 // 'Cantidad_Total_Pedidos' => $pedidos->count()
             ]);
         } catch (\Exception $e) {
-            return response()->json(['error' => $e->getMessage()], 500);
+            return response()->json([
+                'Costo_Transporte' => 0,
+                'Costo_Entrega' => 0,
+                'Costo_Devolución' => 0,
+                'Filtro_Existente' => 0,
+                'Estado_Pedidos' => [
+                    'NOVEDAD' => 0,
+                    'ENTREGADO' => 0,
+                    'NO ENTREGADO' => 0,
+                ],
+                // 'Cantidad_Total_Pedidos' => 0
+            ], 200);
         }
     }
 
