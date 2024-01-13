@@ -1585,7 +1585,7 @@ class PedidosShopifyAPIController extends Controller
                     $lastIdProduct = $id_product;
                 }
             }
-           $variants= implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
+            $variants = implode(', ', array_column(array_slice($listOfProducts, 0), 'variant_title'));
 
             error_log("******************proceso 2 terminado************************\n");
             error_log("******************numero de orden: . $order_number. ************************\n");
@@ -1593,20 +1593,20 @@ class PedidosShopifyAPIController extends Controller
 
             $createOrder = new PedidosShopify([
                 'marca_t_i' => $fechaHoraActual,
-                'tienda_temporal' =>$productos[0]['vendor'],
+                'tienda_temporal' => $productos[0]['vendor'],
                 'numero_orden' => $order_number,
                 'direccion_shipping' => $address1,
                 'nombre_shipping' => $name,
                 'telefono_shipping' => $phone,
                 'precio_total' => $formattedPrice,
-                'observacion'=>$variants,
+                'observacion' => $variants,
                 'ciudad_shipping' => $city,
-                'sku' =>$sku,
+                'sku' => $sku,
                 'id_product' => $lastIdProduct,
                 'id_comercial' => $id,
                 'producto_p' => $listOfProducts[0]['title'],
                 'producto_extra' => implode(', ', array_column(array_slice($listOfProducts, 1), 'title')),
-                'variant_details'=> $variants,
+                'variant_details' => $variants,
                 'cantidad_total' => $listOfProducts[0]['quantity'],
                 'estado_interno' => "PENDIENTE",
                 'status' => "PEDIDO PROGRAMADO",
@@ -1672,8 +1672,8 @@ class PedidosShopifyAPIController extends Controller
                 'message' => 'La orden se ha registrado con éxito.',
                 'orden_ingresada' => $createOrder,
                 'search' => 'MANDE',
-               // 'and' => [],
-              //  'id_product' => $id_product
+                // 'and' => [],
+                //  'id_product' => $id_product
             ], 200);
         } else {
             return response()->json([
@@ -2398,5 +2398,150 @@ class PedidosShopifyAPIController extends Controller
 
         $pedido->save();
         return response()->json([$pedido], 200);
+    }
+
+    //  *
+    public function shopifyPedidosProducto(Request $request, $id)
+    {
+        //GENERATE DATE
+        $currentDate = now();
+        $fechaActual = $currentDate->format('d/m/Y');
+
+        // ID DATE ORDER FOR RELATION
+        $dateOrder = "";
+
+        //VARIABLES FOR ENTITY
+        $order_number = $request->input('NumeroOrden');
+        $name = $request->input('NombreShipping');
+        $address = $request->input('DireccionShipping');
+        $phone = $request->input('TelefonoShipping');
+        $total_price = $request->input('PrecioTotal');
+        $city = $request->input('CiudadShipping');
+        $product = $request->input('ProductoP');
+        $productE = $request->input('ProductoExtra');
+        $cantidadTotal = $request->input('Cantidad_Total');
+        $PrecioTotal =  $request->input('PrecioTotal');
+        $formattedPrice = str_replace(",", ".", str_replace(["$", " "], "", $PrecioTotal));
+        if ($request->input('Observacion') != null) {
+            $Observacion = $request->input('Observacion');
+        } else {
+            $Observacion = "";
+        }
+        $Name_Comercial = $request->input('Name_Comercial');
+        // $sku = $request->input('sku');
+        $productId = $request->input('product_id');
+        $variant_details = $request->input('variant_details');
+
+        //ADD PRODUCT TO LIST FOR NEW OBJECT
+
+        error_log("******************proceso 1 terminado************************\n");
+
+        $search = PedidosShopify::where([
+            'numero_orden' => $order_number,
+            // 'tienda_temporal' => $productos[0]['vendor'],
+            'id_comercial' => $id,
+        ])->get();
+
+        //
+        // IF ORDER NOT EXIST CREATE ORDER
+        if ($search->isEmpty()) {
+            $dateOrder;
+            // SEARCH DATE ORDER FOR RELLATION
+            $searchDate = PedidoFecha::where('fecha', $fechaActual)->get();
+
+            // IF DATE ORDER NOT EXIST CREATE ORDER AND ADD ID ELSE IF ONLY ADD DATE ORDER ID VALUE
+            if ($searchDate->isEmpty()) {
+                // Crea un nuevo registro de fecha
+                $newDate = new PedidoFecha();
+                $newDate->fecha = $fechaActual;
+                $newDate->save();
+
+                // Obtén el ID del nuevo registro
+                $dateOrder = $newDate->id;
+            } else {
+                // Si la fecha existe, obtén el ID del primer resultado
+                $dateOrder = $searchDate[0]->id;
+            }
+
+
+            // Obtener la fecha y hora actual
+            $ahora = now();
+            $dia = $ahora->day;
+            $mes = $ahora->month;
+            $anio = $ahora->year;
+            $hora = $ahora->hour;
+            $minuto = $ahora->minute;
+
+            // Formatear la fecha y hora actual
+            $fechaHoraActual = "$dia/$mes/$anio $hora:$minuto";
+
+            error_log("******************proceso 2 terminado************************\n");
+
+            $createOrder = new PedidosShopify([
+                'marca_t_i' => $fechaHoraActual,
+                'numero_orden' => $order_number,
+                'direccion_shipping' => $address,
+                'nombre_shipping' => $name,
+                'telefono_shipping' => $phone,
+                'precio_total' => $formattedPrice,
+                'id_comercial' => $id,
+                'producto_p' => $product,
+                'producto_extra' => $productE,
+                'cantidad_total' => $cantidadTotal,
+                'observacion' => $Observacion,
+                'ciudad_shipping' => $city,
+                'name_comercial' => $Name_Comercial,
+                'tienda_temporal' => $Name_Comercial,
+                'estado_interno' => "CONFIRMADO",
+                'fecha_confirmacion' => "$dia/$mes/$anio",
+                'status' => "PEDIDO PROGRAMADO",
+                'estado_logistico' => 'PENDIENTE',
+                'estado_pagado' => 'PENDIENTE',
+                'estado_pago_logistica' => 'PENDIENTE',
+                'estado_devolucion' => 'PENDIENTE',
+                'do' => 'PENDIENTE',
+                'dt' => 'PENDIENTE',
+                'dl' => 'PENDIENTE',
+                // 'sku' => $sku,
+                'id_product' => $productId,
+                'variant_details' => $variant_details
+            ]);
+            $createOrder->save();
+
+            error_log("******************proceso 3 terminado************************\n");
+
+
+            $createPedidoFecha = new PedidosShopifiesPedidoFechaLink();
+            $createPedidoFecha->pedidos_shopify_id = $createOrder->id;
+            $createPedidoFecha->pedido_fecha_id = $dateOrder;
+            $createPedidoFecha->save();
+
+            $createUserPedido = new UpUsersPedidosShopifiesLink();
+            $createUserPedido->user_id = $id;
+            $createUserPedido->pedidos_shopify_id = $createOrder->id;
+            $createUserPedido->save();
+
+
+            error_log("******************proceso 4 terminado************************\n");
+
+            return response()->json([
+                'message' => 'La orden se ha registrado con éxito.',
+                'orden_ingresada' => $createOrder,
+            ], 200);
+        } else {
+            return response()->json([
+                'error' => 'Esta orden ya existe',
+                'orden_a_ingresar' => [
+                    'numero_orden' => $order_number,
+                    'nombre' => $name,
+                    'direccion' => $address,
+                    'telefono' => $phone,
+                    'precio_total' => $total_price,
+                    'ciudad' => $city,
+                    'producto' => $product
+                ],
+                'orden_existente' => $search,
+            ], 200);
+        }
     }
 }

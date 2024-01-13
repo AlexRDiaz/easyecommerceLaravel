@@ -433,6 +433,9 @@ Route::middleware(['cors'])->group(function () {
         Route::post('provider/{id}', [ProviderTransactionsAPIController::class, 'getByProvider']);
     });
 
+    //  * 
+    Route::post('orderproduct/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'shopifyPedidosProducto']);
+
 });
 
 // api/upload
