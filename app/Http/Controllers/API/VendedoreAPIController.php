@@ -126,7 +126,8 @@ class VendedoreAPIController extends Controller
                 ->where(function ($query) {
                     $query->where('estado_devolucion', 'ENTREGADO EN OFICINA')
                         ->orWhere('estado_devolucion', 'DEVOLUCION EN RUTA')
-                        ->orWhere('estado_devolucion', 'EN BODEGA');
+                        ->orWhere('estado_devolucion', 'EN BODEGA')
+                        ->orWhere('estado_devolucion', 'EN BODEGA PROVEEDOR');
                 })
                 ->where('status', 'NOVEDAD')->get();
 
