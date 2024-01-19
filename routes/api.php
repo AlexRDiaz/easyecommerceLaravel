@@ -89,6 +89,9 @@ Route::middleware(['cors'])->group(function () {
     // * --> PRINTEDGUIDES
 
     Route::post('pedidos-shopifies-prtgd', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintedGuidesLaravel']);
+    Route::post('pedidos-shopifies-prtgdD', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintedGuidesLaravelD']);
+
+    Route::post('values_not_test', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersCountByWarehouse']);
 
     Route::post('upd/pedidossho-printedg', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderInteralStatusLogisticLaravel']);
 
@@ -99,6 +102,7 @@ Route::middleware(['cors'])->group(function () {
     // * --> GUIDES_SENT
 
     Route::post('send-guides/printg', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintGuidesInSendGuidesPrincipalLaravel']);
+    Route::post('send-guides/printgD', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintGuidesInSendGuidesPrincipalLaravelD']);
     Route::post('send-guides', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersSendGuides']);
     // getOrdersSendGuides
 
@@ -245,7 +249,9 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
 
+    Route::post('/valuesdrop', [PedidosShopifyAPIController::class, 'getValuesDropdownSendGuide']);
 
+    Route::post('/register-withdrawan-by', [PedidosShopifyAPIController::class, 'addWithdrawanBy']);
 
     Route::post('pedidos-shopify/products/counters', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getCounters']);
     Route::post('pedidos-shopify/products/counters/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getCountersLogistic']);
@@ -315,6 +321,11 @@ Route::middleware(['cors'])->group(function () {
 
 
 
+    
+
+
+
+
     Route::prefix('seller/ordenesretiro')->group(function () {
         Route::get('/retiro/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroNew']);
         Route::get('/ret-count/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroCount']);
@@ -357,6 +368,7 @@ Route::middleware(['cors'])->group(function () {
 
     Route::prefix('operators')->group(function () {
         Route::get('/', [OperadoreAPIController::class, 'getOperators']);
+        Route::get('/by-id/{idOperator}', [OperadoreAPIController::class, 'getOperatorbyId']);
     });
 
 
@@ -452,6 +464,7 @@ Route::prefix('warehouses')->group(function () {
     Route::delete('/deactivate/{id}', [WarehouseAPIController::class, 'deactivate']);
     Route::post('/activate/{id}', [WarehouseAPIController::class, 'activate']);
     Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
+    Route::post('/approved', [WarehouseAPIController::class, 'approvedWarehouses']);
 });
 
 // *

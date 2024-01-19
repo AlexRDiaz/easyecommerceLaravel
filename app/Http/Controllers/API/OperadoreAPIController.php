@@ -46,6 +46,31 @@ class OperadoreAPIController extends Controller
     
         return response()->json(['data' => $result, 'count' => count($result)]);
     }
+    public function getOperatorbyId($idOperator){
+
+        // $data = $request->json()->all();
+        // $idOperator = $data['idOperator']; 
+
+        $operators = Operadore::with('up_users')
+        ->where('id',$idOperator)
+        ->whereHas('transportadoras', function ($query) {
+            $query->where('active', 1);
+        })
+        ->get();
+
+   
+
+    foreach ($operators as $operator) {
+        // Verificar si up_users no está vacío y tiene username
+        if ($operator->up_users->isNotEmpty() && !empty($operator->up_users[0]->username)) {
+            // Imprime información útil para depurar
+
+            $result = $operator->up_users[0]->username; 
+        }
+    }
+
+    return response()->json($result);
+    }
     
 
 

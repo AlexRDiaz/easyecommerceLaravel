@@ -11,6 +11,8 @@ use App\Models\PedidosShopifiesSubRutaLink;
 use App\Models\PedidosShopifiesOperadoreLink;
 use App\Models\PedidosShopifiesTransportadoraLink;
 use App\Models\PedidosShopify;
+use App\Models\Warehouse;
+use App\Models\Transportadora;
 use App\Models\ProductoShopifiesPedidosShopifyLink;
 use App\Models\Ruta;
 use App\Models\TransaccionPedidoTransportadora;
@@ -627,6 +629,207 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($pedidos);
     }
+
+    public function getOrdersForPrintedGuidesLaravelD(Request $request)
+    {
+        $data = $request->json()->all();
+        $pageSize = $data['page_size'];
+        $pageNumber = $data['page_number'];
+        $searchTerm = $data['search'];
+        $idWarehouse = $data['idw'];
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
+        }
+        // ! *************************************
+        $Map = $data['and'];
+        $not = $data['not'];
+        // ! *************************************
+
+        $pedidos = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta', 'printedBy', 'sentBy', 'product.warehouse.provider'])
+            ->where(function ($pedidos) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where(function ($pedidos) use ($idWarehouse) {
+                $pedidos->whereHas('product.warehouse', function ($query) use ($idWarehouse) {
+                    $query->where('warehouse_id', $idWarehouse);
+                });
+            })
+            ->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '=', $valor);
+                        }
+                    }
+                }
+            }))
+            ->where((function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
+                    }
+                }
+            }));
+        // ! Ordenamiento ********************************** 
+        $orderByText = null;
+        $orderByDate = null;
+        $sort = $data['sort'];
+        $sortParts = explode(':', $sort);
+
+        $pt1 = $sortParts[0];
+
+        $type = (stripos($pt1, 'fecha') !== false || stripos($pt1, 'marca') !== false) ? 'date' : 'text';
+
+        $dataSort = [
+            [
+                'field' => $sortParts[0],
+                'type' => $type,
+                'direction' => $sortParts[1],
+            ],
+        ];
+
+        foreach ($dataSort as $value) {
+            $field = $value['field'];
+            $direction = $value['direction'];
+            $type = $value['type'];
+
+            if ($type === "text") {
+                $orderByText = [$field => $direction];
+            } else {
+                $orderByDate = [$field => $direction];
+            }
+        }
+
+        if ($orderByText !== null) {
+            $pedidos->orderBy(key($orderByText), reset($orderByText));
+        } else {
+            $pedidos->orderBy(DB::raw("STR_TO_DATE(" . key($orderByDate) . ", '%e/%c/%Y')"), reset($orderByDate));
+        }
+        // ! **************************************************
+        $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
+
+        return response()->json($pedidos);
+    }
+
+    public function getOrdersCountByWarehouse(Request $request)
+    {
+        $data = $request->json()->all();
+        $idTransportadora = $data['idTransportadora'];
+
+        // Obtener el nombre de la transportadora
+        $transportadoraNombre = Transportadora::where('id', $idTransportadora)->pluck('nombre')->first();
+
+        // Obtener almacenes aprobados
+        $warehouses = Warehouse::where('approved', 1)->get();
+
+        // Transformaciones en las propiedades
+        $warehouses = $warehouses->filter(function ($warehouse) use ($transportadoraNombre) {
+            // Decodificar la cadena JSON en 'collection'
+            $collection = json_decode($warehouse['collection'], true);
+
+            // Filtrar almacenes con 'collectionTransport' igual al nombre de la transportadora
+            return isset($collection['collectionTransport']) && $collection['collectionTransport'] == $transportadoraNombre;
+        })->map(function ($warehouse) {
+            // Decodificar la cadena JSON en 'collection'
+            $collection = json_decode($warehouse['collection'], true);
+
+            // Asignar la colección modificada de nuevo a 'collection'
+            $warehouse['collection'] = $collection;
+
+            return $warehouse;
+        });
+        // Reindexar el array numéricamente
+        $warehouses = $warehouses->values();
+
+        // Obtener el conteo de pedidos por estado para cada bodega
+        $ordersCountByWarehouse = collect([]);
+
+        foreach ($warehouses as $warehouse) {
+            $count = PedidosShopify::whereHas('product.warehouse', function ($query) use ($warehouse) {
+                $query->where('warehouse_id', $warehouse->warehouse_id);
+            })
+                ->where('estado_interno', 'CONFIRMADO')
+                ->where('estado_logistico', 'IMPRESO')
+                ->count();
+
+            $ordersCountByWarehouse->push([
+                'warehouse_id' => $warehouse->warehouse_id,
+                'count' => $count,
+            ]);
+        }
+
+        return response()->json(['ordersCountByWarehouse' => $ordersCountByWarehouse]);
+    }
+
+
+
+
+
+    // public function calculateOrderStatistics(Request $request)
+    // {
+    //     $data = $request->json()->all();
+    //     $startDate = $data['start'];
+    //     $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->startOfDay();
+
+    //     // Obtener el primer día del mes actual
+    //     $startOfMonth = $startDateFormatted->copy()->startOfMonth();
+
+    //     // Limitar la fecha de inicio al principio del mes actual
+    //     $startDateFormatted = $startOfMonth->gte($startDateFormatted) ? $startDateFormatted : $startOfMonth;
+
+    //     $endDate = $startDateFormatted->copy()->addDays(6);
+
+    //     // Ajustar la fecha de inicio para incluir solo los 7 días desde el día proporcionado
+    //     $startDateFormatted = $endDate->copy()->subDays(6);
+
+    //     // Obtener el último día del mes actual
+    //     $endOfMonth = $startOfMonth->copy()->endOfMonth();
+
+    //     // Ajustar la fecha de fin para limitarla al final del mes actual
+    //     $endDate = $endDate->lte($endOfMonth) ? $endDate : $endOfMonth;
+
+    //     $statistics = [];
+
+    //     for ($date = $startDateFormatted; $date->lte($endDate); $date->addDay()) {
+    //         $formattedDate = $date->format('Y-m-d');
+    //         $endOfDay = $date->copy()->endOfDay();
+
+    //         $ordersForDate = PedidosShopify::with(['transportadora', 'users', 'users.vendedores', 'pedidoFecha', 'ruta', 'printedBy', 'sentBy', 'product.warehouse.provider'])
+    //             ->where('created_at', '>=', $formattedDate)
+    //             ->where('created_at', '<=', $endOfDay)
+    //             ->where('estado_interno', '=', 'CONFIRMADO')
+    //             ->where('estado_logistico', '=', 'ENVIADO')
+    //             ->get();
+
+    //         $statistics[] = [
+    //             'date' => $formattedDate,
+    //             'total_orders' => $ordersForDate->count(),
+    //             'orders' => $ordersForDate,
+    //         ];
+    //     }
+
+    //     return response()->json(['statistics' => $statistics]);
+    // }
 
     public function getOrderByIDLaravel(Request $req)
     {
@@ -1529,7 +1732,7 @@ class PedidosShopifyAPIController extends Controller
                 'title' => $element['title'],
                 'variant_title' => $element['variant_title'],
                 'sku' => $element['sku']
-                
+
 
             ];
         }
@@ -1766,6 +1969,123 @@ class PedidosShopifyAPIController extends Controller
                         $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
                     }
                 }
+            })
+            ->where((function ($pedidos) use ($Map) {
+                foreach ($Map as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        $parts = explode("/", $key);
+                        $type = $parts[0];
+                        $filter = $parts[1];
+                        if ($key === '/marca_tiempo_envio') {
+                            $startDateFormatted = Carbon::createFromFormat('j/n/Y', $valor)->format('Y-m-d');
+                            $pedidos->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted]);
+                        } elseif (strpos($filter, '.') !== false) {
+                            $relacion = substr($filter, 0, strpos($filter, '.'));
+                            $propiedad = substr($filter, strpos($filter, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            if ($type == "equals") {
+                                $pedidos->where($filter, '=', $valor);
+                            } else {
+                                $pedidos->where($filter, 'LIKE', '%' . $valor . '%');
+                            }
+                        }
+                    }
+                }
+            }))->where((function ($pedidos) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $valor);
+                        } else {
+                            $pedidos->where($key, '!=', $valor);
+                        }
+                    }
+                }
+            }));
+        // ! Ordenamiento ********************************** 
+        $orderByText = null;
+        $orderByDate = null;
+        $sort = $data['sort'];
+        $sortParts = explode(':', $sort);
+
+        $pt1 = $sortParts[0];
+
+        $type = (stripos($pt1, 'fecha') !== false || stripos($pt1, 'marca') !== false) ? 'date' : 'text';
+
+        $dataSort = [
+            [
+                'field' => $sortParts[0],
+                'type' => $type,
+                'direction' => $sortParts[1],
+            ],
+        ];
+
+        foreach ($dataSort as $value) {
+            $field = $value['field'];
+            $direction = $value['direction'];
+            $type = $value['type'];
+
+            if ($type === "text") {
+                $orderByText = [$field => $direction];
+            } else {
+                $orderByDate = [$field => $direction];
+            }
+        }
+
+        if ($orderByText !== null) {
+            $pedidos->orderBy(key($orderByText), reset($orderByText));
+        } else {
+            $pedidos->orderBy(DB::raw("STR_TO_DATE(" . key($orderByDate) . ", '%e/%c/%Y')"), reset($orderByDate));
+        }
+        // ! **************************************************
+        $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
+        return response()->json($pedidos);
+    }
+
+    public function getOrdersForPrintGuidesInSendGuidesPrincipalLaravelD(Request $request)
+    {
+        $data = $request->json()->all();
+        // $startDate = $data['start'];
+        // $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
+
+        $populate = $data['populate'];
+
+        $pageSize = $data['page_size'];
+        $pageNumber = $data['page_number'];
+        $searchTerm = $data['search'];
+        $idWarehouse =  $data['idWarehouse'];
+
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
+        }
+
+        // ! *************************************
+        $Map = $data['and'];
+        $not = $data['not'];
+        // ! *************************************
+
+        $pedidos = PedidosShopify::with($populate)
+            // ->whereRaw("STR_TO_DATE(marca_tiempo_envio, '%e/%c/%Y') = ?", [$startDateFormatted])
+            ->where(function ($pedidos) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $relacion = substr($field, 0, strpos($field, '.'));
+                        $propiedad = substr($field, strpos($field, '.') + 1);
+                        $this->recursiveWhereHas($pedidos, $relacion, $propiedad, $searchTerm);
+                    } else {
+                        $pedidos->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->where(function ($pedidos) use ($idWarehouse) {
+                $pedidos->whereHas('product.warehouse', function ($query) use ($idWarehouse) {
+                    $query->where('warehouse_id', $idWarehouse);
+                });
             })
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
@@ -2413,10 +2733,23 @@ class PedidosShopifyAPIController extends Controller
             $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
             $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
             $Map = $data['and'];
-    
-            $pedidos = PedidosShopify::select('id','numero_orden','nombre_shipping','id_comercial','status','observacion','comentario','estado_interno','estado_logistico','estado_devolucion',
-            'costo_devolucion','costo_transportadora','costo_envio')
-                ->with(['operadore.up_users','transportadora','users.vendedores','ruta'])
+
+            $pedidos = PedidosShopify::select(
+                'id',
+                'numero_orden',
+                'nombre_shipping',
+                'id_comercial',
+                'status',
+                'observacion',
+                'comentario',
+                'estado_interno',
+                'estado_logistico',
+                'estado_devolucion',
+                'costo_devolucion',
+                'costo_transportadora',
+                'costo_envio'
+            )
+                ->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'ruta'])
                 ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
                 ->where((function ($pedidos) use ($Map) {
                     foreach ($Map as $condition) {
@@ -2424,7 +2757,7 @@ class PedidosShopifyAPIController extends Controller
                             $parts = explode("/", $key);
                             $type = $parts[0];
                             $filter = $parts[1];
-    
+
                             if (strpos($filter, '.') !== false) {
                                 $relacion = substr($filter, 0, strpos($filter, '.'));
                                 $propiedad = substr($filter, strpos($filter, '.') + 1);
@@ -2439,53 +2772,53 @@ class PedidosShopifyAPIController extends Controller
                         }
                     }
                 }))->get();
-    
+
             $isIdComercialPresent = collect($Map)->contains(function ($condition) {
                 return isset($condition['equals/id_comercial']);
             });
-    
+
             $isIdTransportPresent = collect($Map)->contains(function ($condition) {
                 return isset($condition['equals/transportadora.transportadora_id']);
             });
-    
+
             $estadoPedidos = $pedidos
-            ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'])
-            ->groupBy('status')
-            ->map(function ($group, $key) {
-                if ($key === 'NOVEDAD') {
-                    $group = $group->where('estado_devolucion', '!=', 'PENDIENTE');
+                ->whereIn('status', ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'])
+                ->groupBy('status')
+                ->map(function ($group, $key) {
+                    if ($key === 'NOVEDAD') {
+                        $group = $group->where('estado_devolucion', '!=', 'PENDIENTE');
+                    }
+
+                    return $group->count();
+                });
+
+            $defaultStatuses = ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'];
+
+            foreach ($defaultStatuses as $status) {
+                if (!isset($estadoPedidos[$status])) {
+                    $estadoPedidos[$status] = 0;
                 }
-        
-                return $group->count();
-            });
-        
-        $defaultStatuses = ['ENTREGADO', 'NO ENTREGADO', 'NOVEDAD'];
-        
-        foreach ($defaultStatuses as $status) {
-            if (!isset($estadoPedidos[$status])) {
-                $estadoPedidos[$status] = 0;
             }
-        }
-    
+
             $sumatoriaCostoTransportadora = $isIdTransportPresent
                 ? $pedidos->sum('costo_transportadora')
                 : null;
-    
+
             if ($sumatoriaCostoTransportadora === null) {
                 // Manejar el caso cuando el valor es null
                 $sumatoriaCostoTransportadora = 0.0;
             }
-    
+
             $sumatoriaCostoEntrega = $isIdComercialPresent
                 ? $pedidos->whereIn('status', ['ENTREGADO', 'NO ENTREGADO'])->sum('costo_envio')
                 : 0.0;
-    
+
             $sumatoriaCostoDevolucion = $isIdComercialPresent
                 ? $pedidos->sum('costo_devolucion')
                 : 0.0;
-    
+
             $presentVendedor = 0;
-    
+
             if ($isIdComercialPresent) {
                 $presentVendedor = 1;
             }
@@ -2495,13 +2828,13 @@ class PedidosShopifyAPIController extends Controller
             if ($isIdTransportPresent && $isIdComercialPresent) {
                 $presentVendedor = 0;
             }
-    
+
             return response()->json([
                 'Costo_Transporte' => $sumatoriaCostoTransportadora,
                 'Costo_Entrega' => $sumatoriaCostoEntrega,
                 'Costo_Devolución' => $sumatoriaCostoDevolucion,
                 'Filtro_Existente' => $presentVendedor,
-                'Estado_Pedidos' =>   $estadoPedidos,
+                'Estado_Pedidos' => $estadoPedidos,
                 // 'Cantidad_Total_Pedidos' => $pedidos->count()
             ]);
         } catch (\Exception $e) {
@@ -2518,6 +2851,58 @@ class PedidosShopifyAPIController extends Controller
                 // 'Cantidad_Total_Pedidos' => 0
             ], 200);
         }
+    }
+
+
+    public function getValuesDropdownSendGuide(Request $request)
+    {
+        $data = $request->json()->all();
+        $monthYear = $data['monthYear']; // '1/2024' por ejemplo
+        $idWarehouse = $data['idWarehouse']; // '1/2024' por ejemplo
+    
+        // Obtiene el primer y último día del mes especificado
+        $startDate = Carbon::createFromFormat('n/Y', $monthYear)->startOfMonth();
+        $endDate = Carbon::createFromFormat('n/Y', $monthYear)->endOfMonth();
+    
+        // Formatea las fechas para la consulta
+        $startDateFormatted = $startDate->format('Y-m-d');
+        $endDateFormatted = $endDate->format('Y-m-d');
+    
+        // Realiza la consulta para contar los pedidos por día
+        $pedidos = PedidosShopify
+        ::with(['product.warehouse.provider'])
+        ->selectRaw('count(*) as cantidad, DATE_FORMAT(STR_TO_DATE(marca_tiempo_envio, "%d/%c/%Y"), "%e/%m/%Y") as fecha')
+        // ... resto de tu consulta
+    
+        ->where(function ($pedidos) use ($idWarehouse) {
+            $pedidos->whereHas('product.warehouse', function ($query) use ($idWarehouse) {
+                $query->where('warehouse_id', $idWarehouse);
+            });
+        })
+            ->where('estado_interno','CONFIRMADO')
+            ->where('estado_logistico','ENVIADO')
+            ->whereBetween(DB::raw('STR_TO_DATE(marca_tiempo_envio, "%d/%m/%Y")'), [$startDateFormatted, $endDateFormatted])
+            ->groupBy('fecha')
+            ->orderBy('fecha', 'desc')
+            ->get();
+    
+        // Ajusta el formato de la fecha para los días menores a 10
+        $pedidos->transform(function ($pedido) {
+            unset($pedido->product); // Elimina el producto
+            $fecha = Carbon::createFromFormat('d/m/Y', $pedido->fecha); // Asegúrate que el formato aquí coincida con cómo se almacena la fecha en la base de datos
+            $pedido->fecha = $fecha->format('j/n/Y'); // 'j' para el día y 'n' para el mes sin ceros iniciales
+            return $pedido;
+        });
+    
+        return response()->json($pedidos);
+    }
+    
+
+    public function addWithdrawanBy(Request $request){
+        $data = $request->json()->all();
+        $idOrder = $data['idOrder']; 
+        $idOperator = $data['idOperator'];     
+        PedidosShopify::where('id',$idOrder)->update(['withdrawan_by' => $idOperator]);
     }
 
 
