@@ -222,6 +222,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post("transacciones/payment-logistic-by-return-status/{id}", [TransaccionesAPIController::class, 'paymentLogisticByReturnStatus']);
     Route::post('transacciones/withdrawal-provider-aproved/{id}', [TransaccionesAPIController::class, 'postWhitdrawalProviderAproved']);
     Route::post('transacciones/deny-withdrawal/{id}', [TransaccionesAPIController::class, 'denyWithdrawal']);
+    Route::post('transacciones/get-transactions', [TransaccionesAPIController::class, 'getTransactions']);
 
     
 
