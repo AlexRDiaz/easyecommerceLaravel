@@ -1318,9 +1318,9 @@ class TransaccionesAPIController extends Controller
             DB::commit();
             return response()->json([
                 "transacciones" =>$transaction,
-                "pedidps" => $ids[0]
-
+                "pedidos" => $ids[0]
             ]);
+            
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([

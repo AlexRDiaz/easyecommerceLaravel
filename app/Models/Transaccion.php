@@ -33,11 +33,10 @@ class Transaccion extends Model
     public static array $rules = [
         
     ];
-
-
-    
-	public function user()
+   
+    public function user()
 	{
 		return $this->hasOne(UpUser::class, 'id','id_vendedor');
 	}
 }
+

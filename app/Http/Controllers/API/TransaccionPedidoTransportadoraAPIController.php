@@ -131,13 +131,6 @@ class TransaccionPedidoTransportadoraAPIController extends Controller
         $count_orders =  $transacciones->flatten()->count();
         $totalShippingCost = $costo_transportadora * $count_orders;
 
-        // $totalCost = TransportadorasShippingCost::where('id_transportadora', $idTransportadora)
-        //     // ->selectRaw('daily_total')
-        //     ->selectRaw('daily_shipping_cost')
-        //     ->whereIn(DB::raw('DATE(time_stamp)'), $fechasEntrega)
-        //     ->get();
-        // $totalShippingCost = $totalCost->sum('daily_shipping_cost');
-
         return response()->json(['data' => $transacciones, "total" => $totalShippingCost], 200);
     }
 
