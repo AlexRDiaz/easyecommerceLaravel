@@ -597,7 +597,9 @@ class TransaccionesAPIController extends Controller
                 "ENTREGADO EN OFICINA" ||
                 $order->estado_devolucion ==
                 "DEVOLUCION EN RUTA" ||
-                $order->estado_devolucion == "EN BODEGA"
+                $order->estado_devolucion == "EN BODEGA"||
+                $order->estado_devolucion == "EN BODEGA PROVEEDOR"
+                
             ) {
 
 
@@ -1244,7 +1246,7 @@ class TransaccionesAPIController extends Controller
 
             foreach ($ids as $id) {
 
-                $transaction = Transaccion::where("id",$id)->first();
+                $transaction = Transaccion::where("id", $id)->first();
 
                 if ($transaction->origen == "retiro") {
                     $retiro = OrdenesRetiro::find($transaction->id_origen);
@@ -1262,17 +1264,15 @@ class TransaccionesAPIController extends Controller
                         );
                     }
                 } else {
-                    
-                   $order = PedidosShopify::find($transaction->id_origen);
+
+                    $order = PedidosShopify::find($transaction->id_origen);
                     if ($order->status != "PEDIDO PROGRAMADO") {
                         $order->status = "PEDIDO PROGRAMADO";
                         $order->estado_devolucion = "PENDIENTE";
-                        $order->costo_devolucion=null;
-                        $order->costo_envio=null;
-                        $order->costo_transportadora=null;
-                        $order->estado_interno="PENDIENTE";
-                        $order->estado_logistico="PEDNIENTE";
-                        $order->estado_pagado="PEDNIENTE";
+                        $order->costo_devolucion = null;
+                        $order->costo_envio = null;
+                        $order->costo_transportadora = null;
+
                         $order->save();
                     }
 
@@ -1312,15 +1312,14 @@ class TransaccionesAPIController extends Controller
                         $transaction->save();
                         $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
                     }
-               }
-           }
+                }
+            }
 
             DB::commit();
             return response()->json([
-                "transacciones" =>$transaction,
+                "transacciones" => $transaction,
                 "pedidos" => $ids[0]
             ]);
-            
         } catch (\Exception $e) {
             DB::rollback();
             return response()->json([
@@ -1331,36 +1330,33 @@ class TransaccionesAPIController extends Controller
 
     public function debitWithdrawal(Request $request, $id)
     {
-        // "data": {
-        //     "Estado": "REALIZADO",
-        //     "Comprobante": comprobante,
-        //     "FechaTransferencia":
-        //         "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute} "
-        //   }
-
-
-
-
         DB::beginTransaction();
 
         try {
             $data = $request->json()->all();
             // $pedido = PedidosShopify::findOrFail($data['id_origen']);
             $orden = OrdenesRetiro::findOrFail($id);
+            if ($orden->estado == "APROBADO") {
+                $orden->estado = "REALIZADO";
+                $orden->comprobante = $data['comprobante'];
+                $orden->fecha_transferencia = $data['fecha_transferencia'];
+                $orden->updated_at = new DateTime();
+                $orden->save();
+                $orden->monto = str_replace(',', '.', $orden->monto);
 
-            $orden->estado = "REALIZADO";
-            $orden->comprobante = $data['comprobante'];
-            $orden->fecha_transferencia = $data['fecha_transferencia'];
-            $orden->save();
-            $orden->monto = str_replace(',', '.', $orden->monto);
+                $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'orden de retiro' .$orden->estado, $data['generated_by']);
 
-            $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'orden de retiro pagada', $data['generated_by']);
-
-            DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
-            return response()->json([
-                "res" => "transaccion exitosa",
-                "orden" => $orden
-            ]);
+                DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+                return response()->json([
+                    "res" => "transaccion exitosa",
+                    "orden" => $orden
+                ]);
+            }else{
+                return response()->json([
+                    "error" => "Solicitud no tiene estado APROBADO",
+                    Response::HTTP_BAD_REQUEST
+                ]);
+            }
         } catch (\Exception $e) {
             DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
             // Maneja el error aquí si es necesario

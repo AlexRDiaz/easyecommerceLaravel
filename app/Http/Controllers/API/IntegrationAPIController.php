@@ -43,7 +43,7 @@ class IntegrationAPIController extends Controller
         $integration = Integration::where("token",$token)->first();
 
         if($integration==null){
-            return response()->json(["response"=>"token not found","token"=>$token,"integration"=>$integration], Response::HTTP_NOT_FOUND);
+            return response()->json(["response"=>"token not found","token"=>$token,"integration"=>$integration], Response::HTTP_BAD_REQUEST);
             
         }
         $integration->store_url=$input["store_url"];
