@@ -180,35 +180,35 @@ class WarehouseAPIController extends Controller
 
     public function warehousesPed(Request $request)
     {
-        $data = $request->json()->all();
-        $idTransportadora = $data['idTransportadora'];
+        // $data = $request->json()->all();
+        // $idTransportadora = $data['idTransportadora'];
 
-        // Obtener el nombre de la transportadora
-        $transportadoraNombre = Transportadora::where('id', $idTransportadora)->pluck('nombre')->first();
+        // // Obtener el nombre de la transportadora
+        // $transportadoraNombre = Transportadora::where('id', $idTransportadora)->pluck('nombre')->first();
 
-        // Obtener almacenes aprobados
-        $warehouses = Warehouse::where('approved', 1)->get();
+        // // Obtener almacenes aprobados
+        // $warehouses = Warehouse::where('approved', 1)->get();
 
-        // Transformaciones en las propiedades
-        $warehouses = $warehouses->filter(function ($warehouse) use ($transportadoraNombre) {
-            // Decodificar la cadena JSON en 'collection'
-            $collection = json_decode($warehouse['collection'], true);
+        // // Transformaciones en las propiedades
+        // $warehouses = $warehouses->filter(function ($warehouse) use ($transportadoraNombre) {
+        //     // Decodificar la cadena JSON en 'collection'
+        //     $collection = json_decode($warehouse['collection'], true);
 
-            // Filtrar almacenes con 'collectionTransport' igual al nombre de la transportadora
-            return isset($collection['collectionTransport']) && $collection['collectionTransport'] == $transportadoraNombre;
-        })->map(function ($warehouse) {
-            // Decodificar la cadena JSON en 'collection'
-            $collection = json_decode($warehouse['collection'], true);
+        //     // Filtrar almacenes con 'collectionTransport' igual al nombre de la transportadora
+        //     return isset($collection['collectionTransport']) && $collection['collectionTransport'] == $transportadoraNombre;
+        // })->map(function ($warehouse) {
+        //     // Decodificar la cadena JSON en 'collection'
+        //     $collection = json_decode($warehouse['collection'], true);
 
-            // Asignar la colección modificada de nuevo a 'collection'
-            $warehouse['collection'] = $collection;
+        //     // Asignar la colección modificada de nuevo a 'collection'
+        //     $warehouse['collection'] = $collection;
 
-            return $warehouse;
-        });
-        // Reindexar el array numéricamente
-        $warehouses = $warehouses->values();
+        //     return $warehouse;
+        // });
+        // // Reindexar el array numéricamente
+        // $warehouses = $warehouses->values();
 
-        return response()->json(['warehouses' => $warehouses]);
+        // return response()->json(['warehouses' => $warehouses]);
     }
 
 

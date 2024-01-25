@@ -90,8 +90,10 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('pedidos-shopifies-prtgd', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintedGuidesLaravel']);
     Route::post('pedidos-shopifies-prtgdD', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintedGuidesLaravelD']);
+    Route::post('pedidos-shopifies-prtgdO', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersForPrintedGuidesLaravelO']);
 
     Route::post('values_not_test', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersCountByWarehouse']);
+    Route::post('values-test-operators', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getOrdersCountByWarehouseByOrders']);
 
     Route::post('upd/pedidossho-printedg', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderInteralStatusLogisticLaravel']);
 
@@ -250,8 +252,14 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/filter/sellers', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getReturnSellers']);
 
     Route::post('/valuesdrop', [PedidosShopifyAPIController::class, 'getValuesDropdownSendGuide']);
+    Route::post('/valuesdrop-op', [PedidosShopifyAPIController::class, 'getValuesDropdownSendGuideOp']);
 
     Route::post('/register-withdrawan-by', [PedidosShopifyAPIController::class, 'addWithdrawanBy']);
+
+    Route::post('/update-retirement-status', [PedidosShopifyAPIController::class, 'updateRetirementStatus']);
+    
+    Route::post('/end-retirement', [PedidosShopifyAPIController::class, 'endRetirement']);
+
 
     Route::post('pedidos-shopify/products/counters', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getCounters']);
     Route::post('pedidos-shopify/products/counters/logistic', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getCountersLogistic']);
@@ -465,6 +473,7 @@ Route::prefix('warehouses')->group(function () {
     Route::post('/activate/{id}', [WarehouseAPIController::class, 'activate']);
     Route::get('/provider/{id}', [WarehouseAPIController::class, 'filterByProvider']);
     Route::post('/approved', [WarehouseAPIController::class, 'approvedWarehouses']);
+    Route::post('/foroperators', [PedidosShopifyAPIController::class, 'getWarehousesofOrders']);
 });
 
 // *
