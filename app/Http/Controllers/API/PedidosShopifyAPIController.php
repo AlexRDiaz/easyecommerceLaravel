@@ -1042,6 +1042,7 @@ class PedidosShopifyAPIController extends Controller
         // $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
         // $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
 
+        $populate = $data['populate'];
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
         $searchTerm = $data['search'];
@@ -1053,31 +1054,20 @@ class PedidosShopifyAPIController extends Controller
         }
 
         // ! *************************************
-        $orConditions = $data['ordefault'];
+        $orConditions = $data['or_multiple'];
         $Map = $data['and'];
         $not = $data['not'];
         // ! *************************************
-        // ! ordenamiento ↓
 
-        // ! *************************************
-
-        $pedidos = PedidosShopify::with(['operadore.up_users'])
-            ->with('transportadora')
-            ->with('users.vendedores')
-            ->with('novedades')
-            ->with('pedidoFecha')
-            ->with('ruta')
-            ->with('subRuta')
-            ->with('receivedBy')
-            ->orWhere(function ($query) use ($orConditions) {
+        $pedidos = PedidosShopify::with($populate)
+            ->where((function ($pedidos) use ($orConditions) {
                 foreach ($orConditions as $condition) {
-                    $query->orWhere(function ($subquery) use ($condition) {
-                        foreach ($condition as $field => $value) {
-                            $subquery->orWhere($field, $value);
-                        }
-                    });
+                    foreach ($condition as $field => $values) {
+                        $pedidos->whereIn($field, $values);
+                    }
                 }
-            })
+                
+            }))
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -1115,6 +1105,7 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }));
+
         // ! Ordena
         $orderByText = null;
         $orderByDate = null;
@@ -1154,6 +1145,7 @@ class PedidosShopifyAPIController extends Controller
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
         return response()->json($pedidos);
     }
+
 
     private function recursiveWhereHas($query, $relation, $property, $searchTerm)
     {
