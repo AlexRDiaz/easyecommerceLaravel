@@ -206,7 +206,6 @@ class TransportadorasShippingCostAPIController extends Controller
         if ($shippingCostsMonthly->isEmpty()) {
             // return response()->json(["message" => "No existen datos en este mes-año"], 200);
             return response()->json([], 204);
-
         }
 
         return response()->json(['data' => $shippingCostsMonthly], 200);
@@ -230,7 +229,8 @@ class TransportadorasShippingCostAPIController extends Controller
         return response()->json(['message' => "Ya existe un registro", "dailyCosts" => $dailyCosts], 200);
     }
 
-    public function uploadFile0(Request $request) {
+    public function uploadFile0(Request $request)
+    {
         if ($request->hasFile('files')) {
             $file = $request->file('files');
             $fileName = time() . '_' . $file->getClientOriginalName();
@@ -239,28 +239,63 @@ class TransportadorasShippingCostAPIController extends Controller
             $fileUrl = asset('storage/uploads/' . $fileName);
             // return response()->json(['message' => 'Archivo subido correctamente', 'url' => $fileUrl]);
             return response()->json([$fileUrl], 200);
-
         } else {
             return response()->json(['error' => 'No se proporcionó un archivo válido.'], 400);
         }
     }
 
-    public function uploadFile(Request $request) {
+    public function uploadFile(Request $request)
+    {
         if ($request->hasFile('files')) {
             $file = $request->file('files');
             $fileName = time() . '_' . $file->getClientOriginalName();
             $file->storeAs('uploads', $fileName, 'public'); // Almacenar en la carpeta 'public/uploads'
-            
+
             // Construye la URL que comienza desde "/uploads"
             $fileUrl = asset('storage/uploads/' . $fileName);
-    
+
             // Devuelve solo la parte de la URL después de "/uploads"
             $relativePath = str_replace(asset('storage/'), '', $fileUrl);
-    
+
             return response()->json($relativePath, 200);
         } else {
             return response()->json(['error' => 'No se proporcionó un archivo válido.'], 400);
         }
     }
-    
+
+    public function recalculateValues(string $id,string $deliveredDate, string $transportadoraId)
+    {
+
+        $transportadoraShipping = TransportadorasShippingCost::findOrFail($id);
+
+        $transportadora = Transportadora::find($transportadoraId);
+        $costo_transportadora = $transportadora->costo_transportadora;
+
+
+        $pedidos = TransaccionPedidoTransportadora::where('id_transportadora', $transportadoraId)
+            ->where('fecha_entrega', $deliveredDate)
+            ->get();
+
+        $total_proceeds = 0;
+        foreach ($pedidos as $pedido) {
+            if ($pedido["status"] == "ENTREGADO") {
+                $precioTotal = floatval($pedido["precio_total"]);
+                $total_proceeds += $precioTotal;
+            }
+        }
+
+        $total_proceeds = round($total_proceeds, 2);
+        $count_orders =  $pedidos->flatten()->count();
+        $shipping_total = $costo_transportadora * $count_orders;
+        $total_day = $total_proceeds - $shipping_total;
+
+        $transportadoraShipping->update([
+            'status' => 'PENDIENTE',
+            'daily_proceeds' => $total_proceeds,
+            'daily_shipping_cost' => $shipping_total,
+            'daily_total' => $total_day
+        ]);
+
+        return response()->json(["message" => "Se ha actualizado correctamente", "id" => $id, "data" => $transportadoraShipping], 200);
+    }
 }

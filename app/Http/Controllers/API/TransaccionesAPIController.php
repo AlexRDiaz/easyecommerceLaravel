@@ -15,6 +15,7 @@ use App\Models\Provider;
 use App\Http\Controllers\API\ProductAPIController;
 use App\Models\OrdenesRetiro;
 use App\Models\TransaccionPedidoTransportadora;
+use App\Models\TransportadorasShippingCost;
 use App\Repositories\transaccionesRepository;
 use App\Repositories\vendedorRepository;
 
@@ -1242,7 +1243,7 @@ public function getTransactions(Request $request)
 
             foreach ($ids as $id) {
 
-                $transaction = Transaccion::where("id",$id)->first();
+                $transaction = Transaccion::where("id", $id)->first();
 
                 if ($transaction->origen == "retiro") {
                     $retiro = OrdenesRetiro::find($transaction->id_origen);
@@ -1260,14 +1261,17 @@ public function getTransactions(Request $request)
                         );
                     }
                 } else {
-                    
-                   $order = PedidosShopify::find($transaction->id_origen);
+
+                    $order = PedidosShopify::find($transaction->id_origen);
                     if ($order->status != "PEDIDO PROGRAMADO") {
                         $order->status = "PEDIDO PROGRAMADO";
                         $order->estado_devolucion = "PENDIENTE";
-                        $order->costo_devolucion=null;
-                        $order->costo_envio=null;
-                        $order->costo_transportadora=null;
+                        $order->costo_devolucion = null;
+                        $order->costo_envio = null;
+                        $order->costo_transportadora = null;
+                        $order->estado_interno = "PENDIENTE";
+                        $order->estado_logistico = "PENDIENTE";
+                        $order->estado_pagado = "PENDIENTE";
                         $order->save();
                     }
 
@@ -1307,14 +1311,44 @@ public function getTransactions(Request $request)
                         $transaction->save();
                         $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
                     }
-               }
-           }
+                }
+            }
+
+            //  *
+            $transactionOrderCarrier = TransaccionPedidoTransportadora::where("id_pedido", $idOrigen)->first();
+            // error_log("transactionOrderCarrier");
+            if ($transactionOrderCarrier != null) {
+                error_log("exist data tpt");
+                // error_log("delete from tpt $transactionOrderCarrier->id");
+                $deliveredDate = $transactionOrderCarrier->fecha_entrega;
+                $tptCarrierId = $transactionOrderCarrier->id_transportadora;
+                $tpt = new TransaccionPedidoTransportadoraAPIController();
+                $tpt->destroy($transactionOrderCarrier->id);
+                // error_log("**** need to recal tsc ****");
+                $dateFormatted = Carbon::createFromFormat('j/n/Y', $deliveredDate)->format('Y-m-d');
+
+                $transportadoraShippingCost = TransportadorasShippingCost::where('id_transportadora', $tptCarrierId)
+                    ->whereDate('time_stamp', $dateFormatted)
+                    ->first();
+                // error_log("upt from tsc $transportadoraShippingCost");
+
+                if ($transportadoraShippingCost != null) {
+                    // error_log("exists data transShippingCost");
+                    $tsc = new TransportadorasShippingCostAPIController();
+                    $tsc->recalculateValues($transportadoraShippingCost->id, $deliveredDate, $tptCarrierId);
+                    // error_log("updated data transShippingCost");
+                } else {
+                    error_log("no data tsc");
+                }
+            } else {
+                error_log("no data tpt");
+            }
+            //  **
 
             DB::commit();
             return response()->json([
-                "transacciones" =>$transaction,
-                "pedidps" => $ids[0]
-
+                "transacciones" => $transaction,
+                "pedidos" => $ids[0]
             ]);
         } catch (\Exception $e) {
             DB::rollback();

@@ -420,6 +420,8 @@ Route::middleware(['cors'])->group(function () {
         Route::put('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'update']);
         Route::post('/bydates', [TransaccionPedidoTransportadoraAPIController::class, 'getByTransportadoraDates']);
         Route::delete('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'destroy']);
+        Route::post('/ordersperday', [TransaccionPedidoTransportadoraAPIController::class, 'getOrdersPerDay']);
+
     });
 
     Route::prefix('providers')->group(function () {
