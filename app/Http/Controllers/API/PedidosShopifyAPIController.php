@@ -2183,7 +2183,6 @@ class PedidosShopifyAPIController extends Controller
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
         $searchTerm = $data['search'];
-        $idWarehouse = $data['idWarehouse'];
 
         if ($searchTerm != "") {
             $filteFields = $data['or'];
@@ -2209,11 +2208,11 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             })
-            ->where(function ($pedidos) use ($idWarehouse) {
-                $pedidos->whereHas('product.warehouse', function ($query) use ($idWarehouse) {
-                    $query->where('warehouse_id', $idWarehouse);
-                });
-            })
+            // ->where(function ($pedidos) use ($idWarehouse) {
+            //     $pedidos->whereHas('product.warehouse', function ($query) use ($idWarehouse) {
+            //         $query->where('warehouse_id', $idWarehouse);
+            //     });
+            // })
             ->where((function ($pedidos) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
