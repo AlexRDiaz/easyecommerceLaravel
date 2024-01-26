@@ -50,27 +50,26 @@ class ShopifyWebhookAPIController extends Controller
         return hash_equals($calculatedHmac, $hmacHeader);
     }
     public function handleShopRedact(Request $request)
-    {  try {
-        $hmacHeader = $request->header('HTTP_X_SHOPIFY_HMAC_SHA256');
-        $data = file_get_contents('php://input');
+    {
+        try {
+            // $hmacHeader = $request->header('HTTP_X_SHOPIFY_HMAC_SHA256');
+            // $data = file_get_contents('php://input');
 
-       // $verified = $this->verifyWebhook($data, $hmacHeader);
+            // $verified = $this->verifyWebhook($data, $hmacHeader);
 
-       // if ($verified) {
+            // if ($verified) {
 
-            return response()->json(['message' => 'Webhook verificado'], 401);
-       // } else {
-       //     return response()->json(['error' => 'No autorizado'], 401);
-      //  }
-    }
-        catch (\Exception $th) {
+            return response()->json(['message' => 'Webhook recibido'], 401);
+            // } else {
+            //     return response()->json(['error' => 'No autorizado'], 401);
+            //  }
+        } catch (\Exception $th) {
             //throw $th;
             return response()->json(['error' => 'No autorizado'], 401);
-
         }
     }
 
-    
+
 
 
     public function handleCallback(Request $request)
@@ -84,5 +83,4 @@ class ShopifyWebhookAPIController extends Controller
         // Por ejemplo, devolver la información del usuario como respuesta a la aplicación cliente
         return response()->json(['user' => $shopifyUser]);
     }
-
 }

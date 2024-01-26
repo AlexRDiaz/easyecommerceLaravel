@@ -1080,6 +1080,18 @@ class PedidosShopifyAPIController extends Controller
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
         $searchTerm = $data['search'];
+        $dateFilter = $data["date_filter"];
+
+
+       
+        $selectedFilter = "fecha_entrega";
+        if ($dateFilter != "FECHA ENTREGA") {
+            $selectedFilter = "marca_tiempo_envio";
+
+  
+        }
+
+
 
         if ($searchTerm != "") {
             $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
@@ -1093,7 +1105,7 @@ class PedidosShopifyAPIController extends Controller
         // ! *************************************
 
         $pedidos = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -1360,6 +1372,7 @@ class PedidosShopifyAPIController extends Controller
         // $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
         // $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
 
+        $populate = $data['populate'];
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
         $searchTerm = $data['search'];
@@ -1371,31 +1384,20 @@ class PedidosShopifyAPIController extends Controller
         }
 
         // ! *************************************
-        $orConditions = $data['ordefault'];
+        $orConditions = $data['or_multiple'];
         $Map = $data['and'];
         $not = $data['not'];
         // ! *************************************
-        // ! ordenamiento ↓
 
-        // ! *************************************
-
-        $pedidos = PedidosShopify::with(['operadore.up_users'])
-            ->with('transportadora')
-            ->with('users.vendedores')
-            ->with('novedades')
-            ->with('pedidoFecha')
-            ->with('ruta')
-            ->with('subRuta')
-            ->with('receivedBy')
-            ->orWhere(function ($query) use ($orConditions) {
+        $pedidos = PedidosShopify::with($populate)
+            ->where((function ($pedidos) use ($orConditions) {
                 foreach ($orConditions as $condition) {
-                    $query->orWhere(function ($subquery) use ($condition) {
-                        foreach ($condition as $field => $value) {
-                            $subquery->orWhere($field, $value);
-                        }
-                    });
+                    foreach ($condition as $field => $values) {
+                        $pedidos->whereIn($field, $values);
+                    }
                 }
-            })
+                
+            }))
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -1433,6 +1435,7 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }));
+
         // ! Ordena
         $orderByText = null;
         $orderByDate = null;
@@ -1472,6 +1475,7 @@ class PedidosShopifyAPIController extends Controller
         $pedidos = $pedidos->paginate($pageSize, ['*'], 'page', $pageNumber);
         return response()->json($pedidos);
     }
+
 
     private function recursiveWhereHas($query, $relation, $property, $searchTerm)
     {
@@ -1592,12 +1596,20 @@ class PedidosShopifyAPIController extends Controller
     public function getCounters(Request $request)
     {
         $data = $request->json()->all();
+        $dateFilter = $data["date_filter"];
         $startDate = $data['start'];
         $endDate = $data['end'];
         $startDateFormatted = Carbon::createFromFormat('j/n/Y', $startDate)->format('Y-m-d');
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
         $Map = $data['and'];
         $not = $data['not'];
+      
+        $selectedFilter = "fecha_entrega";
+        if ($dateFilter != "FECHA ENTREGA") {
+            $selectedFilter = "marca_tiempo_envio";
+
+  
+        }
 
         $result = PedidosShopify::with(['operadore.up_users'])
             ->with('transportadora')
@@ -1605,8 +1617,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('novedades')
             ->with('pedidoFecha')
             ->with('ruta')
-            ->with('subRuta')
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->with('subRuta')->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->where((function ($pedidos) use ($Map) {
@@ -1635,7 +1646,7 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }
-                ))->get();
+            ))->get();
 
 
 
@@ -1724,10 +1735,15 @@ class PedidosShopifyAPIController extends Controller
         $endDate = Carbon::createFromFormat('j/n/Y', $data['end'])->format('Y-m-d');
         $Map = $data['and'];
         $not = $data['not'];
+        $dateFilter = $data["date_filter"];
+        $selectedFilter = "fecha_entrega";
+        if ($dateFilter != "FECHA ENTREGA") {
+            $selectedFilter = "marca_tiempo_envio";  
+        }
 
         $query = PedidosShopify::query()
             ->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
+            ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
 
         $this->applyConditions($query, $Map);
         $this->applyConditions($query, $not, true);
@@ -1765,10 +1781,19 @@ class PedidosShopifyAPIController extends Controller
         $endDate = Carbon::createFromFormat('j/n/Y', $data['end'])->format('Y-m-d');
         $Map = $data['and'];
         $not = $data['not'];
+        $dateFilter = $data["date_filter"];
+
+
+        $selectedFilter = "fecha_entrega";
+        if ($dateFilter != "FECHA ENTREGA") {
+            $selectedFilter = "marca_tiempo_envio";
+
+  
+        }
 
         $query = PedidosShopify::query()
             ->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
+            ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
 
         $this->applyConditions($query, $Map);
         $this->applyConditions($query, $not, true);
@@ -3315,6 +3340,7 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json(['ordersCountByWarehouse' => $ordersCountByWarehouse]);
     }
+
 
 
 }

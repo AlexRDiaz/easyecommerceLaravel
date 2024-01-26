@@ -15,6 +15,7 @@ use App\Models\Provider;
 use App\Http\Controllers\API\ProductAPIController;
 use App\Models\OrdenesRetiro;
 use App\Models\TransaccionPedidoTransportadora;
+use App\Models\TransportadorasShippingCost;
 use App\Repositories\transaccionesRepository;
 use App\Repositories\vendedorRepository;
 
@@ -216,6 +217,39 @@ class TransaccionesAPIController extends Controller
 
         return response()->json("Monto debitado");
     }
+
+public function CreditLocal($vendedorId, $monto, $idOrigen, $codigo, $origen, $comentario, $generated_by)
+    {
+        $startDateFormatted = new DateTime();
+        $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
+        $vendedor = $user['vendedores'][0];
+        $saldo = $vendedor->saldo;
+        $nuevoSaldo = $saldo + $monto;
+        $vendedor->saldo = $nuevoSaldo;
+
+
+        $newTrans = new Transaccion();
+
+        $newTrans->tipo = "credit";
+        $newTrans->monto = $monto;
+        $newTrans->valor_anterior = $saldo;
+
+        $newTrans->valor_actual = $nuevoSaldo;
+        $newTrans->marca_de_tiempo = $startDateFormatted;
+        $newTrans->id_origen = $idOrigen;
+        $newTrans->codigo = $codigo;
+
+        $newTrans->origen = $origen;
+        $newTrans->comentario = $comentario;
+        $newTrans->id_vendedor = $vendedorId;
+        $newTrans->state = 1;
+        $newTrans->generated_by = $generated_by;
+        $this->transaccionesRepository->create($newTrans);
+        $this->vendedorRepository->update($nuevoSaldo, $user['vendedores'][0]['id']);
+
+        return response()->json("Monto acreditado");
+    }
+
     public function Debit(Request $request)
     {
         $data = $request->json()->all();
@@ -319,6 +353,50 @@ class TransaccionesAPIController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return ["total" => null, "valor_producto" => null, "error" => $e->getMessage()];
+        }
+    }
+
+
+public function paymentOrderInWarehouseProvider(Request $request, $id)
+    {
+        DB::beginTransaction();
+        $message = "";
+        $repetida = null;
+
+        try {
+            $data = $request->json()->all();
+            $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
+            $order->estado_devolucion = "EN BODEGA PROVEEDOR";
+            $order->marca_t_d = date("d/m/Y H:i");
+            $order->received_by = $data['generated_by'];
+            if ($order->status == "NOVEDAD") {
+
+
+                if ($order->costo_devolucion == null) { // Verifica si está vacío convirtiendo a un array
+                    $order->costo_devolucion = $order->users[0]->vendedores[0]->costo_devolucion;
+                    $this->DebitLocal( $order->users[0]->vendedores[0]->id_master,$order->users[0]->vendedores[0]->costo_devolucion,$order->id,$order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden, "devolucion",  "Costo de devolución desde operador por pedido en " . $order->status . " y " . $order->estado_devolucion,  $data['generated_by']);
+
+
+
+                    $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
+                } else {
+                    $message = "Transacción ya cobrada";
+                }
+            } else {
+                $message = "Transacción sin débito por estado" . $order->status . " y " . $order->estado_devolucion;
+            }
+            $order->save();
+            DB::commit();
+
+            return response()->json([
+                "res" => $message,
+                "transaccion_repetida" => $repetida
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -564,7 +642,8 @@ class TransaccionesAPIController extends Controller
                 "ENTREGADO EN OFICINA" ||
                 $order->estado_devolucion ==
                 "DEVOLUCION EN RUTA" ||
-                $order->estado_devolucion == "EN BODEGA"
+                $order->estado_devolucion == "EN BODEGA" ||
+                $order->estado_devolucion == "EN BODEGA PROVEEDOR" 
             ) {
 
 
@@ -1044,6 +1123,99 @@ class TransaccionesAPIController extends Controller
 
         return response()->json($transaccions);
     }
+
+public function getTransactions(Request $request)
+    {
+        $data = $request->json()->all();
+        $startDate = Carbon::parse($data['start'] . " 00:00:00");
+        $endDate = Carbon::parse($data['end'] . " 23:59:59");
+
+        $pageSize = $data['page_size'];
+        $pageNumber = $data['page_number'];
+        $searchTerm = $data['search'];
+
+        if ($searchTerm != "") {
+            $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
+        } else {
+            $filteFields = [];
+        }
+
+        // ! *************************************
+        $and = $data['and'];
+        $not = $data['not'];
+        // ! *************************************
+        // ! ordenamiento ↓
+        $orderBy = null;
+        if (isset($data['sort'])) {
+            $sort = $data['sort'];
+            $sortParts = explode(':', $sort);
+            if (count($sortParts) === 2) {
+                $field = $sortParts[0];
+                $direction = strtoupper($sortParts[1]) === 'DESC' ? 'DESC' : 'ASC';
+                $orderBy = [$field => $direction];
+            }
+        }
+
+        // ! *************************************
+
+        $transactions = Transaccion::with(['user']);
+
+        $transactions->whereRaw("marca_de_tiempo BETWEEN ? AND ?", [$startDate, $endDate]);
+
+        $transactions->where(function ($transactions) use ($searchTerm, $filteFields) {
+            foreach ($filteFields as $field) {
+                if (strpos($field, '.') !== false) {
+                    $relacion = substr($field, 0, strpos($field, '.'));
+                    $propiedad = substr($field, strpos($field, '.') + 1);
+                    $this->recursiveWhereHas($transactions, $relacion, $propiedad, $searchTerm);
+                } else {
+                    $transactions->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                }
+            }
+        })
+            ->where((function ($transactions) use ($and) {
+                foreach ($and as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        $parts = explode("/", $key);
+                        $type = $parts[0];
+                        $filter = $parts[1];
+                        if (strpos($filter, '.') !== false) {
+                            $relacion = substr($filter, 0, strpos($filter, '.'));
+                            $propiedad = substr($filter, strpos($filter, '.') + 1);
+                            $this->recursiveWhereHas($transactions, $relacion, $propiedad, $valor);
+                        } else {
+                            if ($type == "equals") {
+                                $transactions->where($filter, '=', $valor);
+                            } else {
+                                $transactions->where($filter, 'LIKE', '%' . $valor . '%');
+                            }
+                        }
+                    }
+                }
+            }))
+            ->where((function ($transactions) use ($not) {
+                foreach ($not as $condition) {
+                    foreach ($condition as $key => $valor) {
+                        if (strpos($key, '.') !== false) {
+                            $relacion = substr($key, 0, strpos($key, '.'));
+                            $propiedad = substr($key, strpos($key, '.') + 1);
+                            $this->recursiveWhereHas($transactions, $relacion, $propiedad, $valor);
+                        } else {
+                            $transactions->where($key, '!=', $valor);
+                        }
+                    }
+                }
+            }));
+        // ! Ordena
+        if ($orderBy !== null) {
+            $transactions->orderBy(key($orderBy), reset($orderBy));
+        }
+        // ! **************************************************
+        $transactions = $transactions->paginate($pageSize, ['*'], 'page', $pageNumber);
+
+        return response()->json($transactions);
+    }
+
     public function getTransactionToRollback($id)
     {
         $transaccion = Transaccion::where("id_origen", $id)->where('state', '1')->whereNot("origen", "reembolso")->get();
@@ -1069,80 +1241,114 @@ class TransaccionesAPIController extends Controller
         try {
             //code...
 
-
-            $order = PedidosShopify::find($idOrigen);
-
-            $order->costo_devolucion = null;
-            $order->costo_envio = null;
-            $order->status = "PEDIDO PROGRAMADO";
-            $order->estado_devolucion = "PENDIENTE";
-            $order->save();
-
-
             foreach ($ids as $id) {
 
-                $transaction = Transaccion::find($id);
-                array_push($reqTrans, $transaction);
-                $pedido = PedidosShopify::where("id", $transaction->id_origen)->first();
+                $transaction = Transaccion::where("id", $id)->first();
 
-                if ($transaction->state == 1) {
+                if ($transaction->origen == "retiro") {
+                    $retiro = OrdenesRetiro::find($transaction->id_origen);
+                    $retiro->estado = "RECHAZADO";
 
-                    array_push($reqPedidos, $pedido);
-
-                    $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
-                    if ($transaction->tipo == "credit") {
-                        $transactionResetValues = new Transaccion();
-                        $transactionResetValues->tipo = "debit";
-                        $transactionResetValues->monto = $transaction->monto;
-                        $transactionResetValues->valor_anterior = $vendedor[0]->saldo;
-                        $transactionResetValues->valor_actual = $vendedor[0]->saldo - $transaction->monto;
-                        $transactionResetValues->marca_de_tiempo = new DateTime();
-                        $transactionResetValues->id_origen = $transaction->id_origen;
-                        $transactionResetValues->codigo = $transaction->codigo;
-                        $transactionResetValues->origen = "reembolso";
-                        $transactionResetValues->id_vendedor = $transaction->id_vendedor;
-                        $transactionResetValues->comentario = "error de transaccion";
-                        $transactionResetValues->state = 0;
-                        $transactionResetValues->generated_by = $generated_by;
-
-
-                        $transactionResetValues->save();
-                        $vendedor[0]->saldo = $vendedor[0]->saldo - $transaction->monto;
-                    }
                     if ($transaction->tipo == "debit") {
-
-                        $transactionResetValues = new Transaccion();
-                        $transactionResetValues->tipo = "credit";
-                        $transactionResetValues->monto = $transaction->monto;
-                        $transactionResetValues->valor_anterior = $vendedor[0]->saldo;
-                        $transactionResetValues->valor_actual = $vendedor[0]->saldo + $transaction->monto;
-                        $transactionResetValues->marca_de_tiempo = new DateTime();
-                        $transactionResetValues->id_origen = $transaction->id_origen;
-                        $transactionResetValues->codigo = $transaction->codigo;
-                        $transactionResetValues->origen = "reembolso";
-                        $transactionResetValues->id_vendedor = $transaction->id_vendedor;
-                        $transactionResetValues->comentario = "error de transaccion";
-                        $transactionResetValues->state = 0;
-                        $transactionResetValues->generated_by = $generated_by;
-
-                        $transactionResetValues->save();
-
-
-
-
-                        $vendedor[0]->saldo = $vendedor[0]->saldo + $transaction->monto;
+                        $this->CreditLocal(
+                            $transaction->id_vendedor,
+                            $transaction->monto,
+                            $transaction->id_origen,
+                            $transaction->codigo,
+                            "reembolso",
+                            "reembolso por retiro cancelado",
+                            $generated_by
+                        );
                     }
-                    $transaction->state = 0;
-                    $transaction->save();
-                    $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
+                } else {
+
+                    $order = PedidosShopify::find($transaction->id_origen);
+                    if ($order->status != "PEDIDO PROGRAMADO") {
+                        $order->status = "PEDIDO PROGRAMADO";
+                        $order->estado_devolucion = "PENDIENTE";
+                        $order->costo_devolucion = null;
+                        $order->costo_envio = null;
+                        $order->costo_transportadora = null;
+                        $order->estado_interno = "PENDIENTE";
+                        $order->estado_logistico = "PENDIENTE";
+                        $order->estado_pagado = "PENDIENTE";
+                        $order->save();
+                    }
+
+
+
+                    array_push($reqTrans, $transaction);
+                    $pedido = PedidosShopify::where("id", $transaction->id_origen)->first();
+
+                    if ($transaction->state == 1) {
+
+                        array_push($reqPedidos, $pedido);
+
+                        $vendedor = UpUser::find($transaction->id_vendedor)->vendedores;
+                        if ($transaction->tipo == "credit") {
+                            $this->DebitLocal(
+                                $transaction->id_vendedor,
+                                $transaction->monto,
+                                $transaction->id_origen,
+                                $transaction->codigo,
+                                "reembolso",
+                                "reembolso por restauracion de pedido",
+                                $generated_by
+                            );
+                        }
+                        if ($transaction->tipo == "debit") {
+                            $this->CreditLocal(
+                                $transaction->id_vendedor,
+                                $transaction->monto,
+                                $transaction->id_origen,
+                                $transaction->codigo,
+                                "reembolso",
+                                "reembolso por restauracion de pedido",
+                                $generated_by
+                            );
+                        }
+                        $transaction->state = 0;
+                        $transaction->save();
+                        $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
+                    }
                 }
             }
 
+            //  *
+            $transactionOrderCarrier = TransaccionPedidoTransportadora::where("id_pedido", $idOrigen)->first();
+            // error_log("transactionOrderCarrier");
+            if ($transactionOrderCarrier != null) {
+                error_log("exist data tpt");
+                // error_log("delete from tpt $transactionOrderCarrier->id");
+                $deliveredDate = $transactionOrderCarrier->fecha_entrega;
+                $tptCarrierId = $transactionOrderCarrier->id_transportadora;
+                $tpt = new TransaccionPedidoTransportadoraAPIController();
+                $tpt->destroy($transactionOrderCarrier->id);
+                // error_log("**** need to recal tsc ****");
+                $dateFormatted = Carbon::createFromFormat('j/n/Y', $deliveredDate)->format('Y-m-d');
+
+                $transportadoraShippingCost = TransportadorasShippingCost::where('id_transportadora', $tptCarrierId)
+                    ->whereDate('time_stamp', $dateFormatted)
+                    ->first();
+                // error_log("upt from tsc $transportadoraShippingCost");
+
+                if ($transportadoraShippingCost != null) {
+                    // error_log("exists data transShippingCost");
+                    $tsc = new TransportadorasShippingCostAPIController();
+                    $tsc->recalculateValues($transportadoraShippingCost->id, $deliveredDate, $tptCarrierId);
+                    // error_log("updated data transShippingCost");
+                } else {
+                    error_log("no data tsc");
+                }
+            } else {
+                error_log("no data tpt");
+            }
+            //  **
+
             DB::commit();
             return response()->json([
-                "transacciones" => $reqTrans,
-                "pedidps" => $reqPedidos
-
+                "transacciones" => $transaction,
+                "pedidos" => $ids[0]
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -1152,44 +1358,4 @@ class TransaccionesAPIController extends Controller
         }
     }
 
-    public function debitWithdrawal(Request $request,$id){
-        // "data": {
-        //     "Estado": "REALIZADO",
-        //     "Comprobante": comprobante,
-        //     "FechaTransferencia":
-        //         "${DateTime.now().day}/${DateTime.now().month}/${DateTime.now().year} ${DateTime.now().hour}:${DateTime.now().minute} "
-        //   }
-
-
-
-
-          DB::beginTransaction();
-
-          try {
-              $data = $request->json()->all();
-              // $pedido = PedidosShopify::findOrFail($data['id_origen']);
-              $orden = OrdenesRetiro::findOrFail($id);
-  
-              $orden->estado = "REALIZADO";
-              $orden->comprobante = $data['comprobante'];
-              $orden->fecha_transferencia=$data['fecha_transferencia'];
-              $orden->save();
-              $orden->monto = str_replace(',', '.', $orden->monto);
-
-              $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id,"retiro-".$orden->id,'retiro','orden de retiro pagada',$data['generated_by']);
-        
-              DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
-              return response()->json([
-                  "res" => "transaccion exitosa",
-                  "orden"=>$orden
-              ]);
-          } catch (\Exception $e) {
-              DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
-              // Maneja el error aquí si es necesario
-              return response()->json([
-                  'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
-              ], 500);
-          }
-
     }
-}

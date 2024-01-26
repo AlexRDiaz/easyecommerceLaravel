@@ -20,6 +20,7 @@ use App\Http\Controllers\API\VendedoreAPIController;
 use App\Http\Controllers\API\WarehouseAPIController;
 
 use App\Http\Controllers\API\ShopifyWebhookAPIController;
+use App\Http\Controllers\API\TransaccionesAPIController;
 use App\Models\Reserve;
 
 use Illuminate\Http\Request;
@@ -137,7 +138,8 @@ Route::middleware(['cors'])->group(function () {
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
 
     //  ! ↓ LA ORIGINAL
-    Route::post('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
+    Route::post('integrations/put-integrations-url-store/compare-token', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
+    Route::post('integrations/get-integrations-url-store/get-token', [IntegrationAPIController::class, 'getIntegrationsByStorename']);
 
 
 
@@ -155,7 +157,7 @@ Route::middleware(['cors'])->group(function () {
 
         
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);
-        Route::put('integrations/put-integrations-url-store', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
+        //Route::put('integrations/put-integrations-url-store/', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
  
 
 
@@ -207,24 +209,29 @@ Route::middleware(['cors'])->group(function () {
 
 
     // ! TRANSACCIONES
-    Route::get("transacciones", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'index']);
+    Route::get("transacciones", [TransaccionesAPIController::class, 'index']);
     // ! LAST 30
-    Route::get("transacciones-lst", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'last30rows']);
+    Route::get("transacciones-lst", [TransaccionesAPIController::class, 'last30rows']);
     // ! CREDIT TRANSACTION
-    Route::post("transacciones/credit", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'Credit']);
+    Route::post("transacciones/credit", [TransaccionesAPIController::class, 'Credit']);
     // ! CREDIT TRANSACTION
-    Route::post("transacciones/debit", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'Debit']);
-    Route::post("transacciones/payment-order-delivered", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderDelivered']);
-    Route::post("transacciones/payment-order-not-delivered", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderNotDelivered']);
-    Route::post("transacciones/payment-order-with-novelty/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderWithNovelty']);
-    Route::post("transacciones/payment-order-operator-in-office/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentOrderOperatorInOffice']);
-    Route::post("transacciones/payment-logistic-in-warehouse/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentLogisticInWarehouse']);
-    Route::post("transacciones/debit_withdrawal/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'debitWithdrawal']);
+    Route::post("transacciones/debit", [TransaccionesAPIController::class, 'Debit']);
+    Route::post("transacciones/payment-order-delivered", [TransaccionesAPIController::class, 'paymentOrderDelivered']);
+    Route::post("transacciones/payment-order-not-delivered", [TransaccionesAPIController::class, 'paymentOrderNotDelivered']);
+    Route::post("transacciones/payment-order-with-novelty/{id}", [TransaccionesAPIController::class, 'paymentOrderWithNovelty']);
+    Route::post("transacciones/payment-order-operator-in-office/{id}", [TransaccionesAPIController::class, 'paymentOrderOperatorInOffice']);
+    Route::post("transacciones/payment-logistic-in-warehouse/{id}", [TransaccionesAPIController::class, 'paymentLogisticInWarehouse']);
+    Route::post("transacciones/debit_withdrawal/{id}", [TransaccionesAPIController::class, 'debitWithdrawal']);
+    
+    Route::post("transacciones/payment-order-in-warehouse-provider/{id}", [TransaccionesAPIController::class, 'paymentOrderInWarehouseProvider']);
 
-    Route::post("transacciones/payment-transport-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentTransportByReturnStatus']);
-    Route::post("transacciones/payment-logistic-by-return-status/{id}", [\App\Http\Controllers\API\TransaccionesAPIController::class, 'paymentLogisticByReturnStatus']);
+    Route::post("transacciones/payment-transport-by-return-status/{id}", [TransaccionesAPIController::class, 'paymentTransportByReturnStatus']);
+    Route::post("transacciones/payment-logistic-by-return-status/{id}", [TransaccionesAPIController::class, 'paymentLogisticByReturnStatus']);
+    Route::post('transacciones/withdrawal-provider-aproved/{id}', [TransaccionesAPIController::class, 'postWhitdrawalProviderAproved']);
+    Route::post('transacciones/deny-withdrawal/{id}', [TransaccionesAPIController::class, 'denyWithdrawal']);
+    Route::post('transacciones/get-transactions', [TransaccionesAPIController::class, 'getTransactions']);
 
-
+    
 
     // ! ***********************
 
@@ -281,7 +288,7 @@ Route::middleware(['cors'])->group(function () {
 
     // -- wallet-ordenesretiro
 
-    Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'getSaldo']);
+    Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'misaldo']);
     // *
     Route::put('pedidos-shopify/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'update']);
 
@@ -335,15 +342,21 @@ Route::middleware(['cors'])->group(function () {
 
 
     Route::prefix('seller/ordenesretiro')->group(function () {
+        Route::get('/', [OrdenesRetiroAPIController::class, 'index']);
         Route::get('/retiro/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroNew']);
         Route::get('/ret-count/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroCount']);
+    
         Route::post('/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
+        Route::post('/withdrawal/generate-code', [OrdenesRetiroAPIController::class, 'postWithdrawalProvider']);
         Route::post('/withdrawal/{id}', [OrdenesRetiroAPIController::class, 'withdrawal']);
-        Route::post('/withdrawal-provider/{id}', [OrdenesRetiroAPIController::class, 'withdrawalProvider']);
-        Route::post('/withdrawal-provider-aproved/{id}', [OrdenesRetiroAPIController::class, 'postWhitdrawalProviderAproved']);
+        Route::put('/withdrawal/done/{id}', [OrdenesRetiroAPIController::class, 'putRealizado']);
+
 
         
     });
+    
+
+   
 
 
 
@@ -427,6 +440,8 @@ Route::middleware(['cors'])->group(function () {
         Route::put('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'update']);
         Route::post('/bydates', [TransaccionPedidoTransportadoraAPIController::class, 'getByTransportadoraDates']);
         Route::delete('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'destroy']);
+        Route::post('/ordersperday', [TransaccionPedidoTransportadoraAPIController::class, 'getOrdersPerDay']);
+
     });
 
     Route::prefix('providers')->group(function () {
