@@ -185,7 +185,7 @@ class TransaccionesAPIController extends Controller
         return response()->json("Monto acreditado");
     }
 
-    public function DebitLocal($vendedorId, $monto, $idOrigen, $codigo, $origen, $comentario, $generated_by)
+    public function DebitLocal($vendedorId,$monto, $idOrigen,$codigo,$origen,$comentario,$generated_by)
     {
         $startDateFormatted = new DateTime();
         $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
@@ -217,7 +217,7 @@ class TransaccionesAPIController extends Controller
         return response()->json("Monto debitado");
     }
 
-    public function CreditLocal($vendedorId, $monto, $idOrigen, $codigo, $origen, $comentario, $generated_by)
+public function CreditLocal($vendedorId, $monto, $idOrigen, $codigo, $origen, $comentario, $generated_by)
     {
         $startDateFormatted = new DateTime();
         $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
@@ -352,6 +352,50 @@ class TransaccionesAPIController extends Controller
         } catch (\Exception $e) {
             DB::rollback();
             return ["total" => null, "valor_producto" => null, "error" => $e->getMessage()];
+        }
+    }
+
+
+public function paymentOrderInWarehouseProvider(Request $request, $id)
+    {
+        DB::beginTransaction();
+        $message = "";
+        $repetida = null;
+
+        try {
+            $data = $request->json()->all();
+            $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
+            $order->estado_devolucion = "EN BODEGA PROVEEDOR";
+            $order->marca_t_d = date("d/m/Y H:i");
+            $order->received_by = $data['generated_by'];
+            if ($order->status == "NOVEDAD") {
+
+
+                if ($order->costo_devolucion == null) { // Verifica si está vacío convirtiendo a un array
+                    $order->costo_devolucion = $order->users[0]->vendedores[0]->costo_devolucion;
+                    $this->DebitLocal( $order->users[0]->vendedores[0]->id_master,$order->users[0]->vendedores[0]->costo_devolucion,$order->id,$order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden, "devolucion",  "Costo de devolución desde operador por pedido en " . $order->status . " y " . $order->estado_devolucion,  $data['generated_by']);
+
+
+
+                    $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
+                } else {
+                    $message = "Transacción ya cobrada";
+                }
+            } else {
+                $message = "Transacción sin débito por estado" . $order->status . " y " . $order->estado_devolucion;
+            }
+            $order->save();
+            DB::commit();
+
+            return response()->json([
+                "res" => $message,
+                "transaccion_repetida" => $repetida
+            ]);
+        } catch (\Exception $e) {
+            DB::rollback();
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
         }
     }
 
@@ -597,9 +641,8 @@ class TransaccionesAPIController extends Controller
                 "ENTREGADO EN OFICINA" ||
                 $order->estado_devolucion ==
                 "DEVOLUCION EN RUTA" ||
-                $order->estado_devolucion == "EN BODEGA"||
-                $order->estado_devolucion == "EN BODEGA PROVEEDOR"
-                
+                $order->estado_devolucion == "EN BODEGA" ||
+                $order->estado_devolucion == "EN BODEGA PROVEEDOR" 
             ) {
 
 
@@ -957,49 +1000,6 @@ class TransaccionesAPIController extends Controller
         }
     }
 
-    public function paymentOrderInWarehouseProvider(Request $request, $id)
-    {
-        DB::beginTransaction();
-        $message = "";
-        $repetida = null;
-
-        try {
-            $data = $request->json()->all();
-            $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
-            $order->estado_devolucion = "EN BODEGA PROVEEDOR";
-            $order->marca_t_d = date("d/m/Y H:i");
-            $order->received_by = $data['generated_by'];
-            if ($order->status == "NOVEDAD") {
-
-
-                if ($order->costo_devolucion == null) { // Verifica si está vacío convirtiendo a un array
-                    $order->costo_devolucion = $order->users[0]->vendedores[0]->costo_devolucion;
-                    $this->DebitLocal($order->users[0]->vendedores[0]->id_master, $order->users[0]->vendedores[0]->costo_devolucion, $order->id, $order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden, "devolucion",  "Costo de devolución desde operador por pedido en " . $order->status . " y " . $order->estado_devolucion,  $data['generated_by']);
-
-
-
-                    $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
-                } else {
-                    $message = "Transacción ya cobrada";
-                }
-            } else {
-                $message = "Transacción sin débito por estado" . $order->status . " y " . $order->estado_devolucion;
-            }
-            $order->save();
-            DB::commit();
-
-            return response()->json([
-                "res" => $message,
-                "transaccion_repetida" => $repetida
-            ]);
-        } catch (\Exception $e) {
-            DB::rollback();
-            return response()->json([
-                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
 
     public function updateFieldTime(Request $request, $id)
     {
@@ -1123,11 +1123,7 @@ class TransaccionesAPIController extends Controller
         return response()->json($transaccions);
     }
 
-
-
-
-
-    public function getTransactions(Request $request)
+public function getTransactions(Request $request)
     {
         $data = $request->json()->all();
         $startDate = Carbon::parse($data['start'] . " 00:00:00");
@@ -1246,7 +1242,7 @@ class TransaccionesAPIController extends Controller
 
             foreach ($ids as $id) {
 
-                $transaction = Transaccion::where("id", $id)->first();
+                $transaction = Transaccion::where("id",$id)->first();
 
                 if ($transaction->origen == "retiro") {
                     $retiro = OrdenesRetiro::find($transaction->id_origen);
@@ -1264,15 +1260,14 @@ class TransaccionesAPIController extends Controller
                         );
                     }
                 } else {
-
-                    $order = PedidosShopify::find($transaction->id_origen);
+                    
+                   $order = PedidosShopify::find($transaction->id_origen);
                     if ($order->status != "PEDIDO PROGRAMADO") {
                         $order->status = "PEDIDO PROGRAMADO";
                         $order->estado_devolucion = "PENDIENTE";
-                        $order->costo_devolucion = null;
-                        $order->costo_envio = null;
-                        $order->costo_transportadora = null;
-
+                        $order->costo_devolucion=null;
+                        $order->costo_envio=null;
+                        $order->costo_transportadora=null;
                         $order->save();
                     }
 
@@ -1312,13 +1307,14 @@ class TransaccionesAPIController extends Controller
                         $transaction->save();
                         $this->vendedorRepository->update($vendedor[0]->saldo, $vendedor[0]->id);
                     }
-                }
-            }
+               }
+           }
 
             DB::commit();
             return response()->json([
-                "transacciones" => $transaction,
-                "pedidos" => $ids[0]
+                "transacciones" =>$transaction,
+                "pedidps" => $ids[0]
+
             ]);
         } catch (\Exception $e) {
             DB::rollback();
@@ -1328,41 +1324,4 @@ class TransaccionesAPIController extends Controller
         }
     }
 
-    public function debitWithdrawal(Request $request, $id)
-    {
-        DB::beginTransaction();
-
-        try {
-            $data = $request->json()->all();
-            // $pedido = PedidosShopify::findOrFail($data['id_origen']);
-            $orden = OrdenesRetiro::findOrFail($id);
-            if ($orden->estado == "APROBADO") {
-                $orden->estado = "REALIZADO";
-                $orden->comprobante = $data['comprobante'];
-                $orden->fecha_transferencia = $data['fecha_transferencia'];
-                $orden->updated_at = new DateTime();
-                $orden->save();
-                $orden->monto = str_replace(',', '.', $orden->monto);
-
-                $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'orden de retiro' .$orden->estado, $data['generated_by']);
-
-                DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
-                return response()->json([
-                    "res" => "transaccion exitosa",
-                    "orden" => $orden
-                ]);
-            }else{
-                return response()->json([
-                    "error" => "Solicitud no tiene estado APROBADO",
-                    Response::HTTP_BAD_REQUEST
-                ]);
-            }
-        } catch (\Exception $e) {
-            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
-            // Maneja el error aquí si es necesario
-            return response()->json([
-                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
-            ], 500);
-        }
     }
-}
