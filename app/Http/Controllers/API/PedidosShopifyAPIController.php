@@ -1457,8 +1457,6 @@ class PedidosShopifyAPIController extends Controller
         $selectedFilter = "fecha_entrega";
         if ($dateFilter != "FECHA ENTREGA") {
             $selectedFilter = "marca_tiempo_envio";
-
-  
         }
 
         $query = PedidosShopify::query()
@@ -2556,5 +2554,33 @@ class PedidosShopifyAPIController extends Controller
                 // 'Cantidad_Total_Pedidos' => 0
             ], 200);
         }
+    }
+
+    public function updateGestionedNovelty(Request $request,$id){
+        try {
+            $data = $request->json()->all();
+            $edited_novelty=null;
+            $order= PedidosShopify::find($id);
+            if($order["gestioned_novelty"]!=null){
+               $edited_novelty= json_decode($order["gestioned_novelty"], true);  
+               
+            }else{
+                $edited_novelty["state"]=$data["state"];
+             $edited_novelty["comment"]=$data["comment"];
+                $edited_novelty["try"]=1;
+               $edited_novelty["id_user"]=$data["id_user"];
+                $order["gestioned_novelty"]= $edited_novelty;
+                $order->save();
+             }
+            return response()->json(["response"=>"returned edited novelty succes","edited_novelty"=>$edited_novelty], Response::HTTP_OK);
+
+
+        } catch (\Throwable $th) {
+            return response()->json(["response"=>"couldn't return edited novelty"], Response::HTTP_OK);
+
+        }
+
+
+
     }
 }
