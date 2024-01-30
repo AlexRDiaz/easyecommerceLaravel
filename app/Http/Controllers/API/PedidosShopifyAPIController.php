@@ -3122,7 +3122,7 @@ class PedidosShopifyAPIController extends Controller
     {
         $data = $request->json()->all();
         $monthYear = $data['monthYear']; // '1/2024' por ejemplo
-        $idWarehouse = $data['idWarehouse']; // '1/2024' por ejemplo
+        // $idWarehouse = $data['idWarehouse']; // '1/2024' por ejemplo
 
         // Obtiene el primer y último día del mes especificado
         $startDate = Carbon::createFromFormat('n/Y', $monthYear)->startOfMonth();
@@ -3138,11 +3138,11 @@ class PedidosShopifyAPIController extends Controller
             ->selectRaw('count(*) as cantidad, DATE_FORMAT(STR_TO_DATE(marca_tiempo_envio, "%d/%c/%Y"), "%e/%m/%Y") as fecha')
             // ... resto de tu consulta
 
-            ->where(function ($pedidos) use ($idWarehouse) {
-                $pedidos->whereHas('product.warehouse', function ($query) use ($idWarehouse) {
-                    $query->where('warehouse_id', $idWarehouse);
-                });
-            })
+            // ->where(function ($pedidos) use ($idWarehouse) {
+            //     $pedidos->whereHas('product.warehouse', function ($query) use ($idWarehouse) {
+            //         $query->where('warehouse_id', $idWarehouse);
+            //     });
+            // })
             ->where('estado_interno', 'CONFIRMADO')
             ->where('estado_logistico', 'ENVIADO')
             ->whereBetween(DB::raw('STR_TO_DATE(marca_tiempo_envio, "%d/%m/%Y")'), [$startDateFormatted, $endDateFormatted])
@@ -3165,7 +3165,7 @@ class PedidosShopifyAPIController extends Controller
     {
         $data = $request->json()->all();
         $monthYear = $data['monthYear']; // '1/2024' por ejemplo
-        $WithdrawanBy = $data['WithdrawanBy']; // '1/2024' por ejemplo
+        // $WithdrawanBy = $data['WithdrawanBy']; // '1/2024' por ejemplo
 
         // Obtiene el primer y último día del mes especificado
         $startDate = Carbon::createFromFormat('n/Y', $monthYear)->startOfMonth();
@@ -3179,7 +3179,7 @@ class PedidosShopifyAPIController extends Controller
         $pedidos = PedidosShopify
             ::with(['product.warehouse.provider'])
             ->selectRaw('count(*) as cantidad, DATE_FORMAT(STR_TO_DATE(marca_tiempo_envio, "%d/%c/%Y"), "%e/%m/%Y") as fecha')
-            ->where('withdrawan_by', $WithdrawanBy)
+            // ->where('withdrawan_by', $WithdrawanBy)
             ->where('estado_interno', 'CONFIRMADO')
             ->where('estado_logistico', 'ENVIADO')
             ->where('retirement_status', 'PEDIDO RETIRADO')
