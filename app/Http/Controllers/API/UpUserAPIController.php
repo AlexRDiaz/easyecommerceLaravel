@@ -1108,7 +1108,6 @@ class UpUserAPIController extends Controller
         $filtersOr = $data['or'];
         $Map = $data['and'];
         $searchValue = $data['searchValue'];
-    
         $users = UpUser::with(['operadores.sub_rutas.rutas', 'rolesFronts', 'operadores.transportadoras'])
             ->whereHas('rolesFronts', function ($query) {
                 $query->where('titulo', 'OPERADOR');
@@ -1125,7 +1124,7 @@ class UpUserAPIController extends Controller
                         // Si es un campo anidado
                         $relations = explode('.', $field);
                         $property = array_pop($relations);
-            
+
                         $users->orWhereHas(implode('.', $relations), function ($q) use ($property, $searchValue) {
                             $q->where($property, 'LIKE', '%' . $searchValue . '%');
                         });
@@ -1135,7 +1134,6 @@ class UpUserAPIController extends Controller
                     }
                 }
             })
-            
             ->where((function ($users) use ($Map) {
                 foreach ($Map as $condition) {
                     foreach ($condition as $key => $valor) {
@@ -1149,16 +1147,23 @@ class UpUserAPIController extends Controller
                     }
                 }
             }));
-        
-    
+        if (isset($data['sort'])) {
+            $sortField = $data['sort']['field'];
+            $sortDirection = $data['sort']['direction'] == 'DESC' ? 'DESC' : 'ASC';
+
+            if ($sortField == 'operadores.transportadoras.id') {
+                $users->join('operadores', 'up_users.id', '=', 'operadores.user_id')
+                    ->join('transportadoras', 'operadores.id', '=', 'transportadoras.id')
+                    ->orderBy('transportadoras.id', $sortDirection);
+            }
+        }
         $users = $users->get();
-    
         return response()->json([
             'data' => $users,
             'total' => $users->count()
         ], 200);
     }
-    
+
     private function recursiveWhereHas($query, $relation, $property, $searchTerm)
     {
         if ($searchTerm == "null") {

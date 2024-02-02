@@ -136,9 +136,14 @@ Route::middleware(['cors'])->group(function () {
     Route::post('updtOrdIS/pedidos-shopifies', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrderInfoSellerLaravel']);
 
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
+
+    
     Route::post('pedidos-shopify/update-gestioned-novelty/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateGestionedNovelty']);
 
+    Route::post('pedidos-shopify/update-prop-gestioned-novelty/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrCreatePropertyGestionedNovelty']);
 
+
+   
     
     //  ! ↓ LA ORIGINAL
     Route::post('integrations/put-integrations-url-store/compare-token', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
