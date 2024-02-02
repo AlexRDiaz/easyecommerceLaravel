@@ -285,6 +285,16 @@ class PedidosShopifyAPIController extends Controller
         $pageSize = $data['page_size'];
         $pageNumber = $data['page_number'];
         $searchTerm = $data['search'];
+        $dateFilter = $data["date_filter"];
+
+
+        $selectedFilter = "fecha_entrega";
+        if ($dateFilter != "FECHA ENTREGA") {
+            $selectedFilter = "marca_tiempo_envio";
+
+
+        }
+        
 
         if ($searchTerm != "") {
             $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
@@ -318,7 +328,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('ruta')
             ->with('subRuta')
             ->with('confirmedBy')
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -880,30 +890,30 @@ class PedidosShopifyAPIController extends Controller
                 })
                 ->get();
 
-                $count = $pedidos->count();
+            $count = $pedidos->count();
 
-                $firstUsername = '...';
-                $primerPedido = $pedidos->first();
-            
-                if ($primerPedido && $primerPedido->withdrawan_by) {
-                    $withdrawanParts = explode('-', $primerPedido->withdrawan_by);
-                    $operatorId = $withdrawanParts[1] ?? '...';
-            
-                    if ($operatorId) {
-                        $operator = Operadore::find($operatorId);
-                        // Asegúrate de que 'up_users' sea el nombre correcto de la relación
-                        if ($operator && $operator->up_users) {
-                            $firstUsername = $operator->up_users[0]->username;
-                        }
+            $firstUsername = '...';
+            $primerPedido = $pedidos->first();
+
+            if ($primerPedido && $primerPedido->withdrawan_by) {
+                $withdrawanParts = explode('-', $primerPedido->withdrawan_by);
+                $operatorId = $withdrawanParts[1] ?? '...';
+
+                if ($operatorId) {
+                    $operator = Operadore::find($operatorId);
+                    // Asegúrate de que 'up_users' sea el nombre correcto de la relación
+                    if ($operator && $operator->up_users) {
+                        $firstUsername = $operator->up_users[0]->username;
                     }
                 }
-            
-                $ordersCountByWarehouse->push([
-                    'warehouse_id' => $warehouse->warehouse_id,
-                    'count' => $count,
-                    'first_username' => $firstUsername,
-                ]);
             }
+
+            $ordersCountByWarehouse->push([
+                'warehouse_id' => $warehouse->warehouse_id,
+                'count' => $count,
+                'first_username' => $firstUsername,
+            ]);
+        }
 
         return response()->json(['ordersCountByWarehouse' => $ordersCountByWarehouse]);
     }
@@ -1083,12 +1093,12 @@ class PedidosShopifyAPIController extends Controller
         $dateFilter = $data["date_filter"];
 
 
-       
+
         $selectedFilter = "fecha_entrega";
         if ($dateFilter != "FECHA ENTREGA") {
             $selectedFilter = "marca_tiempo_envio";
 
-  
+
         }
 
 
@@ -1105,7 +1115,7 @@ class PedidosShopifyAPIController extends Controller
         // ! *************************************
 
         $pedidos = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
-            ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->whereRaw("STR_TO_DATE(" . $selectedFilter . ", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -1396,7 +1406,7 @@ class PedidosShopifyAPIController extends Controller
                         $pedidos->whereIn($field, $values);
                     }
                 }
-                
+
             }))
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
@@ -1603,12 +1613,12 @@ class PedidosShopifyAPIController extends Controller
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
         $Map = $data['and'];
         $not = $data['not'];
-      
+
         $selectedFilter = "fecha_entrega";
         if ($dateFilter != "FECHA ENTREGA") {
             $selectedFilter = "marca_tiempo_envio";
 
-  
+
         }
 
         $result = PedidosShopify::with(['operadore.up_users'])
@@ -1617,7 +1627,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('novedades')
             ->with('pedidoFecha')
             ->with('ruta')
-            ->with('subRuta')->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->with('subRuta')->whereRaw("STR_TO_DATE(" . $selectedFilter . ", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->selectRaw('status, COUNT(*) as count')
             ->groupBy('status')
             ->where((function ($pedidos) use ($Map) {
@@ -1646,7 +1656,7 @@ class PedidosShopifyAPIController extends Controller
                     }
                 }
             }
-            ))->get();
+                ))->get();
 
 
 
@@ -1738,12 +1748,12 @@ class PedidosShopifyAPIController extends Controller
         $dateFilter = $data["date_filter"];
         $selectedFilter = "fecha_entrega";
         if ($dateFilter != "FECHA ENTREGA") {
-            $selectedFilter = "marca_tiempo_envio";  
+            $selectedFilter = "marca_tiempo_envio";
         }
 
         $query = PedidosShopify::query()
             ->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
-            ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
+            ->whereRaw("STR_TO_DATE(" . $selectedFilter . ", '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
 
         $this->applyConditions($query, $Map);
         $this->applyConditions($query, $not, true);
@@ -1788,12 +1798,12 @@ class PedidosShopifyAPIController extends Controller
         if ($dateFilter != "FECHA ENTREGA") {
             $selectedFilter = "marca_tiempo_envio";
 
-  
+
         }
 
         $query = PedidosShopify::query()
             ->with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
-            ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
+            ->whereRaw("STR_TO_DATE(" . $selectedFilter . ", '%e/%c/%Y') BETWEEN ? AND ?", [$startDate, $endDate]);
 
         $this->applyConditions($query, $Map);
         $this->applyConditions($query, $not, true);
@@ -3339,6 +3349,92 @@ class PedidosShopifyAPIController extends Controller
 
 
         return response()->json(['ordersCountByWarehouse' => $ordersCountByWarehouse]);
+    }
+
+
+    public function updateOrCreatePropertyGestionedNovelty(Request $request, $id)
+    {
+        try {
+            $data = $request->json()->all();
+            $property = $data['property'];
+            list($propertyName, $propertyValue) = explode(':', $property);
+
+            $order = PedidosShopify::find($id);
+
+            $edited_novelty = $order["gestioned_novelty"] != null ? json_decode($order["gestioned_novelty"], true) : [];
+            // Actualizar o crear la propiedad
+            $edited_novelty[$propertyName] = $propertyValue;
+
+            // Guardar los cambios en el modelo
+            $order->gestioned_novelty = json_encode($edited_novelty);
+            $order->save();
+
+            return response()->json(['success' => 'Property  updated successfully!']);
+
+
+        } catch (\Throwable $th) {
+            return response()->json(['error' => $th->getMessage()], 500);
+        }
+    }
+
+    public function updateGestionedNovelty(Request $request, $id)
+    {
+        try {
+            $data = $request->json()->all();
+            $noveltyState = $data['novelty_state'];
+            $startDate = $data['start'];
+            $startDateFormatted = Carbon::createFromFormat('j/n/Y H:i:s', $startDate)->format('Y-m-d H:i:s');
+
+            $order = PedidosShopify::find($id);
+
+            // Inicializar 'edited_novelty' y 'lastTry'
+            $edited_novelty = $order["gestioned_novelty"] != null ? json_decode($order["gestioned_novelty"], true) : [];
+            $lastTry = $edited_novelty['try'] ?? 0;
+
+
+            // verified
+            // novelty_status
+
+            switch ($noveltyState) {
+                case 1:
+                    // Incrementar el intento solo si está entre 0 y 4
+                    if ($lastTry >= 0 && $lastTry < 5) {
+                        $lastTry++;
+                        $edited_novelty["state"] = 'gestioned';
+                        $edited_novelty["comment"] = $data["comment"];
+                        $edited_novelty["verified"] = $data["comment"];
+                        $edited_novelty["id_user"] = $data["id_user"];
+                        $edited_novelty["m_t_g"] = $startDateFormatted;
+                    } elseif ($lastTry == 5) {
+                        return response()->json(["response" => "returned edited novelty failed"], Response::HTTP_OK);
+                    }
+                    break;
+
+                case 2:
+                    $edited_novelty["state"] = 'resolved';
+                    $edited_novelty["comment"] = $data['comment'];
+                    $edited_novelty["id_user"] = $data['id_user'];
+                    $edited_novelty["m_t_g"] = $startDateFormatted;
+                    break;
+
+                default:
+                    $edited_novelty["state"] = 'ok';
+                    $edited_novelty["comment"] = $data['comment'];
+                    $edited_novelty["id_user"] = $data['id_user'];
+                    $edited_novelty["m_t_g"] = $startDateFormatted;
+                    break;
+            }
+
+            // Actualizar el valor de 'try' y otros campos
+            $edited_novelty['try'] = $lastTry;
+
+            $order["gestioned_novelty"] = json_encode($edited_novelty);
+            $order->save();
+
+            return response()->json(["response" => "Novelty updated successfully", "edited_novelty" => $edited_novelty], Response::HTTP_OK);
+        } catch (\Throwable $th) {
+            return response()->json(["response" => "Failed to update novelty (-_-)/ "], Response::HTTP_NOT_FOUND);
+        }
     }
 
 
