@@ -160,7 +160,7 @@ class PedidosShopify extends Model
 		'confirmed_at',
 		'sku',
 		'id_product',
-		"getionated_novelty",
+		'gestioned_novelty'
 	];
 
 	public function admin_user()
