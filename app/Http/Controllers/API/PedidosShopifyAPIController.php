@@ -291,10 +291,8 @@ class PedidosShopifyAPIController extends Controller
         $selectedFilter = "fecha_entrega";
         if ($dateFilter != "FECHA ENTREGA") {
             $selectedFilter = "marca_tiempo_envio";
-
-
         }
-        
+
 
         if ($searchTerm != "") {
             $filteFields = $data['or']; // && SOLO QUITO  ((||)&&())
@@ -328,7 +326,7 @@ class PedidosShopifyAPIController extends Controller
             ->with('ruta')
             ->with('subRuta')
             ->with('confirmedBy')
-            ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
+            ->whereRaw("STR_TO_DATE(" . $selectedFilter . ", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
                     if (strpos($field, '.') !== false) {
@@ -878,8 +876,8 @@ class PedidosShopifyAPIController extends Controller
         // return response()->json(['data' => $pedido]);
         return response()->json($pedido);
     }
-  
-  
+
+
     //  TODO: en desarrollo ↓↓↓↓
     public function createDateOrderLaravel(Request $req)
     {
@@ -1270,7 +1268,6 @@ class PedidosShopifyAPIController extends Controller
             $estado = $row->status;
             $stateTotals[$estado] = $row->count;
             $stateTotals['TOTAL'] += $row->count;
-
         }
 
         return response()->json([
@@ -1288,8 +1285,8 @@ class PedidosShopifyAPIController extends Controller
         $endDateFormatted = Carbon::createFromFormat('j/n/Y', $endDate)->format('Y-m-d');
         $Map = $data['and'];
         $not = $data['not'];
-      
-       $selectedFilter = "fecha_entrega";
+
+        $selectedFilter = "fecha_entrega";
         if ($dateFilter != "FECHA ENTREGA") {
             $selectedFilter = "marca_tiempo_envio";
         }
@@ -1477,11 +1474,11 @@ class PedidosShopifyAPIController extends Controller
     }
 
 
-   
+
 
     private function applyConditions($query, $conditions, $not = false)
     {
-       $operator = $not ? '!=' : '=';
+        $operator = $not ? '!=' : '=';
 
         foreach ($conditions as $condition) {
             foreach ($condition as $key => $value) {
@@ -1496,7 +1493,7 @@ class PedidosShopifyAPIController extends Controller
             }
         }
     }
-      
+
 
 
     public function CalculateValuesSeller(Request $request)
@@ -1512,8 +1509,6 @@ class PedidosShopifyAPIController extends Controller
         $selectedFilter = "fecha_entrega";
         if ($dateFilter != "FECHA ENTREGA") {
             $selectedFilter = "marca_tiempo_envio";
-
-
         }
 
         $query = PedidosShopify::query()
@@ -1554,7 +1549,7 @@ class PedidosShopifyAPIController extends Controller
 
 
 
-  
+
 
     public function shopifyPedidos(Request $request, $id)
     {
@@ -1754,7 +1749,7 @@ class PedidosShopifyAPIController extends Controller
             ], 200);
         }
     }
-  
+
     public function sendToAutome($url, $data)
     {
         $client = new Client();
@@ -2054,7 +2049,7 @@ class PedidosShopifyAPIController extends Controller
 
         $pedidos = PedidosShopify::with(['operadore.up_users', 'transportadora', 'users.vendedores', 'novedades', 'pedidoFecha', 'ruta', 'subRuta'])
             //select('marca_t_i', 'fecha_entrega', DB::raw('concat(tienda_temporal, "-", numero_orden) as codigo'), 'nombre_shipping', 'ciudad_shipping', 'direccion_shipping', 'telefono_shipping', 'cantidad_total', 'producto_p', 'producto_extra', 'precio_total', 'comentario', 'estado_interno', 'status', 'estado_logistico', 'estado_devolucion', 'costo_envio', 'costo_devolucion')
-            ->whereRaw("STR_TO_DATE(fecha_entrega, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])->where((function ($pedidos) use ($and) {
+            ->whereRaw("STR_TO_DATE(marca_t_i, '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])->where((function ($pedidos) use ($and) {
                 foreach ($and as $condition) {
                     foreach ($condition as $key => $valor) {
                         if (strpos($key, '.') !== false) {
@@ -2078,6 +2073,7 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json($response);
     }
+
     public function generateTransportCosts()
     {
 
@@ -3215,7 +3211,7 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json(['warehouses' => $warehouses]);
     }
-      
+
 
     public function updateOrCreatePropertyGestionedNovelty(Request $request, $id)
     {
@@ -3235,8 +3231,6 @@ class PedidosShopifyAPIController extends Controller
             $order->save();
 
             return response()->json(['success' => 'Property  updated successfully!']);
-
-
         } catch (\Throwable $th) {
             return response()->json(['error' => $th->getMessage()], 500);
         }
@@ -3301,6 +3295,4 @@ class PedidosShopifyAPIController extends Controller
             return response()->json(["response" => "Failed to update novelty (-_-)/ "], Response::HTTP_NOT_FOUND);
         }
     }
-
-
 }
