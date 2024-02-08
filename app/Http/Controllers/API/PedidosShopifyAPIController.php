@@ -2547,6 +2547,7 @@ class PedidosShopifyAPIController extends Controller
 
         //v0
         if ($key == "estado_interno") {
+            $pedido->fecha_confirmacion = $currentDateTimeText;
             $pedido->confirmed_by = $idUser;
             $pedido->confirmed_at = $currentDateTime;
         }
