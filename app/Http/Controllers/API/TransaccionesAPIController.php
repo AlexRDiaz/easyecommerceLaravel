@@ -1359,6 +1359,44 @@ class TransaccionesAPIController extends Controller
         }
     }
 
+    public function debitWithdrawal(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $data = $request->json()->all();
+            // $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $orden = OrdenesRetiro::findOrFail($id);
+            if ($orden->estado == "APROBADO") {
+                $orden->estado = "REALIZADO";
+                $orden->comprobante = $data['comprobante'];
+                $orden->fecha_transferencia = $data['fecha_transferencia'];
+                $orden->updated_at = new DateTime();
+                $orden->save();
+                $orden->monto = str_replace(',', '.', $orden->monto);
+
+                $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'orden de retiro' . $orden->estado, $data['generated_by']);
+
+                DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+                return response()->json([
+                    "res" => "transaccion exitosa",
+                    "orden" => $orden
+                ]);
+            } else {
+                return response()->json([
+                    "error" => "Solicitud no tiene estado APROBADO",
+                    Response::HTTP_BAD_REQUEST
+                ]);
+            }
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+            // Maneja el error aquí si es necesario
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
     public function postWhitdrawalProviderAproved(Request $request, $id)
     {
 
