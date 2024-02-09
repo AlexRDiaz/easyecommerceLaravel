@@ -14,6 +14,7 @@ use App\Models\Provider;
 
 use App\Http\Controllers\API\ProductAPIController;
 use App\Models\OrdenesRetiro;
+use App\Models\OrdenesRetirosUsersPermissionsUserLink;
 use App\Models\TransaccionPedidoTransportadora;
 use App\Models\TransportadorasShippingCost;
 use App\Repositories\transaccionesRepository;
@@ -186,7 +187,7 @@ class TransaccionesAPIController extends Controller
         return response()->json("Monto acreditado");
     }
 
-    public function DebitLocal($vendedorId,$monto, $idOrigen,$codigo,$origen,$comentario,$generated_by)
+    public function DebitLocal($vendedorId, $monto, $idOrigen, $codigo, $origen, $comentario, $generated_by)
     {
         $startDateFormatted = new DateTime();
         $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
@@ -218,7 +219,7 @@ class TransaccionesAPIController extends Controller
         return response()->json("Monto debitado");
     }
 
-public function CreditLocal($vendedorId, $monto, $idOrigen, $codigo, $origen, $comentario, $generated_by)
+    public function CreditLocal($vendedorId, $monto, $idOrigen, $codigo, $origen, $comentario, $generated_by)
     {
         $startDateFormatted = new DateTime();
         $user = UpUser::where("id", $vendedorId)->with('vendedores')->first();
@@ -357,7 +358,7 @@ public function CreditLocal($vendedorId, $monto, $idOrigen, $codigo, $origen, $c
     }
 
 
-public function paymentOrderInWarehouseProvider(Request $request, $id)
+    public function paymentOrderInWarehouseProvider(Request $request, $id)
     {
         DB::beginTransaction();
         $message = "";
@@ -374,7 +375,7 @@ public function paymentOrderInWarehouseProvider(Request $request, $id)
 
                 if ($order->costo_devolucion == null) { // Verifica si está vacío convirtiendo a un array
                     $order->costo_devolucion = $order->users[0]->vendedores[0]->costo_devolucion;
-                    $this->DebitLocal( $order->users[0]->vendedores[0]->id_master,$order->users[0]->vendedores[0]->costo_devolucion,$order->id,$order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden, "devolucion",  "Costo de devolución desde operador por pedido en " . $order->status . " y " . $order->estado_devolucion,  $data['generated_by']);
+                    $this->DebitLocal($order->users[0]->vendedores[0]->id_master, $order->users[0]->vendedores[0]->costo_devolucion, $order->id, $order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden, "devolucion",  "Costo de devolución desde operador por pedido en " . $order->status . " y " . $order->estado_devolucion,  $data['generated_by']);
 
 
 
@@ -643,7 +644,7 @@ public function paymentOrderInWarehouseProvider(Request $request, $id)
                 $order->estado_devolucion ==
                 "DEVOLUCION EN RUTA" ||
                 $order->estado_devolucion == "EN BODEGA" ||
-                $order->estado_devolucion == "EN BODEGA PROVEEDOR" 
+                $order->estado_devolucion == "EN BODEGA PROVEEDOR"
             ) {
 
 
@@ -1124,7 +1125,7 @@ public function paymentOrderInWarehouseProvider(Request $request, $id)
         return response()->json($transaccions);
     }
 
-public function getTransactions(Request $request)
+    public function getTransactions(Request $request)
     {
         $data = $request->json()->all();
         $startDate = Carbon::parse($data['start'] . " 00:00:00");
@@ -1358,4 +1359,74 @@ public function getTransactions(Request $request)
         }
     }
 
+    public function debitWithdrawal(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $data = $request->json()->all();
+            // $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $orden = OrdenesRetiro::findOrFail($id);
+            if ($orden->estado == "APROBADO") {
+                $orden->estado = "REALIZADO";
+                $orden->comprobante = $data['comprobante'];
+                $orden->fecha_transferencia = $data['fecha_transferencia'];
+                $orden->updated_at = new DateTime();
+                $orden->save();
+                $orden->monto = str_replace(',', '.', $orden->monto);
+
+                $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'orden de retiro' . $orden->estado, $data['generated_by']);
+
+                DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+                return response()->json([
+                    "res" => "transaccion exitosa",
+                    "orden" => $orden
+                ]);
+            } else {
+                return response()->json([
+                    "error" => "Solicitud no tiene estado APROBADO",
+                    Response::HTTP_BAD_REQUEST
+                ]);
+            }
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+            // Maneja el error aquí si es necesario
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
+        }
     }
+
+    public function postWhitdrawalProviderAproved(Request $request, $id)
+    {
+
+        DB::beginTransaction();
+        try {
+            //code...
+
+            $data = $request->json()->all();
+            $withdrawal = new OrdenesRetiro();
+            $withdrawal->monto = $data["monto"];
+            $withdrawal->fecha = new  DateTime();
+            $withdrawal->codigo_generado = $data["codigo"];
+            $withdrawal->estado = 'APROBADO';
+            $withdrawal->id_vendedor =  $data["id_vendedor"];
+            $withdrawal->account_id = "EEEETEST";
+
+            $withdrawal->save();
+
+            $ordenUser = new OrdenesRetirosUsersPermissionsUserLink();
+            $ordenUser->ordenes_retiro_id = $withdrawal->id;
+            $ordenUser->user_id = $id;
+            $ordenUser->save();
+
+            $this->DebitLocal($data["id_vendedor"], $data["monto"], $withdrawal->id, "retiro-" . $withdrawal->id, "retiro", "debito por retiro solicitado", $data["id_vendedor"]);
+            DB::commit();
+            return response()->json(["response" => "solicitud generada exitosamente", "solicitud" => $withdrawal], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            DB::rollback();
+
+            return response()->json(["response" => "error al cambiar de estado", "error" => $e], Response::HTTP_BAD_REQUEST);
+        }
+    }
+}

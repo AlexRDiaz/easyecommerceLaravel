@@ -296,7 +296,7 @@ Route::middleware(['cors'])->group(function () {
 
     // -- wallet-ordenesretiro
 
-    Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'misaldo']);
+    Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'getSaldo']);
     // *
     Route::put('pedidos-shopify/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'update']);
 
