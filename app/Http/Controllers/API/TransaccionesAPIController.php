@@ -1366,8 +1366,12 @@ class TransaccionesAPIController extends Controller
         try {
             $data = $request->json()->all();
             // $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            error_log("debitWithdrawal");
+            // error_log("$data");
             $orden = OrdenesRetiro::findOrFail($id);
+
             if ($orden->estado == "APROBADO") {
+
                 $orden->estado = "REALIZADO";
                 $orden->comprobante = $data['comprobante'];
                 $orden->fecha_transferencia = $data['fecha_transferencia'];
@@ -1375,14 +1379,34 @@ class TransaccionesAPIController extends Controller
                 $orden->save();
                 $orden->monto = str_replace(',', '.', $orden->monto);
 
-                $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'orden de retiro' . $orden->estado, $data['generated_by']);
+
+                //Transaccion update
+                $foundTrans = Transaccion::where('id_origen', $orden->id)
+                    ->where('id_vendedor', $orden->id_vendedor)
+                    ->first();
+
+
+                $foundTrans->comentario = "debito por retiro REALIZADO";
+                $foundTrans = Transaccion::where('id_origen', $orden->id)
+                    ->where('id_vendedor', $orden->id_vendedor)
+                    ->first();
+
+                if ($foundTrans) {
+                    $foundTrans->comentario = "debito por retiro REALIZADO";
+                    $foundTrans->marca_de_tiempo = new DateTime();
+                    $foundTrans->save();
+                } else {
+                    $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'orden de retiro' . $orden->estado, $data['generated_by']);
+                }
 
                 DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+                error_log("transaccion exitosa  -> $orden");
                 return response()->json([
                     "res" => "transaccion exitosa",
                     "orden" => $orden
                 ]);
             } else {
+                error_log("Solicitud no tiene estado APROBADO ");
                 return response()->json([
                     "error" => "Solicitud no tiene estado APROBADO",
                     Response::HTTP_BAD_REQUEST

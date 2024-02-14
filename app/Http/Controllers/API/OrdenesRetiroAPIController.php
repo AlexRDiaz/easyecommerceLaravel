@@ -8,6 +8,7 @@ use App\Models\OrdenesRetiro;
 use App\Models\OrdenesRetirosUsersPermissionsUserLink;
 use App\Models\Transaccion;
 use App\Models\UpUser;
+use App\Models\Vendedore;
 use DateTime;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -76,64 +77,62 @@ class OrdenesRetiroAPIController extends Controller
     {
         try {
             //code...
-            $user = UpUser::where("id",$request->input('user_id'))->with('vendedores')->first();
-            
-            
+            $user = UpUser::where("id", $request->input('user_id'))->with('vendedores')->first();
+
+
             $data = $request->validate([
                 'monto' => 'required',
                 'email' => 'required|email',
 
             ]);
 
-            
+
             $monto = $request->input('monto');
             $email = $request->input('email');
-             $user_id=$request->input('user_id');
+            $user_id=$request->input('user_id');
             $user = UpUser::where("id",$user_id)->with('vendedores')->first();
-            
-
-        if($user->vendedores[0]->saldo >= $monto){
 
 
-            //     // Generar código único
-            $numerosUtilizados = [];
-            while (count($numerosUtilizados) < 10000000) {
-                $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
-                if (!in_array($numeroAleatorio, $numerosUtilizados)) {
-                    $numerosUtilizados[] = $numeroAleatorio;
-                    break;
+            if ($user->vendedores[0]->saldo >= $monto) {
+
+
+                //     // Generar código único
+                $numerosUtilizados = [];
+                while (count($numerosUtilizados) < 10000000) {
+                    $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+                    if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                        $numerosUtilizados[] = $numeroAleatorio;
+                        break;
+                    }
                 }
+                $resultCode = $numeroAleatorio;
+
+
+                Mail::to($email)->send(new ValidationCode($resultCode, $monto));
+
+
+                return response()->json(["response" => "code generated succesfully", "code" => $resultCode], Response::HTTP_OK);
+            } else {
+                return response()->json(["response" => "saldo insuficiente"], Response::HTTP_BAD_REQUEST);
             }
-            $resultCode = $numeroAleatorio;
-
-
-            Mail::to($email)->send(new ValidationCode($resultCode, $monto));
-
-
-            return response()->json(["response" => "code generated succesfully", "code" => $resultCode], Response::HTTP_OK);
-           }else{
-            return response()->json(["response" => "saldo insuficiente"], Response::HTTP_BAD_REQUEST);
-
-           }
         } catch (\Exception $e) {
             return response()->json(["response" => "error al generar el codigo", "error" => $e], Response::HTTP_BAD_REQUEST);
         }
     }
 
-    public function putRealizado(Request $request,$id){
-         try {
+    public function putRealizado(Request $request, $id)
+    {
+        try {
             $data = $request->json()->all();
 
-            $withdrawal= OrdenesRetiro::findOrFail($id);
-            $withdrawal->estado="REALIZADO";
-            $withdrawal->comprobante=$data["comprobante"];
-            $withdrawal->fecha_transferencia=$data["fecha_transferencia"];
+            $withdrawal = OrdenesRetiro::findOrFail($id);
+            $withdrawal->estado = "REALIZADO";
+            $withdrawal->comprobante = $data["comprobante"];
+            $withdrawal->fecha_transferencia = $data["fecha_transferencia"];
             return response()->json(["response" => "edited succesfully"], Response::HTTP_OK);
-
-         } catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(["response" => "edidted failed", "error" => $e], Response::HTTP_BAD_REQUEST);
-
-         }
+        }
     }
 
 
@@ -238,5 +237,113 @@ class OrdenesRetiroAPIController extends Controller
         $pedidos['total_retiros'] = number_format($total_retiros, 2, '.', '');
 
         return response()->json($pedidos);
+    }
+
+    public function totalForSellers()
+    {
+        try {
+            //code...
+            $sellers = Vendedore::where('id_master', '!=', '')
+                ->where('id_master', '!=', 0)
+                ->get();
+
+            $total_realizado = 0;
+
+            foreach ($sellers as $seller) {
+                $sellerIdMaster = $seller->id_master;
+                $currentTotalResponse = $this->getOrdenesRetiroCount($sellerIdMaster);
+
+                $total_realizado = $currentTotalResponse->original['total_retiros'];
+                // error_log("$sellerIdMaster : $total_realizado");
+                //last orden_retiro
+                $lastWithdrawal = DB::table('ordenes_retiros as o')
+                    ->join('ordenes_retiros_users_permissions_user_links as oul', 'o.id', '=', 'oul.ordenes_retiro_id')
+                    ->where('oul.user_id', $sellerIdMaster)
+                    ->select('o.*')
+                    ->orderBy('o.id', 'desc')
+                    ->first();
+
+                if ($lastWithdrawal !== null) {
+                    $idLast = $lastWithdrawal->id;
+                    // error_log("$sellerIdMaster-> $idLast");
+                    $withdrawal = OrdenesRetiro::findOrFail($idLast);
+                    $withdrawal->previous_value = $total_realizado;
+                    $withdrawal->current_value = $total_realizado;
+                    $withdrawal->id_vendedor = $sellerIdMaster;
+                    $withdrawal->save();
+                } else {
+                    error_log("No se encontraron retiros para el usuario");
+                }
+
+                // error_log("$idLast");
+
+                error_log("***************");
+            }
+
+            return response()->json(['message' => 'Se calculó los totales de todos los vendedores'], 200);
+        } catch (\Throwable $e) {
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    public function updateRealizado($sellerIdMaster, Request $request)
+    {
+        error_log("updateRealizado");
+
+        $data = $request->json()->all();
+        $monto = $data["monto"];
+        $status = $data["status"];
+
+        $lastWithdrawal = DB::table('ordenes_retiros as o')
+            ->join('ordenes_retiros_users_permissions_user_links as oul', 'o.id', '=', 'oul.ordenes_retiro_id')
+            ->where('oul.user_id', $sellerIdMaster)
+            ->select('o.*')
+            ->orderBy('o.id', 'desc')
+            ->first();
+        if ($lastWithdrawal !== null) {
+            $idLast = $lastWithdrawal->id;
+            $withdrawal = OrdenesRetiro::findOrFail($idLast);
+
+            if ($withdrawal["current_value"] != null || $withdrawal["previous_value"] == "0.00") {
+                //update
+                error_log("update");
+                if ($status == "REALIZADO") {
+                    error_log("REALIZADO");
+
+                    // Valor original
+                    $valorOriginal = (float) number_format($withdrawal->current_value, 2, '.', '');
+                    $montoDouble = (float) number_format($monto, 2, '.', '');
+                    $value = $valorOriginal + $montoDouble;
+                    error_log("valorOriginal: $valorOriginal");
+                    error_log("montoDouble: $montoDouble");
+                    error_log("value: $value");
+
+                    $withdrawal->previous_value = $withdrawal->current_value;
+                    $withdrawal->current_value = strval($value);
+                    $withdrawal->save();
+                } else {
+                    error_log("$status");
+                    $withdrawal->previous_value = $withdrawal->current_value;
+                    $withdrawal->current_value = $withdrawal->current_value;
+                    $withdrawal->save();
+                }
+            } else {
+                // calculate the first
+                error_log("calculate the first");
+                $currentTotalResponse = $this->getOrdenesRetiroCount($sellerIdMaster);
+                $total_realizado = $currentTotalResponse->original['total_retiros'];
+
+                $withdrawal->previous_value = $total_realizado;
+                $withdrawal->current_value = $total_realizado;
+                $withdrawal->id_vendedor = $sellerIdMaster;
+                $withdrawal->save();
+            }
+        } else {
+            //
+        }
+        // return $lastWithdrawal;
+        return response()->json($lastWithdrawal, 200);
     }
 }
