@@ -197,7 +197,15 @@ Route::middleware(['cors'])->group(function () {
     //  ! MIA TRANSPORTADORAS
 
     Route::get('transportadoras', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getTransportadoras']);
+    Route::post('transportadoras-novelties', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getTransportadorasNovelties']);
     Route::get('active/transportadoras', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getActiveTransportadoras']);
+    Route::post('generaldata', [App\Http\Controllers\API\TransportadorasAPIController::class, 'generalData']);
+    Route::post('generalspecific-data', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getSpecificDataGeneral']);
+    Route::post('transportadoras/update-supervisor', [App\Http\Controllers\API\TransportadorasAPIController::class, 'updateSupervisor']);
+    Route::get('transportadoras/get-supervisors', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getSupervisors']);
+
+    
+
 
     // ! MIA OPERATORESBYTRANSPORT
 
@@ -212,8 +220,12 @@ Route::middleware(['cors'])->group(function () {
 
     // *
     Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
+    Route::put('/vendedores-cost/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'updateRefererCost']);
+    
     Route::get('/vendedores/saldo/{id}', [VendedoreAPIController::class, 'getSaldo']);
     Route::get('/vendedores/refereds/{id}', [VendedoreAPIController::class, 'getRefereds']);
+    Route::get('/vendedores-principals', [App\Http\Controllers\API\VendedoreAPIController::class, 'obtenerUsuariosPrincipales']);
+    
 
 
     // ! TRANSACCIONES
@@ -310,6 +322,10 @@ Route::middleware(['cors'])->group(function () {
     Route::post('/users/general', [UpUserAPIController::class, 'storeGeneral']);
     Route::post('/users/providers', [App\Http\Controllers\API\UpUserAPIController::class, 'storeProvider']);
     Route::put('/users/providers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateProvider']);
+    Route::put('/users/transports/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateTransport']);
+    Route::put('/users/sellers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSeller']);
+
+    
 
     
     Route::get('/users/subproviders/{id}/{search?}', [App\Http\Controllers\API\UpUserAPIController::class, 'getSubProviders']);
@@ -324,6 +340,10 @@ Route::middleware(['cors'])->group(function () {
     Route::get('/users/handle-callback', [UpUserAPIController::class, 'handleCallback']);
 
     Route::post('/users/generate-integration', [UpUserAPIController::class, 'generateIntegration']);
+    
+    Route::post('/users/new-user', [UpUserAPIController::class, 'storeGeneralNewUser']);
+    
+    Route::post('/users/reset-password/{id}', [UpUserAPIController::class, 'updateUserPassword']);
 
 
 
@@ -384,6 +404,7 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/', [RutaAPIController::class, 'index']);
         Route::get('/active', [RutaAPIController::class, 'activeRoutes']);
         Route::get('/{id}', [RutaAPIController::class, 'show']);
+        Route::post('/create', [RutaAPIController::class, 'createRuta']);
         Route::post('/subroutesofroute/{id}', [RutaAPIController::class, 'getTransportadorasConRutasYSubRutas']);
     });
 

@@ -291,8 +291,6 @@ class PedidosShopifyAPIController extends Controller
         $selectedFilter = "fecha_entrega";
         if ($dateFilter != "FECHA ENTREGA") {
             $selectedFilter = "marca_tiempo_envio";
-
-
         }
         
 

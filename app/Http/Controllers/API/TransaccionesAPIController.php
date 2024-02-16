@@ -429,7 +429,7 @@ public function paymentOrderInWarehouseProvider(Request $request, $id)
             $SellerCreditFinalValue = $this->updateProductAndProviderBalance(
                 // "TEST2C1003",
                 $pedido->sku,
-                $pedido->precio_total,
+                $pedido->precio_total, 
                 $pedido->cantidad_total,
                 $data['generated_by'],
                 $data['id_origen'],
