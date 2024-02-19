@@ -9,6 +9,7 @@ use App\Models\PedidosShopify;
 use App\Models\UpUser;
 use App\Models\UpUsersRoleLink;
 use App\Models\UpUsersRolesFrontLink;
+use App\Models\UpUsersVendedoresLink;
 use App\Models\Vendedore;
 
 use App\Repositories\vendedorRepository;
@@ -59,18 +60,18 @@ class VendedoreAPIController extends Controller
     }
 
     public function getSaldoPorId(Request $request)
-{
-    $id_master = $request->input('id_master');
-    $vendedor = Vendedore::where('id_master', $id_master)->first();
+    {
+        $id_master = $request->input('id_master');
+        $vendedor = Vendedore::where('id_master', $id_master)->first();
 
-    if (!$vendedor) {
-        return response()->json(['message' => 'Vendedor con id_master no encontrado'], 404);
+        if (!$vendedor) {
+            return response()->json(['message' => 'Vendedor con id_master no encontrado'], 404);
+        }
+
+        $saldo = $vendedor->saldo;
+
+        return response()->json(['saldo' => $saldo]);
     }
-
-    $saldo = $vendedor->saldo;
-
-    return response()->json(['saldo' => $saldo]);
-}
 
     public function getRefereds($id)
     {
@@ -186,5 +187,54 @@ class VendedoreAPIController extends Controller
     //     $updatedData= $this->VendedorRepository->update($vendedor, $id);
 
     // }
+
+
+
+    function obtenerUsuariosPrincipales()
+    {
+        // Primero, obtenemos el ID mínimo para cada vendedor_id
+        $idsPrincipales = UpUsersVendedoresLink::select(DB::raw('MIN(id) as id'), 'vendedor_id')
+            ->groupBy('vendedor_id')
+            ->pluck('id'); // Esto nos dará una colección de IDs mínimos.
+
+        // Luego, obtenemos los user_id correspondientes a esos IDs mínimos.
+        $usuariosPrincipales = UpUsersVendedoresLink::whereIn('id', $idsPrincipales)
+            ->orderBy('vendedor_id')
+            ->get(['user_id']);
+
+        return $usuariosPrincipales->pluck('user_id')->toArray();
+    }
+
+
+    function updateRefererCost(Request $request, $idSeller)
+    {
+        try {
+            $data = $request->json()->all();
+            $newRefererCost = $data["referer_cost"];
+
+
+            $seller = Vendedore::find($idSeller);
+
+            $seller->referer_cost = $newRefererCost;
+            $seller->save();
+
+            // $sellerLink = UpUsersVendedoresLink::with(['up_user.vendedores'])
+            //     ->where('vendedor_id', $idSeller)
+            //     ->firstOrFail();
+
+            // if ($sellerLink && $sellerLink->up_user && $sellerLink->up_user->vendedores) {
+            //     $vendedor = $sellerLink->up_user->vendedores;
+            //     $vendedor->referer_cost = $newRefererCost;
+            //     $vendedor->save();
+            // } else {
+            //     return response()->json(["message" => "No se encontró el vendedor correspondiente."], 404);
+            // }
+
+            return response()->json(["message" => "Se ha actualizado el costo de referido correctamente."], 200);
+        } catch (\Throwable $th) {
+            return response()->json(["message" => "Error al actualizar el costo de referido."], 400);
+        }
+    }
+
 
 }

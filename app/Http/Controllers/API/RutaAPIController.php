@@ -36,6 +36,22 @@ class RutaAPIController extends Controller
         return $rutaStrings;
     }
 
+
+    public function createRuta(Request $request)
+    {
+        $validatedData = $request->validate([
+            'titulo' => 'required|string|max:255', 
+        ]);
+
+        $ruta = Ruta::create([
+            'titulo' => $validatedData['titulo'],
+            'active' => 1
+        ]);
+
+        return response()->json($ruta, 201); 
+    }
+
+
     public function show(string $id)
     {
         //
@@ -67,8 +83,8 @@ class RutaAPIController extends Controller
         //
     }
 
-    
-   // public function getSubRutasByRuta(Request $request, $rutaId)
+
+    // public function getSubRutasByRuta(Request $request, $rutaId)
     // {
     //     // Extraer el ID de la transportadora del JSON
     //     $data = $request->json()->all();
@@ -100,18 +116,22 @@ class RutaAPIController extends Controller
     //     return response()->json($subRutas);
     // }
 
-    public function getTransportadorasConRutasYSubRutas(Request $request,$rutaId)
+    public function getTransportadorasConRutasYSubRutas(Request $request, $rutaId)
     {
-        
+
         $data = $request->json()->all();
         $transportadoraId = $data['transportadora_id'];
 
-        $transportadoras = Transportadora::with(['rutas' => function ($query) use ($rutaId,$transportadoraId) {
-            $query->where('rutas.id', $rutaId)->with(['sub_rutas' => function ($query) use ($transportadoraId) {
-                $query->where('sub_rutas.id_operadora', $transportadoraId);
-            }]);
-        }])->where('transportadoras.id', $transportadoraId)->get();
-    
+        $transportadoras = Transportadora::with([
+            'rutas' => function ($query) use ($rutaId, $transportadoraId) {
+                $query->where('rutas.id', $rutaId)->with([
+                    'sub_rutas' => function ($query) use ($transportadoraId) {
+                        $query->where('sub_rutas.id_operadora', $transportadoraId);
+                    }
+                ]);
+            }
+        ])->where('transportadoras.id', $transportadoraId)->get();
+
         $subRutasNombres = [];
         foreach ($transportadoras as $transportadora) {
             foreach ($transportadora->rutas as $ruta) {
@@ -122,8 +142,8 @@ class RutaAPIController extends Controller
                 }
             }
         }
-    
+
         return response()->json($subRutasNombres);
     }
-    
+
 }

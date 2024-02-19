@@ -46,7 +46,8 @@ class Transportadora extends Model
 		'transportadora_id',
 		'nombre',
 		'costo_transportadora',
-		'telefono_1',
+		'novelties_supervisor',
+		'telefono_1', 
 		'telefono_2',
 		'created_by_id',
 		'updated_by_id',
@@ -80,11 +81,11 @@ class Transportadora extends Model
 					->withPivot('id', 'ruta_order', 'transportadora_order');
 	}
 
-	public function subrutas()
-	{
-		return $this->belongsToMany(SubRuta::class, 'transportadoras_rutas_links')
-					->withPivot('id', 'ruta_order', 'transportadora_order');
-	}
+	// public function subrutas()
+	// {
+	// 	return $this->belongsToMany(SubRuta::class, 'transportadoras_rutas_links')
+	// 				->withPivot('id', 'ruta_order', 'transportadora_order');
+	// }
 
 	public function transportadoras_users_permissions_user_links()
 	{
