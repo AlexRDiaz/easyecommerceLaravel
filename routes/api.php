@@ -21,6 +21,7 @@ use App\Http\Controllers\API\WarehouseAPIController;
 
 use App\Http\Controllers\API\ShopifyWebhookAPIController;
 use App\Http\Controllers\API\TransaccionesAPIController;
+use App\Http\Controllers\API\TransportadorasAPIController;
 use App\Models\Reserve;
 
 use Illuminate\Http\Request;
@@ -137,14 +138,14 @@ Route::middleware(['cors'])->group(function () {
 
     Route::post('pedidos-shopify/filter', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'getByDateRange']);
 
-    
+
     Route::post('pedidos-shopify/update-gestioned-novelty/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateGestionedNovelty']);
 
     Route::post('pedidos-shopify/update-prop-gestioned-novelty/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'updateOrCreatePropertyGestionedNovelty']);
 
 
-   
-    
+
+
     //  ! ↓ LA ORIGINAL
     Route::post('integrations/put-integrations-url-store/compare-token', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
     Route::post('integrations/get-integrations-url-store/get-token', [IntegrationAPIController::class, 'getIntegrationsByStorename']);
@@ -157,16 +158,16 @@ Route::middleware(['cors'])->group(function () {
 
 
     Route::middleware(['jwt.auth'])->group(function () {
-    
+
         Route::put('/users/modify-account/{id}', [UpUserAPIController::class, 'modifyAccount']);
 
         Route::put('/users/update-paiment-information/{id}', [UpUserAPIController::class, 'updatePaymentInformation']);
         Route::get('/users/get-paiment-information/{id}', [UpUserAPIController::class, 'getPaymentInformation']);
 
-        
+
         Route::get('integrations/user/{id}', [IntegrationAPIController::class, 'getIntegrationsByUser']);
         //Route::put('integrations/put-integrations-url-store/', [IntegrationAPIController::class, 'putIntegrationsUrlStore']);
- 
+
 
 
         Route::resource('integrations', IntegrationAPIController::class)
@@ -184,9 +185,9 @@ Route::middleware(['cors'])->group(function () {
             // Route::post('/find-by-product-and-sku', [ReserveAPIController::class, 'findByProductAndSku']);
 
 
-                Route::put('/{id}', [OrdenesRetiroAPIController::class, 'update']);
-                Route::post('/', [OrdenesRetiroAPIController::class, 'store']);
-            });
+            Route::put('/{id}', [OrdenesRetiroAPIController::class, 'update']);
+            Route::post('/', [OrdenesRetiroAPIController::class, 'store']);
+        });
     });
 
 
@@ -204,7 +205,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post('transportadoras/update-supervisor', [App\Http\Controllers\API\TransportadorasAPIController::class, 'updateSupervisor']);
     Route::get('transportadoras/get-supervisors', [App\Http\Controllers\API\TransportadorasAPIController::class, 'getSupervisors']);
 
-    
+
 
 
     // ! MIA OPERATORESBYTRANSPORT
@@ -221,11 +222,11 @@ Route::middleware(['cors'])->group(function () {
     // *
     Route::put('/vendedores/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'update']);
     Route::put('/vendedores-cost/{id}', [App\Http\Controllers\API\VendedoreAPIController::class, 'updateRefererCost']);
-    
+
     Route::get('/vendedores/saldo/{id}', [VendedoreAPIController::class, 'getSaldo']);
     Route::get('/vendedores/refereds/{id}', [VendedoreAPIController::class, 'getRefereds']);
     Route::get('/vendedores-principals', [App\Http\Controllers\API\VendedoreAPIController::class, 'obtenerUsuariosPrincipales']);
-    
+
 
 
     // ! TRANSACCIONES
@@ -242,7 +243,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post("transacciones/payment-order-operator-in-office/{id}", [TransaccionesAPIController::class, 'paymentOrderOperatorInOffice']);
     Route::post("transacciones/payment-logistic-in-warehouse/{id}", [TransaccionesAPIController::class, 'paymentLogisticInWarehouse']);
     Route::post("transacciones/debit_withdrawal/{id}", [TransaccionesAPIController::class, 'debitWithdrawal']);
-    
+
     Route::post("transacciones/payment-order-in-warehouse-provider/{id}", [TransaccionesAPIController::class, 'paymentOrderInWarehouseProvider']);
 
     Route::post("transacciones/payment-transport-by-return-status/{id}", [TransaccionesAPIController::class, 'paymentTransportByReturnStatus']);
@@ -251,7 +252,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post('transacciones/deny-withdrawal/{id}', [TransaccionesAPIController::class, 'denyWithdrawal']);
     Route::post('transacciones/get-transactions', [TransaccionesAPIController::class, 'getTransactions']);
 
-    
+
 
     // ! ***********************
 
@@ -284,7 +285,7 @@ Route::middleware(['cors'])->group(function () {
     Route::post('/register-withdrawan-by', [PedidosShopifyAPIController::class, 'addWithdrawanBy']);
 
     Route::post('/update-retirement-status', [PedidosShopifyAPIController::class, 'updateRetirementStatus']);
-    
+
     Route::post('/end-retirement', [PedidosShopifyAPIController::class, 'endRetirement']);
 
 
@@ -324,10 +325,10 @@ Route::middleware(['cors'])->group(function () {
     Route::put('/users/providers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateProvider']);
     Route::put('/users/transports/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateTransport']);
     Route::put('/users/sellers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSeller']);
+    Route::put('/users/operator/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateOperator']);
 
-    
 
-    
+
     Route::get('/users/subproviders/{id}/{search?}', [App\Http\Controllers\API\UpUserAPIController::class, 'getSubProviders']);
     Route::post('/users/subproviders/add', [App\Http\Controllers\API\UpUserAPIController::class, 'storeSubProvider']);
     Route::put('/users/subproviders/update/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSubProvider']);
@@ -340,9 +341,9 @@ Route::middleware(['cors'])->group(function () {
     Route::get('/users/handle-callback', [UpUserAPIController::class, 'handleCallback']);
 
     Route::post('/users/generate-integration', [UpUserAPIController::class, 'generateIntegration']);
-    
+
     Route::post('/users/new-user', [UpUserAPIController::class, 'storeGeneralNewUser']);
-    
+
     Route::post('/users/reset-password/{id}', [UpUserAPIController::class, 'updateUserPassword']);
 
 
@@ -364,7 +365,7 @@ Route::middleware(['cors'])->group(function () {
 
 
 
-    
+
 
 
 
@@ -373,18 +374,15 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/', [OrdenesRetiroAPIController::class, 'index']);
         Route::get('/retiro/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroNew']);
         Route::get('/ret-count/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroCount']);
-    
+
         Route::post('/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
         Route::post('/withdrawal/generate-code', [OrdenesRetiroAPIController::class, 'postWithdrawalProvider']);
         Route::post('/withdrawal/{id}', [OrdenesRetiroAPIController::class, 'withdrawal']);
         Route::put('/withdrawal/done/{id}', [OrdenesRetiroAPIController::class, 'putRealizado']);
-
-
-        
     });
-    
 
-   
+
+
 
 
 
@@ -404,7 +402,6 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/', [RutaAPIController::class, 'index']);
         Route::get('/active', [RutaAPIController::class, 'activeRoutes']);
         Route::get('/{id}', [RutaAPIController::class, 'show']);
-        Route::post('/create', [RutaAPIController::class, 'createRuta']);
         Route::post('/subroutesofroute/{id}', [RutaAPIController::class, 'getTransportadorasConRutasYSubRutas']);
     });
 
@@ -414,6 +411,7 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/withid', [SubRutaAPIController::class, 'getSubrutas']);
         Route::get('bytransport/{id}', [SubRutaAPIController::class, 'getSubroutesByTransportadoraId']);
         Route::post('operadores/{id}', [SubRutaAPIController::class, 'getOperatorsbySubrouteAndTransportadora']);
+        Route::post('/new', [SubRutaAPIController::class, 'store']);
     });
 
     Route::prefix('operators')->group(function () {
@@ -470,7 +468,6 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/bydates', [TransaccionPedidoTransportadoraAPIController::class, 'getByTransportadoraDates']);
         Route::delete('/{id}', [TransaccionPedidoTransportadoraAPIController::class, 'destroy']);
         Route::post('/ordersperday', [TransaccionPedidoTransportadoraAPIController::class, 'getOrdersPerDay']);
-
     });
 
     Route::prefix('providers')->group(function () {
@@ -478,7 +475,6 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/all/{search?}', [ProviderAPIController::class, 'getProviders']);
         Route::get('/nofilter', [ProviderAPIController::class, 'index']);
         Route::put('/update/{id}', [ProviderAPIController::class, 'updateRequest']);
-
     });
 
     // *
@@ -499,6 +495,13 @@ Route::middleware(['cors'])->group(function () {
         Route::post('provider/{id}', [ProviderTransactionsAPIController::class, 'getByProvider']);
     });
 
+    //  * test email
+    Route::post('sendemail', [App\Http\Controllers\API\OrdenesRetiroAPIController::class, 'sendEmail']);
+
+    //  *
+    Route::prefix('transportadora')->group(function () {
+        Route::get('rutas/{id}', [TransportadorasAPIController::class, 'getRutasByCarrier']);
+    });
 });
 
 // api/upload
@@ -531,14 +534,12 @@ Route::prefix('products')->group(function () {
     Route::put('/{id}', [ProductAPIController::class, 'update']);
     Route::put('delete/{id}', [ProductAPIController::class, 'destroy']);
     Route::put('update/{id}', [ProductAPIController::class, 'updateRequest']);
-    
 });
 
 Route::prefix('stockhistory')->group(function () {
     Route::post('/', [StockHistoryAPIController::class, 'store']);
     Route::post('/v2', [StockHistoryAPIController::class, 'storeD']);
     Route::get('byproduct/{id}', [StockHistoryAPIController::class, 'showByProduct']);
-
 });
 
 
@@ -556,4 +557,3 @@ Route::resource('providers', App\Http\Controllers\API\ProviderAPIController::cla
 
 Route::resource('up-users-providers-links', App\Http\Controllers\API\UpUsersProvidersLinkAPIController::class)
     ->except(['create', 'edit']);
-
