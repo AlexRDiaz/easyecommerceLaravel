@@ -8,7 +8,6 @@ use App\Models\Operadore;
 use App\Models\PedidosShopify;
 use App\Models\Ruta;
 use App\Models\Transportadora;
-use App\Models\UpUser;
 use App\Models\TransportadorasShippingCost;
 // use App\Models\Ruta;
 use Carbon\Carbon;
@@ -64,16 +63,15 @@ class TransportadorasAPIController extends Controller
         return response()->json(['transportadoras' => $transportadoras]);
     }
 
-
     public function getActiveTransportadoras(Request $request)
     {
         $transportadoras = Transportadora::where('active', 1)->get();
-
+    
         $formattedTransportadoras = $transportadoras->map(function ($transportadora) {
             return $transportadora->nombre . ' - ' . $transportadora->id;
         })->toArray();
-
-        return response()->json($formattedTransportadoras);
+    
+        return response()->json( $formattedTransportadoras);
     }
 
     public function getSpecificDataGeneral(Request $request)
@@ -276,23 +274,27 @@ class TransportadorasAPIController extends Controller
     }
 
 
-    public function getRutasOfTransport($transportadoraId)
+
+    public function getRutasByCarrier($transportadoraId)
     {
         // Obtener la transportadora con sus rutas relacionadas
         $transportadora = Transportadora::with(['rutas'])->find($transportadoraId);
 
-        // Verificar si la transportadora existe
         if (!$transportadora) {
             return response()->json(['error' => 'Transportadora no encontrada'], 404);
         }
 
-        // Obtener las rutas de la transportadora y formatear los resultados
-        $rutas = $transportadora->rutas->map(function ($ruta) {
-            return $ruta->titulo . ' - ' . $ruta->id;
+        //all
+        // $rutas = $transportadora->rutas->map(function ($ruta) {
+        //     return $ruta->titulo . '-' . $ruta->id;
+        // });
+        $rutasActivas = $transportadora->rutas->filter(function ($ruta) {
+            return $ruta->active == 1;
+        })->map(function ($ruta) {
+            return $ruta->titulo . '-' . $ruta->id;
         });
 
-        // Hacer algo con las rutas formateadas (por ejemplo, devolverlas en una respuesta JSON)
-        return response()->json(['rutas' => $rutas]);
+        return response()->json(['rutas' => $rutasActivas]);
     }
 
     public function getTransportadorasOfRuta($rutaId)
@@ -403,6 +405,4 @@ class TransportadorasAPIController extends Controller
             return response()->json(['message' => 'Error en la consulta.'], 500);
         }
     }
-
-
 }
