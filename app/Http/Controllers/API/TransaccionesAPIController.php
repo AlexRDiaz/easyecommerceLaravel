@@ -412,7 +412,10 @@ class TransaccionesAPIController extends Controller
             $startDateFormatted = new DateTime();
 
             // $pedido = PedidosShopify::findOrFail($data['id_origen']);
-            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore', 'transactionTransportadora'])->findOrFail($data['id_origen']);
+            $pedido = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades', 'operadore', 'transactionTransportadora',])->findOrFail($data['id_origen']);
+
+            // if ($pedido->costo_envio == null) {
+            error_log("Transaccion nueva");
 
             $pedido->status = "ENTREGADO";
             $pedido->fecha_entrega = now()->format('j/n/Y');
@@ -430,14 +433,14 @@ class TransaccionesAPIController extends Controller
             $SellerCreditFinalValue = $this->updateProductAndProviderBalance(
                 // "TEST2C1003",
                 $pedido->sku,
-                $pedido->precio_total, 
+                $pedido->precio_total,
                 $pedido->cantidad_total,
                 $data['generated_by'],
                 $data['id_origen'],
                 // 22.90,
             );
 
-            $request->merge(['comentario' => 'Recaudo  de valor por pedido' . $pedido->status]);
+            $request->merge(['comentario' => 'Recaudo  de valor por pedido ' . $pedido->status]);
             $request->merge(['origen' => 'recaudo']);
 
             if ($SellerCreditFinalValue['total'] != null) {
@@ -535,10 +538,19 @@ class TransaccionesAPIController extends Controller
                 ]);
             }
 
+
             DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
             return response()->json([
                 "res" => "transaccion exitosa"
             ]);
+            // }else{
+            //     error_log("Este pedido ya tiene marcado el costo_envio");
+
+            //     return response()->json([
+            //         'error' => 'Ocurrió un error al procesar la solicitud'
+            //     ], 500); 
+            // }
+
         } catch (\Exception $e) {
             DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
             // Maneja el error aquí si es necesario
@@ -1370,14 +1382,32 @@ class TransaccionesAPIController extends Controller
             if ($orden->estado == "APROBADO") {
                 $orden->estado = "REALIZADO";
                 $orden->comprobante = $data['comprobante'];
-                $orden->fecha_transferencia = $data['fecha_transferencia'];
+                $orden->comentario = $data['comentario'];
+                // $orden->fecha_transferencia = $data['fecha_transferencia'];
+                $orden->fecha_transferencia = date("d/m/Y H:i:s");
                 $orden->updated_at = new DateTime();
                 $orden->save();
                 $orden->monto = str_replace(',', '.', $orden->monto);
 
-                $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'orden de retiro' . $orden->estado, $data['generated_by']);
+                $lastTransaccion = Transaccion::where('id_origen', $id)
+                    ->orderBy('id', 'desc')
+                    ->first();
 
-                DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito  
+                if ($lastTransaccion == null) {
+                    error_log("Nuevo registro");
+                    $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'debito por retiro ' . $orden->estado, $data['generated_by']);
+                } else {
+                    if ($lastTransaccion->tipo != "debit" && $lastTransaccion->origen != "retiro") {
+                        error_log("El ultimo registro con id_origen:$id se encuentra en $lastTransaccion->origen");
+                        $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'debito por retiro ' . $orden->estado, $data['generated_by']);
+                    } else {
+                        error_log("El ultimo registro con id_origen:$id se encuentra en debit just update comment");
+                        $lastTransaccion->comentario = 'debito por retiro ' . $orden->estado;
+                        $lastTransaccion->save();
+                    }
+                }
+
+                DB::commit();
                 return response()->json([
                     "res" => "transaccion exitosa",
                     "orden" => $orden
@@ -1427,6 +1457,34 @@ class TransaccionesAPIController extends Controller
             DB::rollback();
 
             return response()->json(["response" => "error al cambiar de estado", "error" => $e], Response::HTTP_BAD_REQUEST);
+        }
+    }
+
+    public function approveWhitdrawal(Request $request, $id)
+    {
+        //for old version: approve and debit
+        error_log("rw-TransportadorasAPIController-approveWhitdrawal");
+        DB::beginTransaction();
+
+        try {
+            $data = $request->json()->all();
+            // $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $withdrawal = OrdenesRetiro::findOrFail($id);
+            $withdrawal->estado = "APROBADO";
+            $withdrawal->updated_at = new DateTime();
+            $withdrawal->codigo = $withdrawal->codigo_generado;
+            $withdrawal->save();
+            $monto = str_replace(',', '.', $withdrawal->monto);
+            $this->DebitLocal($data["id_vendedor"], $monto, $withdrawal->id, "retiro-" . $withdrawal->id, "retiro", "debito por retiro solicitado", $data["id_vendedor"]);
+
+            DB::commit();
+            return response()->json(["response" => "cambio de estado y debit exitoso", "solicitud" => $withdrawal], 200);
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+            error_log("$e");
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
         }
     }
 }
