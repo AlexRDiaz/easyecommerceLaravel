@@ -113,6 +113,8 @@ class MiSaldoAPIController extends Controller
         $sumaRetiros = OrdenesRetiro::join('ordenes_retiros_users_permissions_user_links as l', 'ordenes_retiros.id', '=', 'l.ordenes_retiro_id')
             ->where('l.user_id', $upuser)
             ->where('ordenes_retiros.estado', 'REALIZADO')
+            ->whereRaw("STR_TO_DATE(ordenes_retiros.fecha, '%d/%m/%Y %H:%i:%s') <= ?", ['2024-02-28 00:00:00'])
+
             ->sum('ordenes_retiros.monto');
 
         $responseFinal = ($sumaEntregados - ($sumaCosto + $sumaDevolucion + $sumaRetiros));

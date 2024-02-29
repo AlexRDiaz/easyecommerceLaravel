@@ -146,14 +146,15 @@ class TransportadorasAPIController extends Controller
         }
 
         // Opcional: Verificar si el modelo es uno de los permitidos
-        $allowedModels = ['Transportadora','UpUser','Vendedore','UpUsersVendedoresLink'];
+        $allowedModels = ['Transportadora', 'UpUser', 'Vendedore', 'UpUsersVendedoresLink', 'UpUsersRolesFrontLink', 'OrdenesRetiro','PedidosShopify'];
+
         if (!in_array($modelName, $allowedModels)) {
             return response()->json(['error' => 'Acceso al modelo no permitido'], 403);
         }
 
         if (isset($data['data_filter'])) {
             $dateFilter = $data["date_filter"];
-            $selectedFilter = "fecha_entrega";
+                $selectedFilter = "fecha_entrega";
             if ($dateFilter != "FECHA ENTREGA") {
                 $selectedFilter = "marca_tiempo_envio";
             }
@@ -184,15 +185,30 @@ class TransportadorasAPIController extends Controller
         }
 
         $databackend->where(function ($databackend) use ($searchTerm, $filteFields) {
-            foreach ($filteFields as $field) {
+            // foreach ($filteFields as $field) {
+            //     if (strpos($field, '.') !== false) {
+            //         $relacion = substr($field, 0, strpos($field, '.'));
+            //         $propiedad = substr($field, strpos($field, '.') + 1);
+            //         $this->recursiveWhereHasLike($databackend, $relacion, $propiedad, $searchTerm);
+            //     } else {
+            //         $databackend->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+            //     }
+            // }
+            foreach ($filteFields as $field) { 
                 if (strpos($field, '.') !== false) {
-                    $relacion = substr($field, 0, strpos($field, '.'));
-                    $propiedad = substr($field, strpos($field, '.') + 1);
-                    $this->recursiveWhereHasLike($databackend, $relacion, $propiedad, $searchTerm);
+                    $segments = explode('.', $field);
+                    $lastSegment = array_pop($segments);
+                    $relation = implode('.', $segments);
+
+                    $databackend->orWhereHas($relation, function ($query) use ($lastSegment, $searchTerm) {
+                        $query->where($lastSegment, 'LIKE', '%' . $searchTerm . '%');
+                    });
                 } else {
                     $databackend->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
                 }
             }
+
+
         })
             ->where((function ($databackend) use ($Map) {
                 foreach ($Map as $condition) {
@@ -216,12 +232,18 @@ class TransportadorasAPIController extends Controller
             }))->where((function ($databackend) use ($not) {
                 foreach ($not as $condition) {
                     foreach ($condition as $key => $valor) {
-                        if (strpos($key, '.') !== false) {
-                            $relacion = substr($key, 0, strpos($key, '.'));
-                            $propiedad = substr($key, strpos($key, '.') + 1);
-                            $this->recursiveWhereHas($databackend, $relacion, $propiedad, $valor);
+                        if ($valor === '') {
+                            $databackend->whereRaw("$key <> ''");
                         } else {
-                            $databackend->where($key, '!=', $valor);
+                            if (strpos($key, '.') !== false) {
+                                $relacion = substr($key, 0, strpos($key, '.'));
+                                $propiedad = substr($key, strpos($key, '.') + 1);
+                                $this->recursiveWhereHas($databackend, $relacion, $propiedad, $valor);
+                            } else {
+                                // $databackend->where($key, '!=', $valor);
+                                $databackend->whereRaw("$key <> ''");
+
+                            }
                         }
                     }
                 }
@@ -270,10 +292,32 @@ class TransportadorasAPIController extends Controller
             });
         } else {
             $query->whereHas($relation, function ($q) use ($property, $searchTerm) {
-                $q->where($property,  'LIKE', '%' . $searchTerm . '%');
+                $q->where($property, 'LIKE', '%' . $searchTerm . '%');
             });
         }
     }
+
+    // ! version prueba 
+    // private function recursiveWhereHasLike($query, $relation, $property, $searchTerm)
+    // {
+    //     if ($searchTerm == "null") {
+    //         $searchTerm = null;
+    //     }
+
+    //     $relationParts = explode('.', $property);
+    //     $property = array_pop($relationParts);
+    //     $nestedRelations = implode('.', $relationParts);
+
+    //     if (!empty($nestedRelations)) {
+    //         $query->whereHas($relation, function ($q) use ($nestedRelations, $property, $searchTerm) {
+    //             $this->recursiveWhereHasLike($q, $nestedRelations, $property, $searchTerm);
+    //         });
+    //     } else {
+    //         $query->whereHas($relation, function ($q) use ($property, $searchTerm) {
+    //             $q->where($property, 'LIKE', '%' . $searchTerm . '%');
+    //         });
+    //     }
+    // }
 
 
     public function getRutasOfTransport($transportadoraId)

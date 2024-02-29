@@ -367,7 +367,8 @@ public function paymentOrderInWarehouseProvider(Request $request, $id)
             $data = $request->json()->all();
             $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
             $order->estado_devolucion = "EN BODEGA PROVEEDOR";
-            $order->marca_t_d = date("d/m/Y H:i");
+            // $order->marca_t_d = date("d/m/Y H:i");
+            $order->marca_t_d_l = date("d/m/Y H:i");
             $order->received_by = $data['generated_by'];
             if ($order->status == "NOVEDAD") {
 
@@ -376,7 +377,7 @@ public function paymentOrderInWarehouseProvider(Request $request, $id)
                     $order->costo_devolucion = $order->users[0]->vendedores[0]->costo_devolucion;
                     $this->DebitLocal( $order->users[0]->vendedores[0]->id_master,$order->users[0]->vendedores[0]->costo_devolucion,$order->id,$order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden, "devolucion",  "Costo de devolución desde operador por pedido en " . $order->status . " y " . $order->estado_devolucion,  $data['generated_by']);
 
-
+                    
 
                     $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
                 } else {
@@ -1357,5 +1358,65 @@ public function getTransactions(Request $request)
             ], 500);
         }
     }
+
+    public function debitWithdrawal(Request $request, $id)
+    {
+        DB::beginTransaction();
+
+        try {
+            $data = $request->json()->all();
+            // $pedido = PedidosShopify::findOrFail($data['id_origen']);
+            $orden = OrdenesRetiro::findOrFail($id);
+            if ($orden->estado == "APROBADO" && orden->fecha <= "28/2/2024") {
+                $orden->estado = "REALIZADO";
+                $orden->comprobante = $data['comprobante'];
+                // $orden->comentario = $data['comentario'];
+                // $orden->fecha_transferencia = $data['fecha_transferencia'];
+                $orden->fecha_transferencia = date("d/m/Y H:i:s");
+                $orden->updated_at = new DateTime();
+                $orden->save();
+                $orden->monto = str_replace(',', '.', $orden->monto);
+
+                $lastTransaccion = Transaccion::where('id_origen', $id)
+                    ->orderBy('id', 'desc')
+                    ->first();
+
+                if ($lastTransaccion == null) {
+                    error_log("Nuevo registro");
+                    $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'debito por retiro ' . $orden->estado, $data['generated_by']);
+                } else {
+                    if ($lastTransaccion->tipo != "debit" && $lastTransaccion->origen != "retiro") {
+                        error_log("El ultimo registro con id_origen:$id se encuentra en $lastTransaccion->origen");
+                        $this->DebitLocal($orden->id_vendedor, $orden->monto, $orden->id, "retiro-" . $orden->id, 'retiro', 'debito por retiro ' . $orden->estado, $data['generated_by']);
+                    } else {
+                        error_log("El ultimo registro con id_origen:$id se encuentra en debit just update comment");
+                        $lastTransaccion->comentario = 'debito por retiro ' . $orden->estado;
+                        $lastTransaccion->save();
+                    }
+                }
+
+                DB::commit();
+                return response()->json([
+                    "res" => "transaccion exitosa",
+                    "orden" => $orden
+                ]);
+            } else {
+                return response()->json([
+                    "error" => "Solicitud no tiene estado APROBADO",
+                    Response::HTTP_BAD_REQUEST
+                ]);
+            }
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+            // Maneja el error aquí si es necesario
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+
+
+
 
     }

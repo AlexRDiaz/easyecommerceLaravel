@@ -318,14 +318,7 @@ class PedidosShopifyAPIController extends Controller
 
         // ! *************************************
 
-        $pedidos = PedidosShopify::with(['operadore.up_users'])
-            ->with('transportadora')
-            ->with('users.vendedores')
-            ->with('novedades')
-            ->with('pedidoFecha')
-            ->with('ruta')
-            ->with('subRuta')
-            ->with('confirmedBy')
+        $pedidos = PedidosShopify::with(['operadore.up_users','novedades','confirmedBy','statusLastModifiedBy','transportadora','users.vendedores'])
             ->whereRaw("STR_TO_DATE(".$selectedFilter.", '%e/%c/%Y') BETWEEN ? AND ?", [$startDateFormatted, $endDateFormatted])
             ->where(function ($pedidos) use ($searchTerm, $filteFields) {
                 foreach ($filteFields as $field) {
@@ -3213,7 +3206,7 @@ class PedidosShopifyAPIController extends Controller
 
         return response()->json(['warehouses' => $warehouses]);
     }
-      
+
 
     public function updateOrCreatePropertyGestionedNovelty(Request $request, $id)
     {
@@ -3224,7 +3217,8 @@ class PedidosShopifyAPIController extends Controller
 
             $order = PedidosShopify::find($id);
 
-            $edited_novelty = $order["gestioned_novelty"] != null ? json_decode($order["gestioned_novelty"], true) : [];
+            $edited_novelty = !empty($order["gestioned_novelty"]) ? json_decode($order["gestioned_novelty"], true) : [];
+
             // Actualizar o crear la propiedad
             $edited_novelty[$propertyName] = $propertyValue;
 
@@ -3265,7 +3259,7 @@ class PedidosShopifyAPIController extends Controller
                         $lastTry++;
                         $edited_novelty["state"] = 'gestioned';
                         $edited_novelty["comment"] = $data["comment"];
-                        $edited_novelty["verified"] = $data["comment"];
+                        // $edited_novelty["verified"] = false;
                         $edited_novelty["id_user"] = $data["id_user"];
                         $edited_novelty["m_t_g"] = $startDateFormatted;
                     } elseif ($lastTry == 5) {
@@ -3278,6 +3272,11 @@ class PedidosShopifyAPIController extends Controller
                     $edited_novelty["comment"] = $data['comment'];
                     $edited_novelty["id_user"] = $data['id_user'];
                     $edited_novelty["m_t_g"] = $startDateFormatted;
+
+                    $order->status = "NOVEDAD RESUELTA";
+                    $order->status_last_modified_by = $data["id_user"];
+                    $order->save();
+
                     break;
 
                 default:
@@ -3288,9 +3287,18 @@ class PedidosShopifyAPIController extends Controller
                     break;
             }
 
-            // Actualizar el valor de 'try' y otros campos
             $edited_novelty['try'] = $lastTry;
 
+
+            $comment = $edited_novelty['comment'];
+            $parts = explode('UID:', $comment, 2);
+            if (count($parts) === 2) {
+                $new_comment = $parts[0] .  "({$edited_novelty['try']})" . $parts[1];
+            } else {
+                $new_comment = $comment;
+            }
+
+            $edited_novelty["comment"]  = $new_comment;
             $order["gestioned_novelty"] = json_encode($edited_novelty);
             $order->save();
 

@@ -13,9 +13,19 @@ use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
+use App\Http\Controllers\API\TransaccionesAPIController;
+use Carbon\Carbon;
+
+
+use App\Repositories\transaccionesRepository;
+use App\Repositories\vendedorRepository;
 
 class OrdenesRetiroAPIController extends Controller
 {
+
+    protected $transaccionesRepository;
+    protected $vendedorRepository;
+
     public function show($id)
     {
         $trasnportadora = OrdenesRetiro::findOrFail($id);
@@ -35,8 +45,8 @@ class OrdenesRetiroAPIController extends Controller
         // //     // Obtener datos del request
         $monto = $request->input('monto');
         $fecha = $request->input('fecha');
-        $email  = $request->input('email');
-        $idVendedor  = $request->input('id_vendedor');
+        $email = $request->input('email');
+        $idVendedor = $request->input('id_vendedor');
 
         // //     // Generar código único
         $numerosUtilizados = [];
@@ -76,64 +86,131 @@ class OrdenesRetiroAPIController extends Controller
     {
         try {
             //code...
-            $user = UpUser::where("id",$request->input('user_id'))->with('vendedores')->first();
-            
-            
+            $user = UpUser::where("id", $request->input('user_id'))->with('vendedores')->first();
+
+
             $data = $request->validate([
                 'monto' => 'required',
                 'email' => 'required|email',
 
             ]);
 
-            
+
             $monto = $request->input('monto');
             $email = $request->input('email');
-             $user_id=$request->input('user_id');
-            $user = UpUser::where("id",$user_id)->with('vendedores')->first();
-            
-
-        if($user->vendedores[0]->saldo >= $monto){
+            $user_id = $request->input('user_id');
+            $user = UpUser::where("id", $user_id)->with('vendedores')->first();
 
 
-            //     // Generar código único
-            $numerosUtilizados = [];
-            while (count($numerosUtilizados) < 10000000) {
-                $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
-                if (!in_array($numeroAleatorio, $numerosUtilizados)) {
-                    $numerosUtilizados[] = $numeroAleatorio;
-                    break;
+            if ($user->vendedores[0]->saldo >= $monto) {
+
+
+                //     // Generar código único
+                $numerosUtilizados = [];
+                while (count($numerosUtilizados) < 10000000) {
+                    $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+                    if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                        $numerosUtilizados[] = $numeroAleatorio;
+                        break;
+                    }
                 }
+                $resultCode = $numeroAleatorio;
+
+
+                Mail::to($email)->send(new ValidationCode($resultCode, $monto));
+
+
+                return response()->json(["response" => "code generated succesfully", "code" => $resultCode], Response::HTTP_OK);
+            } else {
+                return response()->json(["response" => "saldo insuficiente"], Response::HTTP_BAD_REQUEST);
+
             }
-            $resultCode = $numeroAleatorio;
-
-
-            Mail::to($email)->send(new ValidationCode($resultCode, $monto));
-
-
-            return response()->json(["response" => "code generated succesfully", "code" => $resultCode], Response::HTTP_OK);
-           }else{
-            return response()->json(["response" => "saldo insuficiente"], Response::HTTP_BAD_REQUEST);
-
-           }
         } catch (\Exception $e) {
             return response()->json(["response" => "error al generar el codigo", "error" => $e], Response::HTTP_BAD_REQUEST);
         }
     }
 
-    public function putRealizado(Request $request,$id){
-         try {
+    public function putRealizado(Request $request, $id)
+    {
+        try {
             $data = $request->json()->all();
 
-            $withdrawal= OrdenesRetiro::findOrFail($id);
-            $withdrawal->estado="REALIZADO";
-            $withdrawal->comprobante=$data["comprobante"];
-            $withdrawal->fecha_transferencia=$data["fecha_transferencia"];
+            $withdrawal = OrdenesRetiro::findOrFail($id);
+            $withdrawal->estado = "REALIZADO";
+            $withdrawal->comprobante = $data["comprobante"];
+            $withdrawal->comentario = $data["comentario"];
+            $withdrawal->fecha_transferencia =  Carbon::now()->format('j/n/Y H:i:s');
+            $withdrawal->save();
+
             return response()->json(["response" => "edited succesfully"], Response::HTTP_OK);
 
-         } catch (\Exception $e) {
+        } catch (\Exception $e) {
             return response()->json(["response" => "edidted failed", "error" => $e], Response::HTTP_BAD_REQUEST);
 
-         }
+        }
+    }
+
+
+    public function putIntern(Request $request, $id)
+    {
+        try {
+            $data = $request->json()->all();
+
+            $withdrawal = OrdenesRetiro::findOrFail($id);
+            $withdrawal->comprobante = $data["comprobante"];
+            $withdrawal->comentario = $data["comentario"];
+            // $withdrawal->fecha_transferencia =  Carbon::now()->format('j/n/Y H:i:s');
+            $withdrawal->save();
+
+            return response()->json(["response" => "edited succesfully"], Response::HTTP_OK);
+
+        } catch (\Exception $e) {
+            return response()->json(["response" => "edidted failed", "error" => $e], Response::HTTP_BAD_REQUEST);
+
+        }
+    }
+
+    public function putRechazado(Request $request, $id)
+    {
+        DB::beginTransaction();
+        try {
+            $transaccionesRepository = app()->make('App\Repositories\transaccionesRepository');
+            $vendedorRepository = app()->make('App\Repositories\vendedorRepository');
+
+            $transactionsController = new TransaccionesAPIController($transaccionesRepository, $vendedorRepository);
+
+
+            $data = $request->json()->all();
+            $monto = $data["monto"];
+            $idOrdenRetiro = $id;
+            $userSesion = $data["idSesion"];
+
+            $withdrawal = OrdenesRetiro::findOrFail($id);
+            $withdrawal->estado = "RECHAZADO";
+            $withdrawal->save();
+
+            if ($withdrawal) {
+                $transactionsController->CreditLocal(
+                    $userSesion,
+                    $monto,
+                    $idOrdenRetiro,
+                    "0000",
+                    "reembolso",
+                    "reembolso orden retiro cancelada",
+                    $userSesion
+                );
+
+            }
+
+            DB::commit(); // Confirma la transacción si todas las operaciones tienen éxito
+
+            return response()->json(["response" => "update succesfully"], Response::HTTP_OK);
+        } catch (\Exception $e) {
+            DB::rollback(); // En caso de error, revierte todos los cambios realizados en la transacción
+
+            return response()->json(["response" => "edidted failed", "error" => $e], Response::HTTP_BAD_REQUEST);
+
+        }
     }
 
 
@@ -151,7 +228,6 @@ class OrdenesRetiroAPIController extends Controller
     }
 
     public function getOrdenesRetiro($id, Request $request)
-
     {
 
         $data = $request->json()->all();

@@ -308,7 +308,7 @@ Route::middleware(['cors'])->group(function () {
 
     // -- wallet-ordenesretiro
 
-    Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'misaldo']);
+    Route::get('seller/misaldo/{id}', [App\Http\Controllers\API\MiSaldoAPIController::class, 'getsaldo']);
     // *
     Route::put('pedidos-shopify/{id}', [App\Http\Controllers\API\PedidosShopifyAPIController::class, 'update']);
 
@@ -324,6 +324,7 @@ Route::middleware(['cors'])->group(function () {
     Route::put('/users/providers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateProvider']);
     Route::put('/users/transports/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateTransport']);
     Route::put('/users/sellers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSeller']);
+    Route::put('/users/logistic-users/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateLogisticUser']);
 
     
 
@@ -378,6 +379,8 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/withdrawal/generate-code', [OrdenesRetiroAPIController::class, 'postWithdrawalProvider']);
         Route::post('/withdrawal/{id}', [OrdenesRetiroAPIController::class, 'withdrawal']);
         Route::put('/withdrawal/done/{id}', [OrdenesRetiroAPIController::class, 'putRealizado']);
+        Route::put('/withdrawal/update-intern/{id}', [OrdenesRetiroAPIController::class, 'putIntern']);
+        Route::put('/withdrawal/denied/{id}', [OrdenesRetiroAPIController::class, 'putRechazado']);
 
 
         
