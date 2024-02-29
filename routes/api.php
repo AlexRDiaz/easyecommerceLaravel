@@ -326,7 +326,7 @@ Route::middleware(['cors'])->group(function () {
     Route::put('/users/transports/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateTransport']);
     Route::put('/users/sellers/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateSeller']);
     Route::put('/users/operator/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateOperator']);
-
+    Route::put('/users/logistic-users/{id}', [App\Http\Controllers\API\UpUserAPIController::class, 'updateLogisticUser']);
 
 
     Route::get('/users/subproviders/{id}/{search?}', [App\Http\Controllers\API\UpUserAPIController::class, 'getSubProviders']);
@@ -379,6 +379,11 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/withdrawal/generate-code', [OrdenesRetiroAPIController::class, 'postWithdrawalProvider']);
         Route::post('/withdrawal/{id}', [OrdenesRetiroAPIController::class, 'withdrawal']);
         Route::put('/withdrawal/done/{id}', [OrdenesRetiroAPIController::class, 'putRealizado']);
+        Route::put('/withdrawal/update-intern/{id}', [OrdenesRetiroAPIController::class, 'putIntern']);
+        Route::put('/withdrawal/denied/{id}', [OrdenesRetiroAPIController::class, 'putRechazado']);
+
+
+        
     });
 
 

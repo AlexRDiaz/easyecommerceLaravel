@@ -368,7 +368,8 @@ class TransaccionesAPIController extends Controller
             $data = $request->json()->all();
             $order = PedidosShopify::with(['users.vendedores', 'transportadora', 'novedades'])->find($id);
             $order->estado_devolucion = "EN BODEGA PROVEEDOR";
-            $order->marca_t_d = date("d/m/Y H:i");
+            // $order->marca_t_d = date("d/m/Y H:i");
+            $order->marca_t_d_l = date("d/m/Y H:i");
             $order->received_by = $data['generated_by'];
             if ($order->status == "NOVEDAD") {
 
@@ -377,7 +378,7 @@ class TransaccionesAPIController extends Controller
                     $order->costo_devolucion = $order->users[0]->vendedores[0]->costo_devolucion;
                     $this->DebitLocal($order->users[0]->vendedores[0]->id_master, $order->users[0]->vendedores[0]->costo_devolucion, $order->id, $order->users[0]->vendedores[0]->nombre_comercial . "-" . $order->numero_orden, "devolucion",  "Costo de devolución desde operador por pedido en " . $order->status . " y " . $order->estado_devolucion,  $data['generated_by']);
 
-
+                    
 
                     $message = "Transacción con débito por estado " . $order->status . " y " . $order->estado_devolucion;
                 } else {
