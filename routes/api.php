@@ -374,6 +374,7 @@ Route::middleware(['cors'])->group(function () {
         Route::get('/', [OrdenesRetiroAPIController::class, 'index']);
         Route::get('/retiro/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroNew']);
         Route::get('/ret-count/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiroCount']);
+        Route::get('/count-a-r/{id}', [OrdenesRetiroAPIController::class, 'getCountOrders']);
 
         Route::post('/{id}', [OrdenesRetiroAPIController::class, 'getOrdenesRetiro']);
         Route::post('/withdrawal/generate-code', [OrdenesRetiroAPIController::class, 'postWithdrawalProvider']);
