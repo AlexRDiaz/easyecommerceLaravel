@@ -36,8 +36,8 @@ class OrdenesRetiroAPIController extends Controller
         $monto = $request->input('monto');
         // $fecha = $request->input('fecha');
         $fecha = date("d/m/Y H:i:s");
-        $email  = $request->input('email');
-        $idVendedor  = $request->input('id_vendedor');
+        $email = $request->input('email');
+        $idVendedor = $request->input('id_vendedor');
 
         // //     // Generar código único
         $numerosUtilizados = [];
@@ -151,7 +151,6 @@ class OrdenesRetiroAPIController extends Controller
     }
 
     public function getOrdenesRetiro($id, Request $request)
-
     {
 
         $data = $request->json()->all();
@@ -238,5 +237,32 @@ class OrdenesRetiroAPIController extends Controller
         $pedidos['total_retiros'] = number_format($total_retiros, 2, '.', '');
 
         return response()->json($pedidos);
+    }
+
+    public function withdrawalProvider(Request $request, $id)
+    {
+        $data = $request->validate([
+            'monto' => 'required',
+            'email' => 'required|email',
+            'id_vendedor' => 'required'
+        ]);
+        $monto = $request->input('monto');
+        $email = $request->input('email');
+        // $idVendedor  = $request->input('id_vendedor');
+
+        //     // Generar código único
+        $numerosUtilizados = [];
+        while (count($numerosUtilizados) < 10000000) {
+            $numeroAleatorio = str_pad(mt_rand(1, 99999999), 8, '0', STR_PAD_LEFT);
+            if (!in_array($numeroAleatorio, $numerosUtilizados)) {
+                $numerosUtilizados[] = $numeroAleatorio;
+                break;
+            }
+        }
+        $resultCode = $numeroAleatorio;
+
+
+        Mail::to($email)->send(new ValidationCode($resultCode, $monto));
+        return response()->json(["response" => "code generated succesfully", "code" => $resultCode], Response::HTTP_OK);
     }
 }

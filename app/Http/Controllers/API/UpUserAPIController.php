@@ -576,7 +576,28 @@ class UpUserAPIController extends Controller
 
             $user->save();
 
-            return response()->json(['message' => 'User modified successfully', $currentPaymentInformation], Response::HTTP_OK);
+            // // return response()->json(['message' => 'User modified successfully', $currentPaymentInformation], Response::HTTP_OK);
+            // $user = UpUser::find($id);
+
+            // // Obtener la información de pago actual y decodificarla si existe
+            // $currentPaymentInformation = [];
+            // if ($user->payment_information) {
+            //     $decryptedData = decrypt($user->payment_information);
+            //     $currentPaymentInformation = json_decode($decryptedData, true);
+            // }
+
+            // // // Agregar los nuevos datos de pago a la información existente
+            // // array_push($currentPaymentInformation, $data);
+
+            // // Codificar y cifrar la información actualizada
+            // $jsonData = json_encode($currentPaymentInformation);
+            // $encryptedData = encrypt($jsonData);
+
+            // // Guardar la información actualizada en el usuario
+            // $user->payment_information = $encryptedData;
+            // $user->save();
+
+            return response()->json(['message' => 'User modified successfully', 'data' => $currentPaymentInformation], Response::HTTP_OK);
         } catch (\Exception $e) {
             return response()->json(['error' => 'User modify failed', $e], Response::HTTP_BAD_REQUEST);
         }
@@ -1297,50 +1318,50 @@ class UpUserAPIController extends Controller
                 //     return response()->json(['message' => 'Usuario creado con éxito', 'user_id' => $user->id], 200);
 
 
-            } else 
-            if ($typeU == "2") {
-                if ($request->has(['nombre_comercial', 'telefono1', 'telefono2', 'costo_envio', 'costo_devolucion', 'url_tienda'])) {
-                    $newSeller = new Vendedore();
-                    $newSeller->nombre_comercial = $request->input('nombre_comercial');
-                    $newSeller->telefono_1 = $request->input('telefono1');
-                    $newSeller->telefono_2 = $request->input('telefono2');
-                    $newSeller->costo_envio = $request->input('costo_envio');
-                    $newSeller->costo_devolucion = $request->input('costo_devolucion');
-                    $newSeller->fecha_alta = $request->input('fecha_alta');
-                    $newSeller->id_master = $user->id;
-                    $newSeller->url_tienda = $request->input('url_tienda');
-                    $newSeller->referer_cost = "0.10";
-                    $newSeller->save();
+            } else
+                if ($typeU == "2") {
+                    if ($request->has(['nombre_comercial', 'telefono1', 'telefono2', 'costo_envio', 'costo_devolucion', 'url_tienda'])) {
+                        $newSeller = new Vendedore();
+                        $newSeller->nombre_comercial = $request->input('nombre_comercial');
+                        $newSeller->telefono_1 = $request->input('telefono1');
+                        $newSeller->telefono_2 = $request->input('telefono2');
+                        $newSeller->costo_envio = $request->input('costo_envio');
+                        $newSeller->costo_devolucion = $request->input('costo_devolucion');
+                        $newSeller->fecha_alta = $request->input('fecha_alta');
+                        $newSeller->id_master = $user->id;
+                        $newSeller->url_tienda = $request->input('url_tienda');
+                        $newSeller->referer_cost = "0.10";
+                        $newSeller->save();
 
-                    $upUserVendedoreLinks = new UpUsersVendedoresLink();
-                    $upUserVendedoreLinks->user_id = $user->id;
-                    $upUserVendedoreLinks->vendedor_id = $newSeller->id;
-                    $upUserVendedoreLinks->save();
+                        $upUserVendedoreLinks = new UpUsersVendedoresLink();
+                        $upUserVendedoreLinks->user_id = $user->id;
+                        $upUserVendedoreLinks->vendedor_id = $newSeller->id;
+                        $upUserVendedoreLinks->save();
+                    }
+                    Mail::to($user->email)->send(new UserValidation($resultCode));
+                } elseif ($typeU == "4") {
+                    // "operatorName","phone","operatorCost","idCarrier" ,"idSubRoute"
+                    $operator = new Operadore();
+                    $operator->telefono = $request->input('phone');
+                    $operator->costo_operador = $request->input('operatorCost');
+                    $operator->save();
+
+                    $upUserOperador = new UpUsersOperadoreLink();
+                    $upUserOperador->user_id = $user->id;
+                    $upUserOperador->operadore_id = $operator->id;
+                    $upUserOperador->save();
+
+                    $OperadoresTransporta = new OperadoresTransportadoraLink();
+                    $OperadoresTransporta->operadore_id = $operator->id;
+                    $OperadoresTransporta->transportadora_id = $request->input('idCarrier');
+                    $OperadoresTransporta->save();
+
+                    $OperadoresSubRuta = new OperadoresSubRutaLink();
+                    $OperadoresSubRuta->operadore_id = $operator->id;
+                    $OperadoresSubRuta->sub_ruta_id = $request->input('idSubRoute');
+                    $OperadoresSubRuta->save();
+                    Mail::to($user->email)->send(new UserValidation($resultCode));
                 }
-                Mail::to($user->email)->send(new UserValidation($resultCode));
-            } elseif ($typeU == "4") {
-                // "operatorName","phone","operatorCost","idCarrier" ,"idSubRoute"
-                $operator = new Operadore();
-                $operator->telefono = $request->input('phone');
-                $operator->costo_operador = $request->input('operatorCost');
-                $operator->save();
-
-                $upUserOperador = new UpUsersOperadoreLink();
-                $upUserOperador->user_id = $user->id;
-                $upUserOperador->operadore_id = $operator->id;
-                $upUserOperador->save();
-
-                $OperadoresTransporta = new OperadoresTransportadoraLink();
-                $OperadoresTransporta->operadore_id = $operator->id;
-                $OperadoresTransporta->transportadora_id = $request->input('idCarrier');
-                $OperadoresTransporta->save();
-
-                $OperadoresSubRuta = new OperadoresSubRutaLink();
-                $OperadoresSubRuta->operadore_id = $operator->id;
-                $OperadoresSubRuta->sub_ruta_id = $request->input('idSubRoute');
-                $OperadoresSubRuta->save();
-                Mail::to($user->email)->send(new UserValidation($resultCode));
-            }
 
             return response()->json(['message' => 'Usuario creado con éxito', 'user_id' => $user->id], 200);
         } catch (\Throwable $th) {

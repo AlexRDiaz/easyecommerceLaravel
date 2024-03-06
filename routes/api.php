@@ -161,7 +161,7 @@ Route::middleware(['cors'])->group(function () {
 
         Route::put('/users/modify-account/{id}', [UpUserAPIController::class, 'modifyAccount']);
 
-        Route::put('/users/update-paiment-information/{id}', [UpUserAPIController::class, 'updatePaymentInformation']);
+        Route::post('/users/update-paiment-information/{id}', [UpUserAPIController::class, 'updatePaymentInformation']);
         Route::get('/users/get-paiment-information/{id}', [UpUserAPIController::class, 'getPaymentInformation']);
 
 
@@ -379,6 +379,7 @@ Route::middleware(['cors'])->group(function () {
         Route::post('/withdrawal/generate-code', [OrdenesRetiroAPIController::class, 'postWithdrawalProvider']);
         Route::post('/withdrawal/{id}', [OrdenesRetiroAPIController::class, 'withdrawal']);
         Route::put('/withdrawal/done/{id}', [OrdenesRetiroAPIController::class, 'putRealizado']);
+        Route::post('/withdrawal-provider/{id}', [OrdenesRetiroAPIController::class, 'withdrawalProvider']);
     });
 
 
