@@ -15,10 +15,35 @@ class CarrierExternalAPIController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
 
-        $carriers = CarriersExternal::where('active', 1)->get();
+        $data = $request->json()->all();
+        $searchTerm = $data['search'];
+
+        if ($searchTerm != "") {
+            $filteFields = $data['or'];
+        } else {
+            $filteFields = [];
+        }
+
+        $carriers = CarriersExternal::where('active', 1)
+            ->where(function ($coverages) use ($searchTerm, $filteFields) {
+                foreach ($filteFields as $field) {
+                    if (strpos($field, '.') !== false) {
+                        $segments = explode('.', $field);
+                        $lastSegment = array_pop($segments);
+                        $relation = implode('.', $segments);
+
+                        $coverages->orWhereHas($relation, function ($query) use ($lastSegment, $searchTerm) {
+                            $query->where($lastSegment, 'LIKE', '%' . $searchTerm . '%');
+                        });
+                    } else {
+                        $coverages->orWhere($field, 'LIKE', '%' . $searchTerm . '%');
+                    }
+                }
+            })
+            ->get();
         // $carriers = CarriersExternal::with('carrier_coverages')
         // ->where('active', 1)->get();
         return response()->json($carriers, 200);
@@ -113,20 +138,23 @@ class CarrierExternalAPIController extends Controller
                     error_log("idProv_local: $idProv_local");
 
                     $idCoverage = 0;
-                    error_log("getCoberturas: $getCoberturas");
+                    // error_log("getCoberturas: $getCoberturas");
 
                     if ($getCoberturas->isNotEmpty()) {
-                        $cobertura_exist = json_decode($getCoberturas, true);
+                        $coberturas_exist = json_decode($getCoberturas, true);
                         // error_log("cobertura_exist: $cobertura_exist");
                         $ciudadSinAcentos = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT',  $ciudadName));
                         $ciudadSearch = preg_replace('/[^a-zA-Z0-9]/', '', $ciudadSinAcentos);
 
-                        foreach ($cobertura_exist as $cobertura) {
+                        foreach ($coberturas_exist as $cobertura) {
                             $ciudadExist = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT',  $cobertura["coverage_external"]["ciudad"]));
                             $ciudName = preg_replace('/[^a-zA-Z0-9]/', '', $ciudadExist);
+                            // error_log("ciudadSearch: $ciudadSearch");
+                            // error_log("ciudName: $ciudName");
+                            // error_log("cobertura:".json_decode($cobertura));
 
                             if (strpos($ciudName, $ciudadSearch) !== false) {
-                                $idCoverage = $cobertura["id"];
+                                $idCoverage = $cobertura["coverage_external"]["id"];
                                 break;
                             }
                         }
@@ -152,7 +180,6 @@ class CarrierExternalAPIController extends Controller
                     $newCarrierCoverage->id_prov_ref = $idRefProv;
                     $newCarrierCoverage->id_ciudad_ref = $idRefCiudad;
                     $newCarrierCoverage->save();
-
                 }
             }
 
@@ -174,11 +201,17 @@ class CarrierExternalAPIController extends Controller
     {
         //
         try {
-            error_log("CarrierExternalAPIController-show");
-            $carriers = CarriersExternal::with('carrier_coverages')
-                ->where('id', $id)
-                ->get();
+            // error_log("CarrierExternalAPIController-show");
+            // $carriers = CarriersExternal::with('carrier_coverages')
+            //     ->where('id', $id)
+            //     ->get();
             // return response()->json($carriers, 200);
+            $carriers = CarriersExternal::with(['carrier_coverages' => function ($query) {
+                $query->where('active', 1);
+            }])
+            ->where('id', $id)
+            ->get();
+            
             return response()->json(['data' => $carriers]);
         } catch (\Exception $e) {
             return response()->json([
@@ -201,6 +234,20 @@ class CarrierExternalAPIController extends Controller
     public function update(Request $request, string $id)
     {
         //
+        $carrier = CarriersExternal::find($id); // Encuentra al usuario por su ID
+
+        if ($carrier) {
+            try {
+                $carrier->update($request->all());
+                return response()->json(['message' => 'Transportadora actualizada con éxito', "transportadora" => $carrier], 200);
+            } catch (\Exception $e) {
+                return response()->json([
+                    'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+                ], 500);
+            }
+        } else {
+            return response()->json(['message' => 'Producto no encontrado'], 404);
+        }
     }
 
     /**
@@ -231,5 +278,78 @@ class CarrierExternalAPIController extends Controller
 
 
         return response()->json(['data' => $coverage], 200);
+    }
+
+    public function newCoverage(Request $request)
+    {
+        //
+        DB::beginTransaction();
+
+        try {
+            // ini_set('memory_limit', '256M'); // Puedes ajustar el valor según tus necesidades
+
+            error_log("CarrierExternalAPIController-newCoverage");
+            //code...
+            $data = $request->json()->all();
+            $idCarrier = $data['id_carrier'];
+            $idCiudad = $data['id_ciudad']; //ref
+            $ciudadName = $data['ciudad'];
+            $idProv = $data['id_prov']; //ref
+            $idProvLocal = $data['id_prov_local']; //ref
+            $provinciaName = $data['provincia'];
+            $tipo = $data['tipo'];
+
+            $getCoberturas = CarrierCoverage::with('coverage_external')->get();
+
+            $idCoverage = 0;
+            // error_log("getCoberturas: $getCoberturas");
+
+            if ($getCoberturas->isNotEmpty()) {
+                $cobertura_exist = json_decode($getCoberturas, true);
+                // error_log("cobertura_exist: $cobertura_exist");
+                $ciudadSinAcentos = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT',  $ciudadName));
+                $ciudadSearch = preg_replace('/[^a-zA-Z0-9]/', '', $ciudadSinAcentos);
+
+                foreach ($cobertura_exist as $cobertura) {
+                    $ciudadExist = strtolower(iconv('UTF-8', 'ASCII//TRANSLIT',  $cobertura["coverage_external"]["ciudad"]));
+                    $ciudName = preg_replace('/[^a-zA-Z0-9]/', '', $ciudadExist);
+
+                    if (strpos($ciudName, $ciudadSearch) !== false) {
+                        $idCoverage = $cobertura["coverage_external"]["id"];
+                        break;
+                    }
+                }
+            }
+            error_log("idCoverage: $idCoverage");
+
+
+            if ($idCoverage == 0) {
+                error_log("creat ciudad-cobertura");
+
+                $newCoverageExt = new CoverageExternal();
+                $newCoverageExt->ciudad = $ciudadName;
+                $newCoverageExt->id_provincia = $idProvLocal;
+                $newCoverageExt->save();
+                $idCoverage = $newCoverageExt->id;
+            }
+
+            $newCarrierCoverage = new CarrierCoverage();
+            $newCarrierCoverage->id_coverage =  $idCoverage;
+            $newCarrierCoverage->id_carrier = $idCarrier;
+            $newCarrierCoverage->type = $tipo;
+            $newCarrierCoverage->id_prov_ref = $idProv;
+            $newCarrierCoverage->id_ciudad_ref = $idCiudad;
+            $newCarrierCoverage->save();
+
+
+            DB::commit();
+            return response()->json(["message" => "Se creo con exito"], 200);
+        } catch (\Exception $e) {
+            DB::rollback();
+            error_log("$e");
+            return response()->json([
+                'error' => 'Ocurrió un error al procesar la solicitud: ' . $e->getMessage()
+            ], 500);
+        }
     }
 }

@@ -16,7 +16,7 @@ class DpaProvinciaAPIController extends Controller
         //
         $provincias = dpaProvincia::all();
         $formattedProvincias = $provincias->map(function ($provincias) {
-            return $provincias->id . '-' . $provincias->provincia;
+            return  $provincias->provincia . '-' . $provincias->id;
         })->toArray();
         return response()->json($formattedProvincias);
     }
@@ -98,7 +98,7 @@ class DpaProvinciaAPIController extends Controller
             $components = explode('-', $element);
             return end($components);
         }, $formattedData);
-        
+
         $duplicados = array_unique(array_diff_assoc($nombres, array_unique($nombres)));
 
         if (empty($duplicados)) {
