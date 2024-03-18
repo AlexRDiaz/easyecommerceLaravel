@@ -514,7 +514,8 @@ Route::middleware(['cors'])->group(function () {
     //  *
     Route::prefix('provincias')->group(function () {
         Route::get('/', [DpaProvinciaAPIController::class, 'index']);
-        Route::get('cantones/{id}', [DpaProvinciaAPIController::class, 'getCantones']);
+        // Route::get('cantones/{id}', [DpaProvinciaAPIController::class, 'getCantones']);
+        Route::get('coverages/{id}', [DpaProvinciaAPIController::class, 'getCoverages']);
     });
 
     //  *
@@ -532,7 +533,6 @@ Route::middleware(['cors'])->group(function () {
     Route::prefix('carriercoverage')->group(function () {
         Route::post('all', [CarrierCoverageAPIController::class, 'getAll']);
         Route::put('/{id}', [CarrierCoverageAPIController::class, 'update']);
-
     });
 });
 
